@@ -1,0 +1,165 @@
+import React, { useEffect, useRef } from "react";
+import {
+  WalletOutlined,
+  AppstoreOutlined,
+  IdcardOutlined,
+  CheckCircleOutlined,
+  FileDoneOutlined,
+  ClockCircleOutlined,
+  BarChartOutlined,
+  TeamOutlined,
+  SafetyCertificateOutlined,
+  UserAddOutlined
+} from "@ant-design/icons";
+import { useLocation, useNavigate } from "react-router-dom";
+
+export default function Sidebar({ role, open, onClose }) {
+  const sidebarRef = useRef();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isMobile = window.innerWidth <= 768;
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        onClose();
+      }
+    }
+
+    if (open && isMobile) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, onClose]);
+
+  const links = [
+    {
+      key: '/Erp_Mnmjec/dashboard',
+      label: 'Dashboard',
+      icon: <AppstoreOutlined />,
+      roles: ['Staff', 'student', 'CA', 'HOD', 'Principal'],
+    },
+    {
+      key: '/Erp_Mnmjec/students',
+      label: 'Students',
+      icon: <TeamOutlined />,
+      roles: ['CA', 'HOD', 'Principal'],
+    },
+    {
+      key: '/Erp_Mnmjec/faculty',
+      label: 'Faculty',
+      icon: <IdcardOutlined />,
+      roles: ['HOD', 'Principal'],
+    },
+    {
+      key: '/Erp_Mnmjec/attendance',
+      label: 'Attendance',
+      icon: <CheckCircleOutlined />,
+      roles: ['Staff', 'student', 'CA', 'HOD'],
+    },
+    {
+      key: '/Erp_Mnmjec/marks',
+      label: 'Marks',
+      icon: <FileDoneOutlined />,
+      roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
+    },
+    {
+      key: '/Erp_Mnmjec/fees',
+      label: 'Fees',
+      icon: <WalletOutlined />,
+      roles: ['Principal', 'F&A', 'HOD'],
+    },
+    {
+      key: '/Erp_Mnmjec/late',
+      label: 'Late Arrival',
+      icon: <ClockCircleOutlined />,
+      roles: ['CA', 'HOD', 'Principal'],
+    },
+    // {
+    //   key: '/Erp_Mnmjec/reports',
+    //   label: 'Reports',
+    //   icon: <BarChartOutlined />,
+    //   roles: ['CA', 'HOD', 'Principal'],
+    // },
+    {
+      key: '/Erp_Mnmjec/SecurityLateEntry',
+      label: 'Security Entry',
+      icon: <SafetyCertificateOutlined />,
+      roles: ['Security'],
+    },
+    // {
+    //   key: '/Erp_Mnmjec/profilehub',
+    //   label: 'Profile Hub',
+    //   icon: <UserAddOutlined />,
+    //   roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
+    // },
+  ];
+
+
+  const menuItems = links.filter((i) => i.roles.includes(role));
+
+  return (
+    <>
+      {/* BACKDROP (MOBILE ONLY) */}
+      {isMobile && open && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-30"
+          onClick={onClose}
+        />
+      )}
+
+      {/* SIDEBAR */}
+      <aside
+        ref={sidebarRef}
+        className={`
+          fixed top-0 left-0 h-full bg-slate-900 text-white z-40
+          transition-all duration-300 overflow-hidden
+          ${isMobile ? (open ? "w-64" : "w-0") : open ? "w-64" : "w-16"}
+        `}
+        onMouseLeave={() => {
+          if (!isMobile) onClose();
+        }}
+      >
+        {/* Header */}
+        <div
+          className="h-16 flex items-center px-4 border-b border-slate-700 text-lg font-bold"
+          style={{ whiteSpace: "nowrap" }}
+        >
+          {(!isMobile && open) || isMobile ? "MNMJEC ERP" : ""}
+        </div>
+
+        {/* Menu */}
+        <nav className="mt-3 flex flex-col">
+          {menuItems.map((item) => {
+            const active = location.pathname === item.key;
+
+            return (
+              <button
+                key={item.key}
+                onClick={() => {
+                  navigate(item.key);
+                  if (isMobile) onClose();
+                }}
+                className={`
+                  flex items-center gap-3 px-4 py-3 text-left
+                  hover:bg-slate-700 transition
+                  ${active ? "bg-slate-800" : ""}
+                `}
+              >
+                {/* Icon always visible */}
+                <span className="text-xl">{item.icon}</span>
+
+                {/* Label visible only when expanded */}
+                {((open && !isMobile) || isMobile) && (
+                  <span className="text-base">{item.label}</span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
+  );
+}
