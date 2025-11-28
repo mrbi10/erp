@@ -7,7 +7,7 @@ export default function Attendance({ user }) {
     const location = useLocation();
 
     // Base paths for navigation
-    const basePath = "/Erp_Mnmjec/attendance";
+    const basePath = "/erp/attendance";
 
     // --- Role-Based Options Definition with Enhanced Styling Data ---
     const options = [];

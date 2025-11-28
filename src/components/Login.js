@@ -69,7 +69,7 @@ export default function Login({ onClose, onLoginSuccess }) {
       localStorage.setItem('user', JSON.stringify(decoded));
 
       onLoginSuccess(decoded);
-      navigate('/Erp_Mnmjec');
+      navigate('/erp');
 
     } catch (err) {
       console.error(err);

@@ -36,61 +36,61 @@ export default function Sidebar({ role, open, onClose }) {
 
   const links = [
     {
-      key: '/Erp_Mnmjec/dashboard',
+      key: '/erp/dashboard',
       label: 'Dashboard',
       icon: <AppstoreOutlined />,
       roles: ['Staff', 'student', 'CA', 'HOD', 'Principal'],
     },
     {
-      key: '/Erp_Mnmjec/students',
+      key: '/erp/students',
       label: 'Students',
       icon: <TeamOutlined />,
       roles: ['CA', 'HOD', 'Principal'],
     },
     {
-      key: '/Erp_Mnmjec/faculty',
+      key: '/erp/faculty',
       label: 'Faculty',
       icon: <IdcardOutlined />,
       roles: ['HOD', 'Principal'],
     },
     {
-      key: '/Erp_Mnmjec/attendance',
+      key: '/erp/attendance',
       label: 'Attendance',
       icon: <CheckCircleOutlined />,
       roles: ['Staff', 'student', 'CA', 'HOD'],
     },
     {
-      key: '/Erp_Mnmjec/marks',
+      key: '/erp/marks',
       label: 'Marks',
       icon: <FileDoneOutlined />,
       roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
     },
     {
-      key: '/Erp_Mnmjec/fees',
+      key: '/erp/fees',
       label: 'Fees',
       icon: <WalletOutlined />,
       roles: ['Principal', 'F&A', 'HOD'],
     },
     {
-      key: '/Erp_Mnmjec/late',
+      key: '/erp/late',
       label: 'Late Arrival',
       icon: <ClockCircleOutlined />,
       roles: ['CA', 'HOD', 'Principal'],
     },
     // {
-    //   key: '/Erp_Mnmjec/reports',
+    //   key: '/erp/reports',
     //   label: 'Reports',
     //   icon: <BarChartOutlined />,
     //   roles: ['CA', 'HOD', 'Principal'],
     // },
     {
-      key: '/Erp_Mnmjec/SecurityLateEntry',
+      key: '/erp/SecurityLateEntry',
       label: 'Security Entry',
       icon: <SafetyCertificateOutlined />,
       roles: ['Security'],
     },
     // {
-    //   key: '/Erp_Mnmjec/profilehub',
+    //   key: '/erp/profilehub',
     //   label: 'Profile Hub',
     //   icon: <UserAddOutlined />,
     //   roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
@@ -121,7 +121,7 @@ export default function Sidebar({ role, open, onClose }) {
         onMouseLeave={() => {
           if (!isMobile) onClose();
         }}
-      >
+      >   
         {/* Header */}
         <div
           className="h-16 flex items-center px-4 border-b border-slate-700 text-lg font-bold"

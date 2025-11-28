@@ -309,7 +309,7 @@ export default function AdminDashboard({ profileCard, announcements }) {
         {/* Admin Tools */}
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           <Link
-            to="/Erp_Mnmjec/faculty"
+            to="/erp/faculty"
             className="p-6 bg-blue-100 rounded-xl shadow-md flex flex-col items-center justify-center hover:bg-blue-200 transition transform hover:scale-105 cursor-pointer"
           >
             <FaChalkboardTeacher className="text-4xl text-blue-700 mb-2" />

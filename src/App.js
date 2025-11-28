@@ -91,7 +91,7 @@ export default function App() {
     localStorage.removeItem('token');
     setUser(null);
     setSidebarOpen(false);
-    window.location.href = "/Erp_Mnmjec/home";
+    window.location.href = "/erp/home";
   };
 
   return (
@@ -128,25 +128,25 @@ export default function App() {
 
         <Routes>
           {/* Public routes */}
-          <Route path="/Erp_Mnmjec" element={<Navigate to="/Erp_Mnmjec/home" />} />
+          <Route path="/erp" element={<Navigate to="/erp/home" />} />
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/resetpassword/:token" element={<ResetPassword />} />
-          <Route path="Erp_Mnmjec/home" element={<Home user={user} />} />
+          <Route path="erp/home" element={<Home user={user} />} />
 
 
           {/* Protected routes */}
           {user && (
             <>
-              <Route path="Erp_Mnmjec/dashboard" element={<Dashboard user={user} />} />
-              <Route path="Erp_Mnmjec/students" element={<Students user={user} />} />
-              <Route path="Erp_Mnmjec/faculty" element={<FacultyList user={user} />} />
-              {/* <Route path="Erp_Mnmjec/reports" element={<Reports user={user} />} /> */}
-              <Route path="Erp_Mnmjec/marks" element={<Marks user={user} />} />
-              <Route path="Erp_Mnmjec/late" element={<Late user={user} />} />
-              <Route path="Erp_Mnmjec/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
+              <Route path="erp/dashboard" element={<Dashboard user={user} />} />
+              <Route path="erp/students" element={<Students user={user} />} />
+              <Route path="erp/faculty" element={<FacultyList user={user} />} />
+              {/* <Route path="erp/reports" element={<Reports user={user} />} /> */}
+              <Route path="erp/marks" element={<Marks user={user} />} />
+              <Route path="erp/late" element={<Late user={user} />} />
+              <Route path="erp/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
 
               {/* Attendance nested routes */}
-              <Route path="Erp_Mnmjec/attendance" element={<Attendance user={user} />}>
+              <Route path="erp/attendance" element={<Attendance user={user} />}>
                 <Route
                   path="view"
                   element={user.role === 'student' ? <StudentAttendance user={user} /> : <PageNotFound />}
@@ -166,7 +166,7 @@ export default function App() {
                 <Route path="*" element={<PageNotFound />} />
               </Route>
 
-              <Route path="Erp_Mnmjec/marks" element={<Marks user={user} />}>
+              <Route path="erp/marks" element={<Marks user={user} />}>
                 <Route path="enter" element={<EnterMarks />} />
                 <Route path="view" element={<ViewMarks />} />
                 <Route path="overview" element={<PrincipalOverview />} />
@@ -174,7 +174,7 @@ export default function App() {
                 <Route path="top" element={<TopPerformers />} />
               </Route>
 
-              <Route path="Erp_Mnmjec/fees" element={<Fees user={user} />}>
+              <Route path="erp/fees" element={<Fees user={user} />}>
                 <Route path="list" element={<FeesList user={user} />} />
                 <Route path="student/:reg_no" element={<FeesStudentView user={user} />} />
                 <Route path="analytics" element={<Feesanalytics user={user} />} />
@@ -182,7 +182,7 @@ export default function App() {
               </Route>
 
 
-              {/* { <Route path="/Erp_Mnmjec/profilehub" element={<ProfileHub user={user} />}>
+              {/* { <Route path="/erp/profilehub" element={<ProfileHub user={user} />}>
                 <Route path="add" element={<ProfileAdd />} />
                 <Route path="view" element={<ProfileView user={user} />} />
                 <Route index element={<ProfileView user={user} />} />

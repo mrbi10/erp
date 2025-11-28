@@ -96,7 +96,7 @@ export default function ProfileAdd() {
         }),
       });
 
-      navigate("/Erp_Mnmjec/profilehub/view");
+      navigate("/erp/profilehub/view");
     } catch (err) {
       console.error("Save error:", err);
       setError("Failed to save item");

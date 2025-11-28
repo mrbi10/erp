@@ -89,7 +89,7 @@ export default function PremiumHeader({
           )}
 
           {/* Logo */}
-          <Link to="/Erp_Mnmjec/home">
+          <Link to="/erp/home">
             <img
               src={logo}
               alt="MNMJEC"
@@ -105,7 +105,7 @@ export default function PremiumHeader({
           </Link>
 
           {/* Title (hide on small screens) */}
-          <Link to="/Erp_Mnmjec/home" style={{ textDecoration: "none" }}>
+          <Link to="/erp/home" style={{ textDecoration: "none" }}>
             <span
               className="header-logo-text"
               style={{

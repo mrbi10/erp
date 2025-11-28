@@ -12,7 +12,7 @@ export default function Fees({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const basePath = "/Erp_Mnmjec/fees";
+  const basePath = "/erp/fees";
 
   // Role bubbles
   const optionStyles = {
