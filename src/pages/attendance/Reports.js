@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { BASE_URL } from '../../constants/API';
-import { FaFilter, FaDownload, FaSearch, FaChevronDown, FaSpinner, FaChartLine } from 'react-icons/fa';
+import { 
+  FaFilter, FaDownload, FaSearch, FaChevronDown, FaSpinner, 
+  FaChartLine, FaUserGraduate, FaCheckCircle, FaTimesCircle, FaPercentage 
+} from 'react-icons/fa';
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import Swal from 'sweetalert2';
@@ -20,14 +23,23 @@ function ReportsPage({ user }) {
 
   const token = localStorage.getItem("token");
 
-  // --- Data Fetching Hooks (Remaining the same) ---
-  // ... (useEffect for classes)
+  // --- Statistics Calculation (New Feature) ---
+  const stats = useMemo(() => {
+    if (!attendanceData.length) return { total: 0, present: 0, absent: 0, percentage: 0 };
+    
+    const total = attendanceData.length;
+    const present = attendanceData.filter(a => a.status === 'Present').length;
+    const absent = total - present;
+    const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+    console.log("Attendance Stats:", { total, present, absent, percentage });
+
+    return { total, present, absent, percentage };
+  }, [attendanceData]);
+
+  // --- Data Fetching ---
   useEffect(() => {
     if (!token) return;
-
-    const url = `${BASE_URL}/staff/classes`;
-
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${BASE_URL}/staff/classes`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.json())
       .then((data) => {
         setClasses(Array.isArray(data) ? data : []);
@@ -38,13 +50,11 @@ function ReportsPage({ user }) {
       .catch((err) => console.error("Error fetching classes:", err));
   }, [token, user.role]);
 
-  // ... (useEffect for students)
   useEffect(() => {
     if (!filters.classId || !token) {
       setStudents([]);
       return;
     }
-
     setStudents([]);
     setFilters((prev) => ({ ...prev, studentId: "" }));
 
@@ -57,26 +67,21 @@ function ReportsPage({ user }) {
       .catch((err) => console.error("Error fetching students:", err));
   }, [filters.classId, token]);
 
-  // ... (handleFilterChange and filtered lists)
   const handleFilterChange = (e) => setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   const filteredClasses = classes;
   const filteredStudents = students;
 
-  // ... (handleFetchAttendance)
   const handleFetchAttendance = () => {
     setLoading(true);
     setAttendanceData([]);
     setDataFetched(false);
 
     const queryParams = new URLSearchParams();
-
     if (filters.classId) queryParams.append("classId", filters.classId);
     if (filters.studentId) queryParams.append("studentId", filters.studentId);
     if (filters.date) queryParams.append("date", filters.date);
 
-    const url = `${BASE_URL}/attendance?${queryParams.toString()}`;
-
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${BASE_URL}/attendance?${queryParams.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => {
         setAttendanceData(Array.isArray(data) ? data : []);
@@ -86,49 +91,28 @@ function ReportsPage({ user }) {
       .finally(() => setLoading(false));
   };
 
-
-  // --- PDF Export Logic (FIXED) ---
+  // --- PDF Export Logic ---
   const handleExportPDF = () => {
     if (attendanceData.length === 0) {
-      Swal.fire({
-        icon: 'info',
-        title: 'No records to export',
-        text: 'Please fetch data first.',
-        confirmButtonText: 'OK'
-      });
+      Swal.fire({ icon: 'info', title: 'No Data', text: 'Please fetch data first.', confirmButtonText: 'OK' });
       return;
     }
 
     const doc = new jsPDF();
-    const collegeHeader = `
-      MISRIMAL NAVAJEE MUNOTH JAIN ENGINEERING COLLEGE
-      (A Jain Minority Institution)
-      Affiliated to Anna University, Chennai
-  `;
+    const collegeHeader = `MISRIMAL NAVAJEE MUNOTH JAIN ENGINEERING COLLEGE\n(A Jain Minority Institution)\nAffiliated to Anna University, Chennai`;
 
-    // Header Text
     doc.setFontSize(14);
     doc.text(collegeHeader, 105, 15, { align: "center" });
 
-    // Title
     doc.setFontSize(18);
     doc.setFont(undefined, 'bold');
-    doc.text("Detailed Attendance Report", 105, 50, { align: "center" });
+    doc.text("Attendance Report", 105, 50, { align: "center" });
 
-    // Filter Summary Block
-    doc.setFontSize(11);
+    // Summary in PDF
+    doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    let y = 60;
-    const classInfo = filters.classId ? filteredClasses.find(c => c.class_id === filters.classId)?.year || 'N/A' : 'All';
-    const studentInfo = filters.studentId ? filteredStudents.find(s => s.student_id === filters.studentId)?.name || 'N/A' : 'All Students';
+    doc.text(`Total Records: ${stats.total}  |  Present: ${stats.present}  |  Absent: ${stats.absent}  |  %: ${stats.percentage}%`, 105, 60, { align: "center" });
 
-    doc.text(`Class Filter: ${classInfo}`, 14, y);
-    doc.text(`Student Filter: ${studentInfo}`, 14, y + 6);
-    doc.text(`Date Filter: ${filters.date ? new Date(filters.date).toLocaleDateString("en-IN") : 'All Dates'}`, 14, y + 12);
-
-    y += 20;
-
-    // Table Data and AutoTable (✅ Correct)
     const tableData = attendanceData.map(a => [
       a.regNo || a.roll_no || "N/A",
       a.student_name || "N/A",
@@ -137,139 +121,111 @@ function ReportsPage({ user }) {
     ]);
 
     doc.autoTable({
-      startY: y,
+      startY: 70,
       head: [["Register No", "Student Name", "Date", "Status"]],
       body: tableData,
-      styles: { fontSize: 10, cellPadding: 2, halign: 'center' },
-      headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold', halign: 'center' },
-      columnStyles: { 0: { halign: 'left' }, 1: { halign: 'left' } },
+      styles: { fontSize: 10, cellPadding: 3, halign: 'center' },
+      headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [243, 244, 246] },
     });
 
-    // Footer Signature
     const finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(10);
-    doc.text(`Report Generated by: ${user.name} (${user.role})`, 14, finalY);
-    doc.text(`Generation Date: ${new Date().toLocaleString()}`, 14, finalY + 5);
-
-
-    const now = new Date();
-    const dateStr = now.toISOString().replace(/[:]/g, "-"); 
-    doc.save(`Attendance_Report_${dateStr}.pdf`);
+    doc.text(`Generated by: ${user.name} | ${new Date().toLocaleString()}`, 14, finalY);
+    doc.save(`Attendance_Report_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  // --- Render Components ---
 
-  // --- UI Render (Remaining the same) ---
-  const renderAttendanceTable = () => {
-    if (loading) {
-      return (
-        <div className="text-center p-10 text-xl text-sky-600">
-          <FaSpinner className="animate-spin inline mr-2" /> Loading attendance records...
+  // 1. Statistics Cards Component
+  const StatsCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up">
+      <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-indigo-500 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500 font-semibold uppercase">Total Records</p>
+          <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
         </div>
-      );
-    }
-
-    if (dataFetched && attendanceData.length === 0) {
-      return (
-        <div className="text-center p-10 text-xl text-gray-500 bg-gray-50 rounded-lg">
-          <FaChartLine className="inline mr-2 text-red-500" /> No attendance data found for the selected filters.
-        </div>
-      );
-    }
-
-    if (!dataFetched) {
-      return (
-        <div className="text-center p-10 text-xl text-gray-500 bg-gray-50 rounded-lg">
-          <FaFilter className="inline mr-2 text-sky-500" /> Apply filters and click 'Fetch' to view the report.
-        </div>
-      );
-    }
-
-    return (
-      <div className="overflow-auto bg-white shadow-2xl rounded-xl border border-gray-200">
-        <table className="min-w-full text-left table-auto divide-y divide-gray-200">
-          <thead className="bg-sky-600 sticky top-0 shadow-md">
-            <tr>
-              <th className="p-3 text-sm font-extrabold text-white uppercase tracking-wider">Register No</th>
-              <th className="p-3 text-sm font-extrabold text-white uppercase tracking-wider">Student Name</th>
-              <th className="p-3 text-sm font-extrabold text-white uppercase tracking-wider">Date</th>
-              <th className="p-3 text-sm font-extrabold text-white uppercase tracking-wider text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {attendanceData.map((a, idx) => {
-              const formattedDate = a.date
-                ? new Date(a.date).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-                : "N/A";
-
-              const statusClass = a.status === "present" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
-
-              return (
-                <tr key={idx} className="hover:bg-sky-50 transition duration-150">
-                  <td className="p-3 text-sm font-medium text-gray-900">{a.regNo || a.roll_no || "N/A"}</td>
-                  <td className="p-3 text-sm text-gray-700">{a.student_name || "N/A"}</td>
-                  <td className="p-3 text-sm text-gray-500">{formattedDate}</td>
-                  <td className="p-3 text-center">
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full capitalize shadow-sm ${statusClass}`}>
-                      {a.status || "N/A"}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="bg-indigo-100 p-3 rounded-full text-indigo-600 text-2xl"><FaUserGraduate /></div>
       </div>
-    );
-  };
+
+      <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-green-500 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500 font-semibold uppercase">Present</p>
+          <p className="text-3xl font-bold text-green-600">{stats.present}</p>
+        </div>
+        <div className="bg-green-100 p-3 rounded-full text-green-600 text-2xl"><FaCheckCircle /></div>
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-red-500 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500 font-semibold uppercase">Absent</p>
+          <p className="text-3xl font-bold text-red-600">{stats.absent}</p>
+        </div>
+        <div className="bg-red-100 p-3 rounded-full text-red-600 text-2xl"><FaTimesCircle /></div>
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-500">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-gray-500 font-semibold uppercase">Attendance %</p>
+          <FaPercentage className="text-blue-500" />
+        </div>
+        <p className="text-3xl font-bold text-blue-700">{stats.percentage}%</p>
+        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+          <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${stats.percentage}%` }}></div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-6 md:p-10 min-h-screen bg-gray-50">
-
-      {/* Header */}
-      <div className="flex items-center mb-6 pb-4 border-b-4 border-indigo-500">
-        <FaChartLine className="text-4xl text-indigo-600 mr-3" />
-        <h1 className="text-3xl font-extrabold text-gray-900">Attendance Reports & Exports</h1>
+    <div className="p-6 md:p-10 min-h-screen bg-gray-100 font-sans">
+      
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">Analytics & Reports</h1>
+          <p className="text-gray-500 mt-2">Generate detailed attendance insights and export data.</p>
+        </div>
+        <div className="mt-4 md:mt-0 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-sm text-gray-600">
+          Logged in as: <span className="font-bold text-indigo-600">{user.name}</span>
+        </div>
       </div>
 
-      {/* Filter Panel Card */}
-      <div className="bg-white p-6 rounded-xl shadow-2xl mb-8 border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2 border-b pb-2">
-          <FaFilter className="text-sky-500" /> Apply Filters
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+      {/* Control Panel (Filters) */}
+      <div className="bg-white p-6 rounded-2xl shadow-xl mb-8 border border-gray-100">
+        <div className="flex items-center gap-2 mb-6 pb-2 border-b border-gray-100">
+          <div className="bg-indigo-100 p-2 rounded-lg"><FaFilter className="text-indigo-600" /></div>
+          <h2 className="text-lg font-bold text-gray-700">Report Configuration</h2>
+        </div>
 
-          {/* Class Dropdown */}
-          {(user.role === "HOD" || user.role === "CA" || user.role === "Staff") && (
-            <div className="relative">
-              <select
-                name="classId"
-                value={filters.classId}
-                onChange={handleFilterChange}
-                className="p-3 w-full border border-gray-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-sky-500 transition"
-              >
-                <option value="">Select Class</option>
-                {filteredClasses.map(c => <option key={c.class_id} value={c.class_id}>{c.class_id} Year</option>)}
-              </select>
-              <FaChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Class Select */}
+          <div className="relative group">
+            <select
+              name="classId"
+              value={filters.classId}
+              onChange={handleFilterChange}
+              className="w-full p-3 pl-4 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none appearance-none"
+            >
+              <option value="">Select Year/Class</option>
+              {filteredClasses.map(c => <option key={c.class_id} value={c.class_id}>{c.class_id} Year</option>)}
+            </select>
+            <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-indigo-500 transition-colors pointer-events-none" />
+          </div>
 
-          {/* Student Dropdown */}
-          {filters.classId && (
-            <div className="relative">
-              <select
-                name="studentId"
-                value={filters.studentId}
-                onChange={handleFilterChange}
-                className="p-3 w-full border border-gray-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-sky-500 transition"
-                disabled={filteredStudents.length === 0}
-              >
-                <option value="">Select Student </option>
-                {filteredStudents.map(s => <option key={s.student_id} value={s.student_id}>{s.name} ({s.roll_no})</option>)}
-              </select>
-              <FaChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
-          )}
+          {/* Student Select */}
+          <div className="relative group">
+            <select
+              name="studentId"
+              value={filters.studentId}
+              onChange={handleFilterChange}
+              className={`w-full p-3 pl-4 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none appearance-none ${!filters.classId ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={!filters.classId}
+            >
+              <option value="">All Students</option>
+              {filteredStudents.map(s => <option key={s.student_id} value={s.student_id}>{s.name} - {s.roll_no}</option>)}
+            </select>
+            <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-indigo-500 transition-colors pointer-events-none" />
+          </div>
 
           {/* Date Picker */}
           <input
@@ -277,34 +233,96 @@ function ReportsPage({ user }) {
             name="date"
             value={filters.date}
             onChange={handleFilterChange}
-            className="p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 transition"
-            title="Filter by specific date"
+            className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-600"
           />
 
-          {/* Fetch Button */}
-          <button
-            onClick={handleFetchAttendance}
-            className="flex items-center justify-center gap-2 bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition duration-150"
-            disabled={!filters.classId || loading}
-          >
-            {loading ? <FaSpinner className="animate-spin" /> : <FaSearch />} Fetch Report
-          </button>
-
-          {/* Export Button */}
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center justify-center gap-2 bg-green-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-green-700 transition duration-150"
-            disabled={attendanceData.length === 0}
-            title={attendanceData.length === 0 ? "Fetch data before exporting" : "Download current report as PDF"}
-          >
-            <FaDownload /> Export PDF
-          </button>
+          {/* Actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleFetchAttendance}
+              disabled={!filters.classId || loading}
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white p-3 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {loading ? <FaSpinner className="animate-spin" /> : <FaSearch />} Fetch
+            </button>
+            
+            <button
+              onClick={handleExportPDF}
+              disabled={attendanceData.length === 0}
+              className="w-14 flex items-center justify-center bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-600 hover:text-white p-3 rounded-xl font-bold transition-all disabled:opacity-50"
+              title="Download PDF"
+            >
+              <FaDownload size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Attendance Table Section */}
-      {renderAttendanceTable()}
+      {/* Analytics Dashboard (Only shows if data fetched) */}
+      {dataFetched && attendanceData.length > 0 && <StatsCards />}
 
+      {/* Results Section */}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 min-h-[400px]">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-64 text-indigo-500">
+            <FaSpinner className="animate-spin text-4xl mb-4" />
+            <p className="font-medium">Crunching the numbers...</p>
+          </div>
+        ) : !dataFetched ? (
+          <div className="flex flex-col items-center justify-center h-80 text-gray-400">
+            <div className="bg-gray-50 p-6 rounded-full mb-4">
+              <FaChartLine className="text-4xl text-gray-300" />
+            </div>
+            <p className="text-lg">Select filters and click "Fetch" to generate report.</p>
+          </div>
+        ) : attendanceData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+            <FaUserGraduate className="text-4xl mb-3 opacity-20" />
+            <p>No records found for this selection.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  <th className="p-4 pl-6">Student Details</th>
+                  <th className="p-4">Date</th>
+                  <th className="p-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {attendanceData.map((a, idx) => {
+                  const isPresent = a.status === "Present";
+                  const initial = (a.student_name || "?").charAt(0).toUpperCase();
+                  
+                  return (
+                    <tr key={idx} className="hover:bg-indigo-50/30 transition-colors duration-150 group">
+                      <td className="p-4 pl-6 flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-sm ${isPresent ? 'bg-indigo-400' : 'bg-gray-400'}`}>
+                          {initial}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">{a.student_name || "Unknown"}</p>
+                          <p className="text-xs text-gray-500 font-mono">{a.regNo || a.roll_no}</p>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm text-gray-600">
+                        {a.date ? new Date(a.date).toLocaleDateString("en-IN", { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : "N/A"}
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${isPresent ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                          {isPresent ? <FaCheckCircle size={10} /> : <FaTimesCircle size={10} />}
+                          {a.status?.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

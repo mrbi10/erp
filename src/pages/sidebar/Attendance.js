@@ -37,8 +37,6 @@ export default function Attendance({ user }) {
     } else if (user.role === 'Principal') {
         options.push(
             { label: 'View All Reports', page: 'reports', icon: <FaClipboardList className="text-blue-500" />, description: "Access comprehensive attendance reports across departments." },
-            { label: 'Manage Staff & CAs', page: 'manage', icon: <FaUsersCog className="text-purple-500" />, description: "Manage teaching loads and assign course advisors." },
-            { label: 'My Subject Reports', page: 'reports/my-subjects', icon: <FaClipboardList className="text-teal-500" />, description: "Review attendance for the subjects you personally teach." }
         );
     } else if (user.role === 'Staff') {
         options.push(

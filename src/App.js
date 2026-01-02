@@ -95,7 +95,7 @@ export default function App() {
     localStorage.removeItem('token');
     setUser(null);
     setSidebarOpen(false);
-    window.location.href = "/erp/home";
+    window.location.href = "/erp";
   };
 
   return (

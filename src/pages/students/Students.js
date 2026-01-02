@@ -221,10 +221,7 @@ export default function Students({ user }) {
     if (dept) res = res.filter(s => s.dept_id === Number(dept));
     if (classId) res = res.filter(s => s.class_id === Number(classId));
     if (year) {
-      res = res.filter(s => {
-        const cls = classes.find(c => c.class_id === s.class_id);
-        return cls?.year === Number(year);
-      });
+      res = res.filter(s => s.class_id === Number(year));
     }
 
     if (multiFilters.length > 0) {
@@ -594,7 +591,7 @@ export default function Students({ user }) {
                         <td className="px-6 py-4">
                           {(() => {
                             const dept = DEPT_MAP[s.dept_id];
-                            const year = YEAR_MAP[s.class_id]; 
+                            const year = YEAR_MAP[s.class_id];
 
                             if (!dept && !year) return null;
 
