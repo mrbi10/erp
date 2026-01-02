@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BASE_URL } from '../../constants/API';
 import axios from "axios";
 import { FaUserGraduate, FaClipboardList, FaCheckCircle, FaTimesCircle, FaPercentage, FaAward, FaCalendarAlt } from 'react-icons/fa';
+// import '../../styles/attendance.css';
 
 export default function StudentAttendance() {
   const [student, setStudent] = useState(null);
@@ -11,6 +12,7 @@ export default function StudentAttendance() {
 
   const token = localStorage.getItem('token');
 
+  // Utility function to decode JWT payload (kept as is)
   const decodeToken = (token) => {
     try {
       return JSON.parse(atob(token.split(".")[1]));
@@ -34,6 +36,7 @@ export default function StudentAttendance() {
     const fetchAttendance = async () => {
       try {
         setLoading(true);
+        // Ensure studentData.roll_no is correctly mapped to the backend expectation
         const res = await axios.get(
           `${BASE_URL}/attendance/student/${studentData.roll_no}`, 
           { headers: { Authorization: `Bearer ${token}` } }
@@ -41,6 +44,7 @@ export default function StudentAttendance() {
 
         const attendance = Array.isArray(res.data) ? res.data : [];
 
+        // --- Core Concept Logic ---
         const totalClasses = attendance.length;
         const presentCount = attendance.filter(a => a.status === "Present").length;
         const absentCount = attendance.filter(a => a.status === "Absent").length;
@@ -54,7 +58,7 @@ export default function StudentAttendance() {
         });
 
         const datewise = attendance
-          .sort((a, b) => new Date(b.date) - new Date(a.date)) 
+          .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort newest first
           .map(a => ({
             date: new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
             status: a.status
@@ -62,6 +66,7 @@ export default function StudentAttendance() {
         setDatewiseAttendance(datewise);
 
         setStudent({ name: studentData.name, email: studentData.email, roll_no: studentData.roll_no });
+        // --- End Core Concept Logic ---
 
       } catch (err) {
         console.error("Error fetching attendance:", err);
@@ -74,6 +79,7 @@ export default function StudentAttendance() {
   }, [token]);
 
 
+  // --- Streak Calculation Logic (Kept as is) ---
   let streak = 0, maxStreak = 0;
   for (let a of datewiseAttendance) {
     if (a.status === "Present") {
@@ -83,7 +89,9 @@ export default function StudentAttendance() {
       streak = 0;
     }
   }
- 
+  // --- End Streak Calculation Logic ---
+  
+  // Custom Card Data Structure with Rich Styling
   const cardData = [
     { title: "Total Classes", value: attendanceSummary?.total ?? 0, icon: FaClipboardList, color: "bg-indigo-600", iconColor: "text-indigo-200" },
     { title: "Present Days", value: attendanceSummary?.present ?? 0, icon: FaCheckCircle, color: "bg-green-600", iconColor: "text-green-200" },
@@ -92,12 +100,14 @@ export default function StudentAttendance() {
       title: "Attendance %", 
       value: `${attendanceSummary?.percentage ?? 0}%`, 
       icon: FaPercentage, 
+      // Dynamic Color based on percentage
       color: (attendanceSummary?.percentage >= 75) ? "bg-sky-600" : (attendanceSummary?.percentage >= 50 ? "bg-yellow-600" : "bg-red-600"),
       iconColor: "text-sky-200"
     },
     { title: "Max Present Streak", value: maxStreak, icon: FaAward, color: "bg-purple-600", iconColor: "text-purple-200" }
   ];
 
+  // --- Render Logic ---
 
   if (loading) return (
     <div className="p-10 text-center text-xl font-semibold text-blue-600">

@@ -129,12 +129,12 @@ export default function Fees({ user }) {
         icon: <FaUserGraduate className="text-green-600" />,
         description: "View your semester, hostel, and transport fees.",
       },
-      // {
-      //   label: "My Payment History",
-      //   page: "history",
-      //   icon: <FaClock className="text-purple-600" />,
-      //   description: "Check all your payments at one place.",
-      // }
+      {
+        label: "My Payment History",
+        page: "history",
+        icon: <FaClock className="text-purple-600" />,
+        description: "Check all your payments at one place.",
+      }
     );
   }
 

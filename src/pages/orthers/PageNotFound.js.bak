@@ -100,7 +100,7 @@ export default function PageNotFound() {
             <button
               className="pnf-btn"
               style={btn}
-              onClick={() => navigate('erp/dashboard')}
+              onClick={() => navigate('/dashboard')}
               title="Go to dashboard/home"
             >
               Home

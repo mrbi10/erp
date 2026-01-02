@@ -9,13 +9,9 @@ import {
   BarChartOutlined,
   TeamOutlined,
   SafetyCertificateOutlined,
-  UserAddOutlined,
+  UserAddOutlined
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CalculatorIcon, Calendar1Icon, CalendarRangeIcon, CookingPotIcon, Megaphone, Mic, Mic2Icon, Speaker, SpeakerIcon } from "lucide-react";
-import { FaSpeakerDeck } from "react-icons/fa";
-import { SpeakerWaveIcon } from "@heroicons/react/24/solid";
-import { Calendar } from "antd";
 
 export default function Sidebar({ role, open, onClose }) {
   const sidebarRef = useRef();
@@ -61,51 +57,26 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/erp/attendance',
       label: 'Attendance',
       icon: <CheckCircleOutlined />,
-      roles: ['Staff', 'student', 'CA', 'Principal', 'HOD'],
+      roles: ['Staff', 'student', 'CA', 'HOD'],
     },
-    // {
-    //   key: '/erp/timetable',
-    //   label: 'Time Table',
-    //   icon: <CalendarRangeIcon />,
-    //   roles: ['CA','HOD', 'Principal'],
-    // },
-    //  {
-    //   key: '/erp/StudentTimetable',
-    //   label: 'Time Table',
-    //   icon: <CalendarRangeIcon />,
-    //   roles: ['student'],
-    // },
-    // {
-    //   key: '/erp/marks',
-    //   label: 'Marks',
-    //   icon: <FileDoneOutlined />,
-    //   roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
-    // },
-    // {
-    //   key: '/erp/fees',
-    //   label: 'Fees',
-    //   icon: <WalletOutlined />,
-    //   roles: ['Staff', 'Principal', 'F&A', 'student', 'CA', 'HOD'],
-    // },
+    {
+      key: '/erp/marks',
+      label: 'Marks',
+      icon: <FileDoneOutlined />,
+      roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
+    },
+    {
+      key: '/erp/fees',
+      label: 'Fees',
+      icon: <WalletOutlined />,
+      roles: ['Principal', 'F&A', 'HOD'],
+    },
     {
       key: '/erp/late',
       label: 'Late Arrival',
       icon: <ClockCircleOutlined />,
       roles: ['CA', 'HOD', 'Principal'],
     },
-    {
-      key: '/erp/mess',
-      label: 'Mess',
-      icon: <CookingPotIcon />,
-      roles: ['Principal'],
-    },
-    {
-      key: '/erp/announcement',
-      label: 'Announcement',
-      icon: <Megaphone />,
-      roles: ['CA', 'student', 'HOD', 'Principal'],
-    },
-
     // {
     //   key: '/erp/reports',
     //   label: 'Reports',
@@ -150,7 +121,7 @@ export default function Sidebar({ role, open, onClose }) {
         onMouseLeave={() => {
           if (!isMobile) onClose();
         }}
-      >
+      >   
         {/* Header */}
         <div
           className="h-16 flex items-center px-4 border-b border-slate-700 text-lg font-bold"

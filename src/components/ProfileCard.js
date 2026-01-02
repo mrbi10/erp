@@ -1,120 +1,136 @@
 // components/ProfileCard.jsx
 import React from 'react';
+import { FaUserCircle, FaGraduationCap, FaChalkboardTeacher, FaShieldAlt } from 'react-icons/fa';
+
+const CARD_CLASSES = "p-8 bg-white rounded-2xl border border-gray-100 shadow-xl transition duration-500 hover:shadow-2xl hover:border-sky-200";
+const ICON_COLOR = "text-sky-600";
+const ACCENT_COLOR_CLASSES = "text-sky-600 font-bold";
+const DETAIL_LABEL_CLASSES = "text-xs font-semibold text-gray-500 uppercase tracking-wider";
+const DETAIL_VALUE_CLASSES = "font-medium text-base text-gray-800 mt-1 truncate";
+
+const getRoleIcon = (role) => {
+    switch (role) {
+        case 'student':
+            return <FaGraduationCap className={`text-2xl ${ICON_COLOR}`} />;
+        case 'staff':
+            return <FaChalkboardTeacher className={`text-2xl ${ICON_COLOR}`} />;
+        case 'admin':
+            return <FaShieldAlt className={`text-2xl ${ICON_COLOR}`} />;
+        default:
+            return <FaUserCircle className={`text-2xl ${ICON_COLOR}`} />;
+    }
+}
 
 export default function ProfileCard({ profileData }) {
     if (!profileData) return null;
 
     const courseMap = {
-        1: "CSE",
+        1: "Computer Science Eng.",
         2: "Data Science",
         3: "Information Technology",
-        4: "Electronics & Communication",
+        4: "Electronics & Comm.",
         5: "Electrical & Electronics",
     };
 
-    const courseName = courseMap[profileData.dept_id] || "Unknown";
+    const courseName = courseMap[profileData.dept_id] || "Department N/A";
     const courseDisplay =
         profileData.role === "student"
-            ? `B.E - ${courseName}`
+            ? `B.E. - ${courseName}`
             : profileData.role === "staff"
             ? courseName
-            : "Admin";
+            : courseMap[profileData.dept_id] || "Department N/A";
 
-    // Semester calculation logic only for students
     const semester = (() => {
         if (profileData.role !== "student" || !profileData.class_id) return "N/A";
         const yearLevel = parseInt(profileData.class_id, 10);
         const currentMonth = new Date().getMonth() + 1;
-        const isOddSem = currentMonth >= 7 && currentMonth <= 12; // Jul–Dec = odd sem
-        return (yearLevel * 2) - (isOddSem ? 1 : 0);
+        const isOddSem = currentMonth >= 7 && currentMonth <= 12;
+        const currentSemester = (yearLevel * 2) - (isOddSem ? 1 : 0);
+        return currentSemester;
     })();
 
+    const roleTagClass = {
+        student: "bg-sky-100 text-sky-800 border-sky-300",
+        staff: "bg-indigo-100 text-indigo-800 border-indigo-300",
+        admin: "bg-red-100 text-red-800 border-red-300",
+    }[profileData.role] || "bg-gray-100 text-gray-700 border-gray-300";
+    
+    const hasMobile = profileData.mobile && profileData.mobile.toUpperCase() !== 'N/A';
+
     return (
-        <div className="p-6 bg-white rounded-xl shadow-lg border-t-4 border-sky-600 h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <div className="text-xl font-extrabold text-gray-900">{profileData.name}</div>
-                    <div className="text-sm text-gray-500">
-                        {profileData.regNo || profileData.employeeId || "ID: -"}
+        <div className={CARD_CLASSES}>
+            <div className="flex items-center justify-between pb-6 mb-6 border-b border-gray-100">
+                <div className="flex items-center">
+                    {getRoleIcon(profileData.role)}
+                    <div className="ml-4">
+                        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                            {profileData.name}
+                        </h1>
+                        <p className="text-lg font-light text-gray-500 mt-1">
+                            {profileData.regNo || profileData.employeeId }
+                        </p>
                     </div>
                 </div>
+                
+                <span className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize border ${roleTagClass}`}>
+                    {profileData.role}
+                </span>
             </div>
 
-            {/* Common Info */}
-            <div className="grid grid-cols-2 gap-3 text-sm text-gray-700 border-t pt-3">
-                <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-gray-500">
-                        Role/Designation
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                <div className="flex flex-col p-3 rounded-lg bg-gray-50/50">
+                    <span className={DETAIL_LABEL_CLASSES}>
+                        {profileData.role === 'student' ? 'Course/Program' : 'Department'}
                     </span>
-                    <span className="font-medium capitalize">{profileData.role}</span>
+                    <span className={DETAIL_VALUE_CLASSES}>
+                        {courseDisplay}
+                    </span>
                 </div>
 
-                {/* STUDENT VIEW */}
-                {profileData.role === "student" && (
-                    <>
-                        <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-gray-500">
-                                Course/Dept
-                            </span>
-                            <span className="font-medium">{courseDisplay}</span>
-                        </div>
-
-                        <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-gray-500">
-                                Current Semester
-                            </span>
-                            <span className="font-medium">{semester}</span>
-                        </div>
-
-                        <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-gray-500">
-                                Mobile
-                            </span>
-                            <span className="font-medium">{profileData.mobile || "-"}</span>
-                        </div>
-                    </>
-                )}
-
-                {/* STAFF VIEW */}
-                {profileData.role === "staff" && (
-                    <>
-                        <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-gray-500">
-                                Department
-                            </span>
-                            <span className="font-medium">{courseName}</span>
-                        </div>
-
-                        {profileData.designation && (
-                            <div className="flex flex-col">
-                                <span className="text-xs font-semibold text-gray-500">
-                                    Designation
-                                </span>
-                                <span className="font-medium">{profileData.designation}</span>
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* ADMIN VIEW (Optional) */}
-                {profileData.role === "admin" && (
-                    <div className="col-span-2 flex flex-col">
-                        <span className="text-xs font-semibold text-gray-500">
-                            Access Level
+                {profileData.role === "student" ? (
+                    <div className="flex flex-col p-3 rounded-lg bg-gray-50/50">
+                        <span className={DETAIL_LABEL_CLASSES}>
+                            Current Semester
                         </span>
-                        <span className="font-medium">System Administrator</span>
+                        <span className={`${DETAIL_VALUE_CLASSES} ${ACCENT_COLOR_CLASSES} text-xl`}>
+                            {semester}
+                        </span>
+                    </div>
+                ) : profileData.role === "staff" && profileData.designation ? (
+                    <div className="flex flex-col p-3 rounded-lg bg-gray-50/50">
+                        <span className={DETAIL_LABEL_CLASSES}>
+                            Designation
+                        </span>
+                        <span className={DETAIL_VALUE_CLASSES}>
+                            {profileData.designation}
+                        </span>
+                    </div>
+                ) : (
+                    <div className="flex flex-col p-3 rounded-lg bg-gray-50/50">
+                        <span className={DETAIL_LABEL_CLASSES}>Status</span>
+                        <span className={DETAIL_VALUE_CLASSES}>Active</span>
                     </div>
                 )}
 
-                {/* Common Email Section */}
-                <div className="col-span-2 flex flex-col">
-                    <span className="text-xs font-semibold text-gray-500">Email</span>
-                    <span className="font-medium truncate">
-                        {profileData.email || "-"}
+                {hasMobile && (
+                    <div className="flex flex-col p-3 rounded-lg bg-gray-50/50">
+                        <span className={DETAIL_LABEL_CLASSES}>Mobile</span>
+                        <span className={DETAIL_VALUE_CLASSES}>
+                            {profileData.mobile}
+                        </span>
+                    </div>
+                )}
+
+                {/* Email is always present as the last item */}
+                <div className={`flex flex-col p-3 rounded-lg bg-gray-50/50 ${!hasMobile ? 'md:col-span-2 lg:col-span-1' : ''}`}>
+                    <span className={DETAIL_LABEL_CLASSES}>Email</span>
+                    <span className={DETAIL_VALUE_CLASSES}>
+                        {profileData.email || "N/A"}
                     </span>
                 </div>
             </div>
+          
         </div>
     );
 }

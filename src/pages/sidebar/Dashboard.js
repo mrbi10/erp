@@ -9,8 +9,8 @@ import { BASE_URL } from "../../constants/API";
 // Import the new role-specific dashboards
 import StudentDashboard from "../dashboards/StudentDashboard";
 import StaffDashboard from "../dashboards/StaffDashboard";
-import PrincipalDashboard from "../dashboards/PrincipalDashboard"; 
-import ProfileCard from "../../components/ProfileCard"; 
+import PrincipalDashboard from "../dashboards/PrincipalDashboard";
+import ProfileCard from "../../components/ProfileCard";
 
 
 // Register Chart.js components once globally
@@ -101,7 +101,7 @@ export default function EnhancedDashboard({ user }) {
         setPerformance(res.data);
       } catch (err) {
         console.error("⚠️ Performance fetch failed, using fallback", err);
-        setPerformance([]); 
+        setPerformance([]);
       }
     };
 
@@ -141,19 +141,19 @@ export default function EnhancedDashboard({ user }) {
   // Announcements
   useEffect(() => {
 
-  const fetchAnnouncements = async () => {
-    try {
-      const res = await api.get("/announcements");
-      console.log("📢 Announcements:", res.data);
-      setAnnouncements(res.data);
-    } catch (err) {
-      console.error("⚠️ Announcements fetch failed", err);
-      setAnnouncements([]);
-    }
-  };
+    const fetchAnnouncements = async () => {
+      try {
+        const res = await api.get("/announcements");
+        console.log("📢 Announcements:", res.data);
+        setAnnouncements(res.data);
+      } catch (err) {
+        console.error("⚠️ Announcements fetch failed", err);
+        setAnnouncements([]);
+      }
+    };
 
-  fetchAnnouncements();
-}, [user, token]);
+    fetchAnnouncements();
+  }, [user, token]);
 
 
   // -----------------------------
@@ -255,6 +255,8 @@ export default function EnhancedDashboard({ user }) {
   // Common profile card
   const profileCard = <ProfileCard profileData={profile} />;
 
+  console.log(profileData);
+
   switch (user.role) {
     case "student":
       return (
@@ -269,6 +271,7 @@ export default function EnhancedDashboard({ user }) {
           fees={fees}
           library={library}
           messMenu={messMenu}
+          token={token}
         />
       );
 
@@ -293,6 +296,7 @@ export default function EnhancedDashboard({ user }) {
     case "Principal":
       return (
         <PrincipalDashboard
+          profileData={profileData}
           profileCard={profileCard}
           announcements={announcements}
         />

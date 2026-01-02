@@ -117,19 +117,19 @@ export default function PremiumHeader({
               MNMJEC
             </span>
           </Link>
-          {user && (
-            <Button
-              type="text"
-              icon={<MenuOutlined style={{ fontSize: 22, color: "#fff" }} />}
-              onClick={() => {
-                onHamburgerClick();
-              }}
-            />
-          )}
 
-
+          {/* Hamburger */}
+          <Button
+            type="text"
+            icon={<MenuOutlined style={{ fontSize: 22, color: "#fff" }} />}
+            onClick={() => {
+              if (isMobile) onHamburgerClick();
+            }}
+            onMouseEnter={() => {
+              if (!isMobile) onHamburgerClick();
+            }}
+          />
         </div>
-
 
         {/* RIGHT SECTION */}
         <div
@@ -140,20 +140,15 @@ export default function PremiumHeader({
           }}
         >
           {/* Notification */}
-
-          {user && (
-
-            <Badge dot>
-              <BellOutlined
-                style={{
-                  fontSize: 20,
-                  color: "#fff",
-                  cursor: "pointer",
-                }}
-              />
-            </Badge>
-
-          )}
+          <Badge dot>
+            <BellOutlined
+              style={{
+                fontSize: 20,
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            />
+          </Badge>
 
           {/* User Dropdown */}
           {user ? (

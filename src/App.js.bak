@@ -7,22 +7,22 @@ import Sidebar from './components/Sidebar';
 import ForgotPassword from './components/forgotpassword';
 import ResetPassword from './components/resetpassword';
 import NetworkAlert from './components/NetworkAlert';
-//import AssistantButton from './components/AssistantButton';
+import AssistantButton from './components/AssistantButton';
 
 import Home from './pages/orthers/Home';
 import PageNotFound from './pages/orthers/PageNotFound';
 
 import Dashboard from './pages/sidebar/Dashboard';
 import Attendance from './pages/sidebar/Attendance';
-// import Marks from './pages/sidebar/Marks';
+import Marks from './pages/sidebar/Marks';
 import Mess from './pages/sidebar/Mess';
-// import Reports from './pages/sidebar/Reports';
+import Reports from './pages/sidebar/Reports';
 import Late from './pages/sidebar/Late';
 import Announcement from './pages/sidebar/Announcement';
 import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
-// import Fees from './pages/sidebar/Fees';
-// import Timetable from './pages/sidebar/Timetable';
-// import StudentTimetable from './pages/sidebar/StudentTimetable';
+import Fees from './pages/sidebar/Fees';
+import Timetable from './pages/sidebar/Timetable';
+import StudentTimetable from './pages/sidebar/StudentTimetable';
 
 
 import Students from './pages/students/Students';
@@ -33,20 +33,20 @@ import MarkAttendance from './pages/attendance/MarkAttendance';
 import ReportsPage from './pages/attendance/Reports';
 import ManageStaff from './pages/attendance/ManageStaff';
 
-// import EnterMarks from './pages/marks/EnterMarks';
-// import ViewMarks from './pages/marks/ViewMarks'
-// import PrincipalOverview from './pages/marks/PrincipalOverview';
-// import DepartmentAnalysis from './pages/marks/DepartmentAnalysis';
-// import TopPerformers from './pages/marks/TopPerformers';
+import EnterMarks from './pages/marks/EnterMarks';
+import ViewMarks from './pages/marks/ViewMarks'
+import PrincipalOverview from './pages/marks/PrincipalOverview';
+import DepartmentAnalysis from './pages/marks/DepartmentAnalysis';
+import TopPerformers from './pages/marks/TopPerformers';
 
-// import FeesStudentView from './pages/fees/FeesStudentView';
-// import FeesList from './pages/fees/FeesList';
-// import Feesanalytics from './pages/fees/FeesAnalytics';
-// import FeesAdd from './pages/fees/FeesAdd';
+import FeesStudentView from './pages/fees/FeesStudentView';
+import FeesList from './pages/fees/FeesList';
+import Feesanalytics from './pages/fees/FeesAnalytics';
+import FeesAdd from './pages/fees/FeesAdd';
 
-// import ProfileHub from './pages/sidebar/ProfileHub';
-// import ProfileView from './pages/profilehub/ProfileView';
-// import ProfileAdd from './pages/profilehub/ProfileAdd';
+import ProfileHub from './pages/sidebar/ProfileHub';
+import ProfileView from './pages/profilehub/ProfileView';
+import ProfileAdd from './pages/profilehub/ProfileAdd';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -144,13 +144,13 @@ export default function App() {
               <Route path="erp/dashboard" element={<Dashboard user={user} />} />
               <Route path="erp/students" element={<Students user={user} />} />
               <Route path="erp/faculty" element={<FacultyList user={user} />} />
-              {/* <Route path="erp/reports" element={<Reports user={user} />} /> */}
-              {/* <Route path="erp/marks" element={<Marks user={user} />} /> */}
+              <Route path="erp/reports" element={<Reports user={user} />} />
+              <Route path="erp/marks" element={<Marks user={user} />} />
               <Route path="erp/late" element={<Late user={user} />} />
               <Route path="erp/mess" element={<Mess user={user} />} />
               <Route path="erp/announcement" element={<Announcement user={user} />} />
-              {/* <Route path="erp/timetable" element={<Timetable user={user} />} /> */}
-              {/* <Route path="erp/StudentTimetable" element={<StudentTimetable user={user} />} /> */}
+              <Route path="erp/timetable" element={<Timetable user={user} />} />
+              <Route path="erp/StudentTimetable" element={<StudentTimetable user={user} />} />
               <Route path="erp/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
 
               {/* Attendance nested routes */}
@@ -173,28 +173,28 @@ export default function App() {
                 />
                 <Route path="*" element={<PageNotFound />} />
               </Route>
-{/* 
+
               <Route path="erp/marks" element={<Marks user={user} />}>
                 <Route path="enter" element={<EnterMarks />} />
                 <Route path="view" element={<ViewMarks />} />
                 <Route path="overview" element={<PrincipalOverview />} />
                 <Route path="analysis" element={<DepartmentAnalysis />} />
                 <Route path="top" element={<TopPerformers />} />
-              </Route> */}
+              </Route>
 
-              {/* <Route path="erp/fees" element={<Fees user={user} />}>
+              <Route path="erp/fees" element={<Fees user={user} />}>
                 <Route path="list" element={<FeesList user={user} />} />
                 <Route path="student/:reg_no" element={<FeesStudentView user={user} />} />
                 <Route path="analytics" element={<Feesanalytics user={user} />} />
                 <Route path="add" element={<FeesAdd user={user} />} />
-              </Route> */}
+              </Route>
 
 
-              {/* <Route path="/erp/profilehub" element={<ProfileHub user={user} />}>
+              <Route path="/erp/profilehub" element={<ProfileHub user={user} />}>
                 <Route path="add" element={<ProfileAdd />} />
                 <Route path="view" element={<ProfileView user={user} />} />
                 <Route index element={<ProfileView user={user} />} />
-              </Route> */}
+              </Route>
 
               <Route path="*" element={<PageNotFound />} />
             </>
@@ -219,7 +219,7 @@ export default function App() {
         </p>
       </footer>
 
-   {/* //   {user && <AssistantButton user={user} />} */}
+      {user && <AssistantButton user={user} />}
 
 
     </div>
