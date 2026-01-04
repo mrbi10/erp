@@ -250,8 +250,10 @@ const ActionCard = ({ to, icon: Icon, title, subtitle, color }) => {
 export default function AdminDashboard({ profileCard, profileData, announcements }) {
   const [overview, setOverview] = useState(null);
   const [classes, setClasses] = useState([]);
-  const [selectedClass, setSelectedClass] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedDept, setSelectedDept] = useState("");
+  const [selectedClass, setSelectedClass] = useState("");
+
 
 
 
@@ -277,21 +279,29 @@ export default function AdminDashboard({ profileCard, profileData, announcements
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const url = selectedClass
-          ? `${BASE_URL}/admin/overview?classId=${selectedClass}`
-          : `${BASE_URL}/admin/overview`;
 
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        const params = new URLSearchParams();
+        if (selectedDept) params.append("deptId", selectedDept);
+        if (selectedClass) params.append("classId", selectedClass);
+
+        const url = `${BASE_URL}/admin/overview${params.toString() ? `?${params}` : ""}`;
+
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         const data = await res.json();
         setOverview(data);
       } catch (err) {
         console.error(err);
       } finally {
-        setTimeout(() => setLoading(false), 500); // Artificial delay for smoothness
+        setTimeout(() => setLoading(false), 300);
       }
     };
+
     fetchStats();
-  }, [selectedClass]);
+  }, [selectedDept, selectedClass]);
+
 
   const DEPT_MAP = {
     1: "CSE",
@@ -303,6 +313,28 @@ export default function AdminDashboard({ profileCard, profileData, announcements
     7: "MECH",
     8: "CIVIL",
   };
+
+  const classOptions = [
+    { value: "", label: "All Years" },
+    { value: 1, label: "Year 1" },
+    { value: 2, label: "Year 2" },
+    { value: 3, label: "Year 3" },
+    { value: 4, label: "Year 4" },
+  ];
+
+
+  const departmentOptions = [
+    { value: "", label: "All Departments" },
+    { value: 1, label: "CSE" },
+    { value: 2, label: "IT" },
+    { value: 3, label: "ADS" },
+    { value: 4, label: "CSBS" },
+    { value: 5, label: "ECE" },
+    { value: 6, label: "EEE" },
+    { value: 7, label: "MECH" },
+    { value: 8, label: "CIVIL" },
+  ];
+
 
   // Custom Styles for React Select (Apple Style)
   const selectStyles = {
@@ -372,31 +404,34 @@ export default function AdminDashboard({ profileCard, profileData, announcements
           </div>
 
           {/* Class Filter Dropdown */}
-          <div className="w-full md:w-72 relative z-50">
-            <Select
-              options={[
-                { value: "", label: "All Departments" },
-                ...classes.map((c) => ({
-                  value: c.class_id,
-                  label: `Year ${c.year} • ${DEPT_MAP[c.dept_id] || "GEN"}`,
-                })),
-              ]}
-              value={
-                selectedClass
-                  ? {
-                    value: selectedClass,
-                    label: classes.find((c) => c.class_id === selectedClass)
-                      ? `Year ${classes.find((c) => c.class_id === selectedClass).year} • ${DEPT_MAP[classes.find((c) => c.class_id === selectedClass).dept_id]}`
-                      : "Select Class",
-                  }
-                  : null
-              }
-              onChange={(option) => setSelectedClass(option?.value || "")}
-              styles={selectStyles}
-              placeholder="Filter by Class..."
-              isSearchable
-            />
+          <div className="flex gap-4 w-full md:w-auto relative z-50">
+
+            {/* Department Filter */}
+            <div className="w-full md:w-60">
+              <Select
+                options={departmentOptions}
+                value={departmentOptions.find(d => d.value === selectedDept)}
+                onChange={(opt) => setSelectedDept(opt?.value || "")}
+                styles={selectStyles}
+                placeholder="Filter by Department"
+                isSearchable={false}
+              />
+            </div>
+
+            {/* Class / Year Filter */}
+            <div className="w-full md:w-48">
+              <Select
+                options={classOptions}
+                value={classOptions.find(c => c.value === selectedClass)}
+                onChange={(opt) => setSelectedClass(opt?.value || "")}
+                styles={selectStyles}
+                placeholder="Filter by Year"
+                isSearchable={false}
+              />
+            </div>
+
           </div>
+
         </motion.div>
 
         {/* Main Grid Layout */}

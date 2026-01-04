@@ -14,6 +14,9 @@ function MarkAttendance({ user }) {
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); // Richer date format
   const [departmentName, setDepartmentName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [attendanceMarked, setAttendanceMarked] = useState(false);
+  const [attendanceMap, setAttendanceMap] = useState({});
+
 
   // Map of department ids to names
   const DEPT_MAP = {
@@ -25,6 +28,20 @@ function MarkAttendance({ user }) {
     6: "EEE",
     7: "MECH",
     8: "CIVIL",
+  };
+
+  const fetchTodayAttendance = async (classId) => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(
+      `${BASE_URL}/attendance?classId=${classId}&date=${todayISO}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    if (!res.ok) return [];
+
+    return await res.json();
   };
 
   useEffect(() => {
@@ -47,6 +64,31 @@ function MarkAttendance({ user }) {
           status: 'unmarked' // default status
         })));
 
+        if (data.length) {
+          const classId = data[0].class_id;
+
+          fetchTodayAttendance(classId).then(attRows => {
+            if (attRows.length > 0) {
+              setAttendanceMarked(true);
+
+              const map = {};
+              attRows.forEach(a => {
+                map[a.student_id] = a;
+              });
+              setAttendanceMap(map);
+
+              // preload status into students list
+              setStudents(prev =>
+                prev.map(s => ({
+                  ...s,
+                  status: map[s.student_id]
+                    ? map[s.student_id].status.toLowerCase()
+                    : "unmarked"
+                }))
+              );
+            }
+          });
+        }
         // Set department name based on first student's dept_id
         if (data.length) {
           setDepartmentName(DEPT_MAP[data[0].dept_id] || "Department");
@@ -58,6 +100,9 @@ function MarkAttendance({ user }) {
         setLoading(false);
       });
   }, []);
+
+
+
 
   const markStudent = (studentId, status) => {
     setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, status } : s));
@@ -123,41 +168,93 @@ function MarkAttendance({ user }) {
           status: s.status.charAt(0).toUpperCase() + s.status.slice(1)
         }));
 
-        fetch(`${BASE_URL}/attendance`, {
-          method: "POST",
-          body: JSON.stringify(payload),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`,
-          },
-        })
-          .then(res => {
-            if (!res.ok) return Promise.reject('Failed to submit attendance');
-            return res.json();
-          })
-          .then(() => {
-            Swal.fire({
-              icon: 'success',
-              title: 'Submission Successful!',
-              text: 'Attendance has been successfully recorded.',
-              confirmButtonText: 'Great!',
-              customClass: { popup: 'swal-classic-popup', confirmButton: 'swal-classic-button bg-teal-600' }
-            });
-            // Optional: Reset state after successful submission
-            // resetAll();
-          })
-          .catch(err => {
-            console.error(err);
-            Swal.fire({
-              icon: 'error',
-              title: 'Submission Failed',
-              text: 'There was an error saving the attendance. Please try again.',
-              confirmButtonText: 'Close',
-              customClass: { popup: 'swal-classic-popup', confirmButton: 'swal-classic-button-cancel bg-red-600' }
-            });
-          });
+        if (!attendanceMarked) {
+          // FIRST TIME → POST
+          submitAttendancePOST(payload);
+        } else {
+          // ALREADY MARKED → PATCH
+          submitAttendancePATCH();
+        }
+
       }
     });
+  };
+
+  const submitAttendancePOST = (payload) => {
+    fetch(`${BASE_URL}/attendance`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(() => {
+        setAttendanceMarked(true);
+
+        fetchTodayAttendance(students[0].class_id).then(attRows => {
+          const map = {};
+          attRows.forEach(a => {
+            map[a.student_id] = a;
+          });
+          setAttendanceMap(map);
+        });
+
+        Swal.fire("Success", "Attendance marked for today", "success");
+      })
+
+      .catch(() => {
+        Swal.fire("Error", "Failed to save attendance", "error");
+      });
+  };
+
+  const submitAttendancePATCH = () => {
+    const changed = students.filter(s => {
+      const old = attendanceMap[s.student_id];
+      return old && old.status.toLowerCase() !== s.status;
+    });
+
+    if (changed.length === 0) {
+      Swal.fire("No Changes", "Nothing to update", "info");
+      return;
+    }
+
+    const payload = changed.map(s => ({
+      attendance_id: attendanceMap[s.student_id].attendance_id,
+      status: s.status.charAt(0).toUpperCase() + s.status.slice(1)
+    }));
+
+    fetch(`${BASE_URL}/attendance`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(() => {
+        const newMap = { ...attendanceMap };
+        students.forEach(s => {
+          if (newMap[s.student_id]) {
+            newMap[s.student_id].status =
+              s.status.charAt(0).toUpperCase() + s.status.slice(1);
+          }
+        });
+        setAttendanceMap(newMap);
+
+        Swal.fire("Updated", "Attendance updated successfully", "success");
+      })
+      .catch(() => {
+        Swal.fire("Error", "Failed to update attendance", "error");
+      });
   };
 
   const markAllPresent = () => setStudents(prev => prev.map(s => ({ ...s, status: "present" })));
@@ -210,10 +307,13 @@ function MarkAttendance({ user }) {
               <FaUndo /> Reset Status
             </button>
             <button
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 text-white font-bold rounded-lg shadow-xl hover:bg-teal-700 transition duration-150"
               onClick={handleSubmit}
+              className={`flex items-center gap-2 px-4 py-2 
+    ${attendanceMarked ? "bg-orange-600" : "bg-teal-600"} 
+    text-white font-bold rounded-lg`}
             >
-              <FaUserCheck /> Submit Attendance
+              <FaUserCheck />
+              {attendanceMarked ? "Update Attendance" : "Submit Attendance"}
             </button>
           </div>
         </div>
@@ -252,6 +352,11 @@ function MarkAttendance({ user }) {
           {/* Main Attendance Table */}
           <div className="flex-1 bg-white rounded-xl shadow-xl p-0 overflow-hidden border border-gray-200">
             <h2 className="text-xl font-bold p-4 bg-gray-50 border-b text-gray-700">Students List</h2>
+            {attendanceMarked && (
+              <div className="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg font-semibold">
+                Attendance already marked for today. You are editing it.
+              </div>
+            )}
             <div className="overflow-x-auto max-h-[60vh]">
               <table className="min-w-full text-left">
                 <thead className="bg-sky-100 sticky top-0 shadow-sm">
