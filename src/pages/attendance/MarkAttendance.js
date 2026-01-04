@@ -68,17 +68,19 @@ function MarkAttendance({ user }) {
   const handleMarkAbsent = (studentId) => markStudent(studentId, "absent");
 
   const handleSubmit = () => {
-    const finalizedStudents = students.filter(s => s.status !== 'unmarked');
-    if (!finalizedStudents.length) {
+    const unmarked = students.filter(s => s.status === 'unmarked');
+    if (unmarked.length > 0) {
       Swal.fire({
-        icon: 'info',
-        title: 'No attendance marked',
-        text: 'Please mark students before submitting.',
-        confirmButtonText: 'OK',
-        customClass: { popup: 'swal-classic-popup', confirmButton: 'swal-classic-button' }
+        icon: 'warning',
+        title: 'Attendance Incomplete',
+        text: 'Please mark all students before submitting.',
+        confirmButtonText: 'OK'
       });
       return;
     }
+
+    const finalizedStudents = students;
+
 
     const absentStudents = finalizedStudents.filter(s => s.status === "absent");
     const presentStudents = finalizedStudents.filter(s => s.status === "present");
@@ -116,9 +118,9 @@ function MarkAttendance({ user }) {
         const payload = finalizedStudents.map(s => ({
           regNo: s.regNo,
           date: todayISO,
-          subjectId: selectedSubjectId || 1, // Using default if not set
-          period: selectedPeriod, // Using default if not set
-          status: s.status,
+          subjectId: selectedSubjectId || 1,
+          period: selectedPeriod,
+          status: s.status.charAt(0).toUpperCase() + s.status.slice(1)
         }));
 
         fetch(`${BASE_URL}/attendance`, {
