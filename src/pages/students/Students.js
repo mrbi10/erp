@@ -24,7 +24,16 @@ import { motion, AnimatePresence } from "framer-motion";
 // ---------------------------
 // Constants & Utils
 // ---------------------------
-const DEPT_MAP = { 1: "CSE", 2: "ECE", 3: "EEE", 4: "MECH", 5: "CIVIL", 6: "IT" };
+const DEPT_MAP = {
+  1: "CSE",
+  2: "IT",
+  3: "ADS",
+  4: "CSBS",
+  5: "ECE",
+  6: "EEE",
+  7: "MECH",
+  8: "CIVIL",
+};
 const ROMAN_MAP = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 const YEAR_MAP = {
   1: "I",

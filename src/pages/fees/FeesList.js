@@ -41,16 +41,16 @@ export default function FeesList({ user }) {
     }
   };
 
-  const deptOptions = [
-    { value: "1", label: "CSE" },
-    { value: "2", label: "AIDS" },
-    { value: "3", label: "AI & DS" },
-    { value: "4", label: "CSBS" },
-    { value: "5", label: "MECH" },
-    { value: "6", label: "CIVIL" },
-    { value: "7", label: "ECE" },
-    { value: "8", label: "EEE" },
-  ];
+ const deptOptions = [
+  { value: "1", label: "CSE" },
+  { value: "2", label: "IT" },
+  { value: "3", label: "ADS" },
+  { value: "4", label: "CSBS" },
+  { value: "5", label: "ECE" },
+  { value: "6", label: "EEE" },
+  { value: "7", label: "MECH" },
+  { value: "8", label: "CIVIL" },
+];
 
   const yearOptions = filteredYears.map((yr) => ({
     value: yr,

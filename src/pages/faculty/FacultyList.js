@@ -5,14 +5,16 @@ import Select from "react-select";
 import { FaUserTie, FaChalkboardTeacher, FaUserTag } from "react-icons/fa";
 
 
-const DEPT_MAP = {
-  1: "CSE",
-  2: "ECE",
-  3: "EEE",
-  4: "MECH",
-  5: "CIVIL",
-  6: "IT",
-};
+  const DEPT_MAP = {
+    1: "CSE",
+    2: "IT",
+    3: "ADS",
+    4: "CSBS",
+    5: "ECE",
+    6: "EEE",
+    7: "MECH",
+    8: "CIVIL",
+  };
 
 const getOrdinalSuffix = (n) => {
   const j = n % 10,

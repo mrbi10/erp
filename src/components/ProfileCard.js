@@ -25,11 +25,14 @@ export default function ProfileCard({ profileData }) {
     if (!profileData) return null;
 
     const courseMap = {
-        1: "Computer Science Eng.",
-        2: "Data Science",
-        3: "Information Technology",
-        4: "Electronics & Comm.",
-        5: "Electrical & Electronics",
+        1: "CSE",
+        2: "IT",
+        3: "ADS",
+        4: "CSBS",
+        5: "ECE",
+        6: "EEE",
+        7: "MECH",
+        8: "CIVIL",
     };
 
     const courseName = courseMap[profileData.dept_id] || "Department N/A";
@@ -37,8 +40,8 @@ export default function ProfileCard({ profileData }) {
         profileData.role === "student"
             ? `B.E. - ${courseName}`
             : profileData.role === "staff"
-            ? courseName
-            : courseMap[profileData.dept_id] || "Department N/A";
+                ? courseName
+                : courseMap[profileData.dept_id] || "Department N/A";
 
     const semester = (() => {
         if (profileData.role !== "student" || !profileData.class_id) return "N/A";
@@ -54,7 +57,7 @@ export default function ProfileCard({ profileData }) {
         staff: "bg-indigo-100 text-indigo-800 border-indigo-300",
         admin: "bg-red-100 text-red-800 border-red-300",
     }[profileData.role] || "bg-gray-100 text-gray-700 border-gray-300";
-    
+
     const hasMobile = profileData.mobile && profileData.mobile.toUpperCase() !== 'N/A';
 
     return (
@@ -67,11 +70,11 @@ export default function ProfileCard({ profileData }) {
                             {profileData.name}
                         </h1>
                         <p className="text-lg font-light text-gray-500 mt-1">
-                            {profileData.regNo || profileData.employeeId }
+                            {profileData.regNo || profileData.employeeId}
                         </p>
                     </div>
                 </div>
-                
+
                 <span className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize border ${roleTagClass}`}>
                     {profileData.role}
                 </span>
@@ -130,7 +133,7 @@ export default function ProfileCard({ profileData }) {
                     </span>
                 </div>
             </div>
-          
+
         </div>
     );
 }

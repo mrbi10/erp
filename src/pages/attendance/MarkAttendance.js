@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BASE_URL } from '../../constants/API';
-import { FaUserCheck, FaUserTimes, FaUserCircle , FaUndo, FaCheck, FaCalendarDay, FaSearch, FaUsers, FaClipboardCheck, FaTimesCircle } from 'react-icons/fa';
+import { FaUserCheck, FaUserTimes, FaUserCircle, FaUndo, FaCheck, FaCalendarDay, FaSearch, FaUsers, FaClipboardCheck, FaTimesCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 
@@ -16,11 +16,15 @@ function MarkAttendance({ user }) {
   const [loading, setLoading] = useState(true);
 
   // Map of department ids to names
-  const deptMap = {
-    1: "Computer Science & Eng.",
-    2: "Electronics & Comm. Eng.",
-    3: "Mechanical Engineering",
-    4: "Civil Engineering",
+  const DEPT_MAP = {
+    1: "CSE",
+    2: "IT",
+    3: "ADS",
+    4: "CSBS",
+    5: "ECE",
+    6: "EEE",
+    7: "MECH",
+    8: "CIVIL",
   };
 
   useEffect(() => {
@@ -45,7 +49,7 @@ function MarkAttendance({ user }) {
 
         // Set department name based on first student's dept_id
         if (data.length) {
-          setDepartmentName(deptMap[data[0].dept_id] || "Department");
+          setDepartmentName(DEPT_MAP[data[0].dept_id] || "Department");
         }
         setLoading(false);
       })
@@ -261,8 +265,8 @@ function MarkAttendance({ user }) {
                     <tr
                       key={student.regNo}
                       className={`border-b transition duration-150 ${student.status === 'present' ? 'bg-green-50 hover:bg-green-100' :
-                          student.status === 'absent' ? 'bg-red-50 hover:bg-red-100' :
-                            'hover:bg-gray-100'
+                        student.status === 'absent' ? 'bg-red-50 hover:bg-red-100' :
+                          'hover:bg-gray-100'
                         }`}
                     >
                       <td className="p-3 text-sm font-medium text-gray-700">{student.regNo}</td>
@@ -271,8 +275,8 @@ function MarkAttendance({ user }) {
                       {/* Status Tag */}
                       <td className="p-3 text-center">
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm capitalize ${student.status === 'present' ? 'bg-green-200 text-green-800' :
-                            student.status === 'absent' ? 'bg-red-200 text-red-800' :
-                              'bg-gray-200 text-gray-800'
+                          student.status === 'absent' ? 'bg-red-200 text-red-800' :
+                            'bg-gray-200 text-gray-800'
                           }`}>
                           {student.status}
                         </span>
@@ -287,7 +291,7 @@ function MarkAttendance({ user }) {
                         >
                           <FaUserCheck />
                         </button>
-                         {/* <button
+                        {/* <button
                           className={`p-2 rounded-full transition duration-150 shadow-md ${student.status === 'OD' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
                           onClick={() => handleMarkOD(student.student_id)}
                           title="Mark OD"
