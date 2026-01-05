@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "erp-portal",
   "homepage": "https://erp.mnmjec.mrbi.live",
   "version": "0.1.0",
