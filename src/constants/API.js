@@ -3,11 +3,6 @@ export let BASE_URL = "";
 const BASE_URLS = [
   "http://192.168.0.69:5000/api",
   "http://localhost:5000/api",
-  "http://192.168.0.50:5000/api",
-  "http://192.168.1.6:5000/api",
-  "http://192.168.29.236:5000/api",
-  "http://192.168.1.4:5000/api",
-  "http://10.157.240.226:5000/api",
 ];
 
 let initialized = false;
