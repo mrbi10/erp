@@ -267,7 +267,7 @@ export default function FeesList({ user }) {
                       <td
                         className="p-3 border text-blue-600 cursor-pointer underline flex items-center justify-center"
                         onClick={() =>
-                          navigate(`/erp/fees/student/${s.reg_no}`)
+                          navigate(`/fees/student/${s.reg_no}`)
                         }
                       >
                         <FaEye className="mr-1" /> View

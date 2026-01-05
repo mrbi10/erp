@@ -12,7 +12,7 @@ export default function Fees({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const basePath = "/erp/fees";
+  const basePath = "/fees";
 
   // Role bubbles
   const optionStyles = {

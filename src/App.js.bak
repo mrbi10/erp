@@ -95,7 +95,7 @@ export default function App() {
     localStorage.removeItem('token');
     setUser(null);
     setSidebarOpen(false);
-    window.location.href = "/erp/home";
+    window.location.href = "/home";
   };
 
   return (
@@ -132,29 +132,29 @@ export default function App() {
 
         <Routes>
           {/* Public routes */}
-          <Route path="/erp" element={<Navigate to="/erp/home" />} />
+          <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/resetpassword/:token" element={<ResetPassword />} />
-          <Route path="erp/home" element={<Home user={user} />} />
+          <Route path="/home" element={<Home user={user} />} />
           <Route path="/" element={<Home user={user} />} />
 
           {/* Protected routes */}
           {user && (
             <>
-              <Route path="erp/dashboard" element={<Dashboard user={user} />} />
-              <Route path="erp/students" element={<Students user={user} />} />
-              <Route path="erp/faculty" element={<FacultyList user={user} />} />
-              <Route path="erp/reports" element={<Reports user={user} />} />
-              <Route path="erp/marks" element={<Marks user={user} />} />
-              <Route path="erp/late" element={<Late user={user} />} />
-              <Route path="erp/mess" element={<Mess user={user} />} />
-              <Route path="erp/announcement" element={<Announcement user={user} />} />
-              <Route path="erp/timetable" element={<Timetable user={user} />} />
-              <Route path="erp/StudentTimetable" element={<StudentTimetable user={user} />} />
-              <Route path="erp/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
+              <Route path="/dashboard" element={<Dashboard user={user} />} />
+              <Route path="/students" element={<Students user={user} />} />
+              <Route path="/faculty" element={<FacultyList user={user} />} />
+              <Route path="/reports" element={<Reports user={user} />} />
+              <Route path="/marks" element={<Marks user={user} />} />
+              <Route path="/late" element={<Late user={user} />} />
+              <Route path="/mess" element={<Mess user={user} />} />
+              <Route path="/announcement" element={<Announcement user={user} />} />
+              <Route path="/timetable" element={<Timetable user={user} />} />
+              <Route path="/StudentTimetable" element={<StudentTimetable user={user} />} />
+              <Route path="/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
 
               {/* Attendance nested routes */}
-              <Route path="erp/attendance" element={<Attendance user={user} />}>
+              <Route path="/attendance" element={<Attendance user={user} />}>
                 <Route
                   path="view"
                   element={user.role === 'student' ? <StudentAttendance user={user} /> : <PageNotFound />}
@@ -174,7 +174,7 @@ export default function App() {
                 <Route path="*" element={<PageNotFound />} />
               </Route>
 
-              <Route path="erp/marks" element={<Marks user={user} />}>
+              <Route path="/marks" element={<Marks user={user} />}>
                 <Route path="enter" element={<EnterMarks />} />
                 <Route path="view" element={<ViewMarks />} />
                 <Route path="overview" element={<PrincipalOverview />} />
@@ -182,7 +182,7 @@ export default function App() {
                 <Route path="top" element={<TopPerformers />} />
               </Route>
 
-              <Route path="erp/fees" element={<Fees user={user} />}>
+              <Route path="/fees" element={<Fees user={user} />}>
                 <Route path="list" element={<FeesList user={user} />} />
                 <Route path="student/:reg_no" element={<FeesStudentView user={user} />} />
                 <Route path="analytics" element={<Feesanalytics user={user} />} />
@@ -190,7 +190,7 @@ export default function App() {
               </Route>
 
 
-              <Route path="/erp/profilehub" element={<ProfileHub user={user} />}>
+              <Route path="/profilehub" element={<ProfileHub user={user} />}>
                 <Route path="add" element={<ProfileAdd />} />
                 <Route path="view" element={<ProfileView user={user} />} />
                 <Route index element={<ProfileView user={user} />} />

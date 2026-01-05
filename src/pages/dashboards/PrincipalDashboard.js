@@ -449,14 +449,14 @@ export default function AdminDashboard({ profileCard, profileData, announcements
 
             <div className="grid grid-cols-1 gap-4">
               <ActionCard
-                to="/erp/faculty"
+                to="/faculty"
                 icon={FaChalkboardTeacher}
                 title="Faculty"
                 subtitle="Manage Staff"
                 color="blue"
               />
               <ActionCard
-                to="/erp/students"
+                to="/students"
                 icon={FaUserGraduate}
                 title="Students"
                 subtitle="Manage Students"

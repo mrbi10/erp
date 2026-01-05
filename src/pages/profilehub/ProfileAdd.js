@@ -96,7 +96,7 @@ export default function ProfileAdd() {
         }),
       });
 
-      navigate("/erp/profilehub/view");
+      navigate("/profilehub/view");
     } catch (err) {
       console.error("Save error:", err);
       setError("Failed to save item");

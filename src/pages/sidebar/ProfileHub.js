@@ -11,7 +11,7 @@ import {
 
 export default function ProfileHub({ user }) {
   const navigate = useNavigate();
-  const basePath = "/erp/profilehub";
+  const basePath = "/profilehub";
 
   const roleCards = {
     Principal: [

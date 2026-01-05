@@ -152,7 +152,7 @@ const AttendanceCard = ({ profileData, token }) => {
             </div>
 
             <button
-                onClick={() => window.location.href = "#/erp/attendance/view"}
+                onClick={() => window.location.href = "#/attendance/view"}
                 className="w-full py-2 bg-sky-600 text-white rounded-xl mb-4 hover:bg-sky-700 transition"
             >
                 Detailed Attendance Overview
@@ -415,7 +415,7 @@ const TimetableCard = ({ timetableToday }) => {
                 </ul>
             )}
             <button
-                onClick={() => window.location.href = "#/erp/Studenttimetable"}
+                onClick={() => window.location.href = "#/Studenttimetable"}
                 className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
             >
                 View Full Timetable
@@ -455,7 +455,7 @@ export const AnnouncementsCard = ({
                 </button>
 
                 <Link
-                    to="/erp/announcement"
+                    to="/announcement"
                     className="text-sm font-semibold text-red-500 hover:text-red-600 flex items-center gap-1"
                 >
                     View all

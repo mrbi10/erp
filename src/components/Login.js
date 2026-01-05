@@ -85,7 +85,7 @@ export default function Login({ onClose, onLoginSuccess }) {
       localStorage.setItem("user", JSON.stringify(decoded));
 
       onLoginSuccess(decoded);
-      navigate("/erp");
+      navigate("/");
     } catch (err) {
       setError(err.message);
       loadCaptcha();
