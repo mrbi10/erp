@@ -11,6 +11,7 @@ import StudentDashboard from "../dashboards/StudentDashboard";
 import StaffDashboard from "../dashboards/StaffDashboard";
 import PrincipalDashboard from "../dashboards/PrincipalDashboard";
 import ProfileCard from "../../components/ProfileCard";
+import HodDashboard from "../dashboards/HodDashboard";
 
 
 // Register Chart.js components once globally
@@ -250,6 +251,10 @@ export default function EnhancedDashboard({ user }) {
 
   if (user.role === "principal") {
     return <PrincipalDashboard />;
+  }
+
+   if (user.role === "HOD") {
+    return <HodDashboard />;
   }
 
   // Common profile card

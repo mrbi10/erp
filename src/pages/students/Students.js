@@ -35,12 +35,22 @@ const DEPT_MAP = {
   8: "CIVIL",
 };
 const ROMAN_MAP = { 1: "I", 2: "II", 3: "III", 4: "IV" };
+
+const yearOptions = [
+  { value: "", label: "All Years" },
+  { value: 1, label: "I Year" },
+  { value: 2, label: "II Year" },
+  { value: 3, label: "III Year" },
+  { value: 4, label: "IV Year" },
+];
+
 const YEAR_MAP = {
   1: "I",
   2: "II",
   3: "III",
-  4: "IV"
+  4: "IV",
 };
+
 
 
 const getInitials = (name) => {
@@ -167,7 +177,11 @@ export default function Students({ user }) {
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({ dept: "", year: "", classId: "", multiFilters: [] });
+  const [filters, setFilters] = useState({
+    dept: "",
+    class: "",
+    multiFilters: []
+  });
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 7;
@@ -211,7 +225,7 @@ export default function Students({ user }) {
 
         // Initial Filter Setup
         if (user.role === "HOD") setFilters(f => ({ ...f, dept: user.dept_id }));
-        if (user.role === "CA") setFilters(f => ({ ...f, dept: user.dept_id, classId: user.assigned_class_id }));
+        if (user.role === "CA") setFilters(f => ({ ...f, dept: user.dept_id, class: user.assigned_class_id }));
 
       } catch (err) {
         console.error("Fetch error:", err);
@@ -225,12 +239,14 @@ export default function Students({ user }) {
   // --- 2. Filtering Logic (Matches Original) ---
   useEffect(() => {
     let res = [...students];
-    const { dept, year, classId, multiFilters } = filters;
+    const { dept, class: classId, multiFilters } = filters;
 
-    if (dept) res = res.filter(s => s.dept_id === Number(dept));
-    if (classId) res = res.filter(s => s.class_id === Number(classId));
-    if (year) {
-      res = res.filter(s => s.class_id === Number(year));
+    if (dept) {
+      res = res.filter(s => s.dept_id === Number(dept));
+    }
+
+    if (classId) {
+      res = res.filter(s => s.class_id === Number(classId));
     }
 
     if (multiFilters.length > 0) {
@@ -419,12 +435,7 @@ export default function Students({ user }) {
   const deptOptions = Object.entries(DEPT_MAP).map(([k, v]) => ({ value: Number(k), label: v }));
   const classOptions = classes.map(c => ({ value: c.class_id, label: `${ROMAN_MAP[c.year]} - ${DEPT_MAP[c.dept_id]}` }));
 
-  // Logic for filtered year options based on current class list
-  const yearOptions = [...new Set(
-    classes
-      .filter(c => !filters.dept || c.dept_id === Number(filters.dept))
-      .map(c => c.year)
-  )].map(y => ({ value: y, label: `${ROMAN_MAP[y]} Year` }));
+
 
   const pageCount = Math.ceil(filteredStudents.length / studentsPerPage);
   const currentData = filteredStudents.slice((currentPage - 1) * studentsPerPage, currentPage * studentsPerPage);
@@ -501,11 +512,10 @@ export default function Students({ user }) {
                       : null
                   }
                   onChange={(o) =>
-                    setFilters((f) => ({
+                    setFilters(f => ({
                       ...f,
                       dept: o?.value || "",
-                      year: "",
-                      classId: "",
+                      class: "",
                     }))
                   }
                 />
@@ -520,9 +530,14 @@ export default function Students({ user }) {
                   menuPosition="fixed"
                   menuShouldBlockScroll={false}
                   placeholder="All Years"
-                  options={[{ value: "", label: "All Years" }, ...yearOptions]}
-                  value={yearOptions.find(o => o.value === filters.year) || null}
-                  onChange={(o) => setFilters(f => ({ ...f, year: o?.value || "", classId: "" }))}
+                  options={yearOptions}
+                  value={yearOptions.find(o => o.value === filters.class) || null}
+                  onChange={(o) =>
+                    setFilters(f => ({
+                      ...f,
+                      class: o?.value || ""
+                    }))
+                  }
                 />
               </div>
             )}
@@ -842,10 +857,15 @@ export default function Students({ user }) {
                   menuPortalTarget={document.body}
                   menuPosition="fixed"
                   menuShouldBlockScroll={false}
-                  options={classOptions}
-                  onChange={(o) => handleInputChange("class_id", o.value)}
-                  value={classOptions.find((c) => c.value === formData.class_id)}
-                  placeholder="Select class"
+                  placeholder="All Years"
+                  options={yearOptions}
+                  value={yearOptions.find(o => o.value === filters.class) || null}
+                  onChange={(o) =>
+                    setFilters(f => ({
+                      ...f,
+                      class: o?.value || ""
+                    }))
+                  }
                 />
               )}
             </div>

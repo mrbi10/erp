@@ -664,7 +664,7 @@ export default function StudentDashboard({
                     </div> */}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-3 md:grid-cols-3 gap-8">
                     <div>
                         <AnnouncementsCard
                             announcements={announcements}
