@@ -23,6 +23,7 @@ import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 // import Fees from './pages/sidebar/Fees';
 // import Timetable from './pages/sidebar/Timetable';
 // import StudentTimetable from './pages/sidebar/StudentTimetable';
+import PlacementTraining from './pages/sidebar/PlacementTraining';
 
 
 import Students from './pages/students/Students';
@@ -47,6 +48,18 @@ import ManageStaff from './pages/attendance/ManageStaff';
 // import ProfileHub from './pages/sidebar/ProfileHub';
 // import ProfileView from './pages/profilehub/ProfileView';
 // import ProfileAdd from './pages/profilehub/ProfileAdd';
+
+
+
+import StudentMyCourses from './pages/placementtraining/StudentMyCourses';
+import StudentTests from './pages/placementtraining/StudentTests';
+import PlacementResults from './pages/placementtraining/PlacementResults';
+import TrainerCourses from './pages/placementtraining/TrainerCourses';
+import TrainerManageTests from './pages/placementtraining/TrainerManageTests';
+import PlacementAnalytics from './pages/placementtraining/PlacementAnalytics';
+import TrainerAddQuestions from './pages/placementtraining/TrainerAddQuestions';
+
+
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -173,7 +186,7 @@ export default function App() {
                 />
                 <Route path="*" element={<PageNotFound />} />
               </Route>
-{/* 
+              {/* 
               <Route path="/marks" element={<Marks user={user} />}>
                 <Route path="enter" element={<EnterMarks />} />
                 <Route path="view" element={<ViewMarks />} />
@@ -195,6 +208,65 @@ export default function App() {
                 <Route path="view" element={<ProfileView user={user} />} />
                 <Route index element={<ProfileView user={user} />} />
               </Route> */}
+
+              <Route path="/placementtraining" element={<PlacementTraining user={user} />}>
+
+                {/* ===== STUDENT ===== */}
+                <Route
+                  path="my-courses"
+                  element={user.role === 'student' ? <StudentMyCourses user={user} /> : <PageNotFound />}
+                />
+
+                <Route
+                  path="tests"
+                  element={user.role === 'student' ? <StudentTests user={user} /> : <PageNotFound />}
+                />
+
+                <Route
+                  path="tests/:testId"
+                  element={user.role === 'student' ? <StudentTests user={user} /> : <PageNotFound />}
+                />
+
+                {/* ===== COMMON RESULTS (ROLE-BASED DATA) ===== */}
+                <Route
+                  path="results"
+                  element={
+                    ['student', 'trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
+                      ? <PlacementResults user={user} />
+                      : <PageNotFound />
+                  }
+                />
+
+                {/* ===== COMMON ANALYTICS (ROLE-BASED DATA) ===== */}
+                <Route
+                  path="analytics"
+                  element={
+                    ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
+                      ? <PlacementAnalytics user={user} />
+                      : <PageNotFound />
+                  }
+                />
+
+                {/* ===== TRAINER ===== */}
+                <Route
+                  path="courses"
+                  element={user.role === 'trainer' ? <TrainerCourses user={user} /> : <PageNotFound />}
+                />
+
+                <Route
+                  path="tests/manage/:courseId"
+                  element={user.role === 'trainer' ? <TrainerManageTests user={user} /> : <PageNotFound />}
+                />
+
+                <Route
+                  path="tests/:testId/questions"
+                  element={user.role === 'trainer' ? <TrainerAddQuestions /> : <PageNotFound />}
+                />
+
+                <Route path="*" element={<PageNotFound />} />
+              </Route>
+
+
 
               <Route path="*" element={<PageNotFound />} />
             </>
@@ -219,7 +291,7 @@ export default function App() {
         </p>
       </footer>
 
-   {/* //   {user && <AssistantButton user={user} />} */}
+      {/* //   {user && <AssistantButton user={user} />} */}
 
 
     </div>

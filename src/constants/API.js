@@ -1,11 +1,11 @@
-export let BASE_URL = "";
+let resolvedBaseUrl = null;
+let resolvingPromise = null;
 
 const BASE_URLS = [
   "http://192.168.0.69:5000/api",
   "http://localhost:5000/api",
+  "https://10.199.0.10/api",
 ];
-
-let initialized = false;
 
 const detectBaseUrl = async () => {
   for (const url of BASE_URLS) {
@@ -22,9 +22,8 @@ const detectBaseUrl = async () => {
       if (res.ok) {
         const data = await res.json();
         if (data?.ok) {
-          BASE_URL = url;
           console.log("✅ Backend connected:", url);
-          return;
+          return url;
         }
       }
     } catch {
@@ -32,12 +31,16 @@ const detectBaseUrl = async () => {
     }
   }
 
-  console.error("❌ No backend server reachable");
+  throw new Error("No backend reachable");
 };
 
-(async () => {
-  if (!initialized) {
-    initialized = true;
-    await detectBaseUrl();
+export const BASE_URL = await (async () => {
+  if (resolvedBaseUrl) return resolvedBaseUrl;
+
+  if (!resolvingPromise) {
+    resolvingPromise = detectBaseUrl();
   }
+
+  resolvedBaseUrl = await resolvingPromise;
+  return resolvedBaseUrl;
 })();
