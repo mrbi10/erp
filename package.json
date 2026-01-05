@@ -1,6 +1,6 @@
 {
   "name": "erp-portal",
-  "homepage": "https://erp.mnmjec.mrbi.live",
+  "homepage": "https://erp.mnmjec.mrbi.live/erp",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
