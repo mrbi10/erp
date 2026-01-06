@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { 
+  FaClock, 
+  FaCheckCircle, 
+  FaPaperPlane, 
+  FaExclamationTriangle,
+  FaListOl,
+  FaHourglassHalf
+} from "react-icons/fa";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
 
@@ -16,25 +24,27 @@ export default function StudentTestAttempt() {
   const timerRef = useRef(null);
 
   // -----------------------------
-  // Start test
+  // Logic: Start Test & Fetch
   // -----------------------------
-
-
-
   useEffect(() => {
     Swal.fire({
-      title: "Test Instructions",
+      title: "Ready to Begin?",
       html: `
-      <ul style="text-align:left">
-        <li>⏱ Timed test</li>
-        <li>❌ No refresh allowed</li>
-        <li>✔ Auto submit on timeout</li>
-      </ul>
-    `,
+        <div class="text-left text-sm space-y-2">
+          <p><strong>⚠️ Instructions:</strong></p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>The timer starts immediately after you click 'Start'.</li>
+            <li>Do not refresh or close the window.</li>
+            <li>The test will <strong>auto-submit</strong> when time runs out.</li>
+          </ul>
+        </div>
+      `,
       icon: "info",
       confirmButtonText: "Start Test",
+      confirmButtonColor: "#4f46e5", // Indigo-600
       allowOutsideClick: false,
-      allowEscapeKey: false
+      allowEscapeKey: false,
+      backdrop: `rgba(15, 23, 42, 0.9)` // Dark slate backdrop
     }).then((res) => {
       if (res.isConfirmed) startTest();
       else navigate(-1);
@@ -69,8 +79,6 @@ export default function StudentTestAttempt() {
       const durationMinutes = data.duration_minutes || 30;
       setTimeLeft(durationMinutes * 60);
 
-
-
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Server error", "error");
@@ -79,9 +87,8 @@ export default function StudentTestAttempt() {
     }
   };
 
-
   // -----------------------------
-  // Timer
+  // Logic: Timer
   // -----------------------------
   useEffect(() => {
     if (loading || timeLeft <= 0) return;
@@ -100,8 +107,6 @@ export default function StudentTestAttempt() {
     return () => clearInterval(timerRef.current);
   }, [loading, timeLeft]);
 
-
-
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -109,23 +114,25 @@ export default function StudentTestAttempt() {
   };
 
   // -----------------------------
-  // Answer select
+  // Logic: Selection & Submit
   // -----------------------------
   const selectOption = (qid, option) => {
     setAnswers({ ...answers, [qid]: option });
   };
 
-  // -----------------------------
-  // Submit
-  // -----------------------------
   const handleSubmit = async (auto = false) => {
     if (!auto) {
+      const answeredCount = Object.keys(answers).length;
+      const totalCount = questions.length;
+      
       const result = await Swal.fire({
         title: "Submit Test?",
-        text: "You cannot change answers after submitting",
+        html: `You have answered <b>${answeredCount} / ${totalCount}</b> questions.<br>This action cannot be undone.`,
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Submit",
+        confirmButtonColor: "#10b981", // Green
+        confirmButtonText: "Yes, Submit",
+        cancelButtonText: "Review Answers"
       });
 
       if (!result.isConfirmed) return;
@@ -158,11 +165,12 @@ export default function StudentTestAttempt() {
         return Swal.fire("Error", data.message, "error");
       }
 
-      Swal.fire(
-        "Submitted",
-        `Score: ${data.score} | ${data.pass_status.toUpperCase()}`,
-        "success"
-      ).then(() => {
+      Swal.fire({
+        title: "Test Submitted!",
+        html: `<div class="text-xl">Score: <b>${data.score}</b></div><div class="mt-2 badge badge-${data.pass_status === 'passed' ? 'success' : 'error'}">${data.pass_status.toUpperCase()}</div>`,
+        icon: data.pass_status === 'passed' ? "success" : "info",
+        confirmButtonText: "View Results"
+      }).then(() => {
         navigate("/placementtraining/results");
       });
 
@@ -173,79 +181,152 @@ export default function StudentTestAttempt() {
   };
 
   // -----------------------------
-  // UI
+  // Helper: Progress Calculation
+  // -----------------------------
+  const progressPercentage = questions.length > 0 
+    ? (Object.keys(answers).length / questions.length) * 100 
+    : 0;
+
+  // -----------------------------
+  // UI Components
   // -----------------------------
   if (loading) {
-    return <p className="p-6 text-gray-500">Starting test...</p>;
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
+        <FaHourglassHalf className="text-4xl text-indigo-500 animate-spin" />
+        <p className="text-slate-500 font-medium animate-pulse">Preparing your test environment...</p>
+      </div>
+    );
   }
 
+  const isLowTime = timeLeft < 300; // Less than 5 mins
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Timer */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold">Online Test</h1>
-        <div className="px-4 py-2 bg-red-600 text-white rounded-lg font-mono">
-          ⏱ {formatTime(timeLeft)}
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20 selection:bg-indigo-100">
+      
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+          
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <FaListOl className="text-indigo-600" />
+              Test
+            </h1>
+            {/* Progress Bar */}
+            <div className="hidden sm:flex flex-col w-32 md:w-48 gap-1">
+               <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+                  <span>Progress</span>
+                  <span>{Object.keys(answers).length} / {questions.length}</span>
+               </div>
+               <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+               </div>
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-lg shadow-inner transition-colors ${
+            isLowTime ? "bg-red-50 text-red-600 border border-red-100 animate-pulse" : "bg-slate-50 text-slate-700 border border-slate-200"
+          }`}>
+            <FaClock className={isLowTime ? "animate-bounce" : ""} />
+            {formatTime(timeLeft)}
+          </div>
         </div>
       </div>
 
-      {/* Questions */}
-      <div className="space-y-6">
-        {questions.map((q, index) => (
-          <div
-            key={q.question_id}
-            className="bg-white p-5 rounded-xl shadow"
-          >
-            <p className="font-semibold mb-3">
-              {index + 1}. {q.question}
-            </p>
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+        
+        {questions.map((q, index) => {
+          const isAnswered = answers[q.question_id] !== undefined;
 
-            <div className="space-y-2">
-              {["A", "B", "C", "D"].map((opt) => {
-                const key = `option_${opt.toLowerCase()}`;
-                return (
-                  <label
-                    key={opt}
-                    className={`block border rounded p-3 cursor-pointer
-                      ${answers[q.question_id] === opt
-                        ? "border-sky-600 bg-sky-50"
-                        : "hover:bg-gray-50"
-                      }
-                    `}
-                  >
-                    <input
-                      type="radio"
-                      className="mr-2"
-                      name={`q-${q.question_id}`}
-                      checked={answers[q.question_id] === opt}
-                      onChange={() =>
-                        selectOption(q.question_id, opt)
-                      }
-                    />
-                    {q[key]}
-                  </label>
-                );
-              })}
+          return (
+            <div 
+              key={q.question_id}
+              className={`bg-white rounded-2xl shadow-sm border transition-all duration-300 ${
+                isAnswered ? "border-indigo-200 shadow-md" : "border-slate-200"
+              }`}
+            >
+              <div className="p-6 md:p-8">
+                {/* Question Text */}
+                <div className="flex gap-4 mb-6">
+                  <span className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${
+                    isAnswered ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"
+                  }`}>
+                    {index + 1}
+                  </span>
+                  <p className="text-lg font-medium text-slate-800 leading-relaxed pt-1">
+                    {q.question}
+                  </p>
+                </div>
+
+                {/* Options Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-0 md:ml-12">
+                  {["A", "B", "C", "D"].map((opt) => {
+                    const key = `option_${opt.toLowerCase()}`;
+                    const isSelected = answers[q.question_id] === opt;
+                    
+                    return (
+                      <div
+                        key={opt}
+                        onClick={() => selectOption(q.question_id, opt)}
+                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 ${
+                          isSelected 
+                            ? "border-indigo-500 bg-indigo-50/50" 
+                            : "border-slate-100 bg-white hover:border-indigo-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            isSelected ? "border-indigo-600 bg-indigo-600" : "border-slate-300 bg-white"
+                          }`}>
+                            {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                          <span className={`font-medium ${isSelected ? "text-indigo-900" : "text-slate-600"}`}>
+                            {q[key]}
+                          </span>
+                        </div>
+                        
+                        {/* Option Letter Watermark */}
+                        <span className={`absolute right-4 top-1/2 -translate-y-1/2 text-4xl font-black opacity-5 pointer-events-none ${
+                            isSelected ? "text-indigo-900" : "text-slate-900"
+                        }`}>
+                            {opt}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
+          );
+        })}
+
+        {/* Bottom Actions */}
+        <div className="flex items-center justify-between pt-6 border-t border-slate-200 mt-8">
+          <div className="text-sm text-slate-500 flex items-center gap-2">
+             <FaExclamationTriangle className="text-amber-500" />
+             <span>Review your answers before submitting.</span>
           </div>
-        ))}
+
+          <button
+            disabled={!attemptId}
+            onClick={() => handleSubmit(false)}
+            className={`flex items-center gap-2 px-8 py-4 rounded-xl font-bold shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 ${
+              !attemptId
+                ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200"
+            }`}
+          >
+            <FaPaperPlane />
+            Submit Test
+          </button>
+        </div>
       </div>
 
-      {/* Submit */}
-      <div className="mt-8 flex justify-end">
-        <button
-          disabled={!attemptId}
-          onClick={() => handleSubmit(false)}
-          className={`px-6 py-3 rounded-lg text-white
-    ${!attemptId
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"}
-  `}
-        >
-          Submit Test
-        </button>
-
-      </div>
     </div>
   );
 }

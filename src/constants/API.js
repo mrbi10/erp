@@ -2,9 +2,9 @@ let resolvedBaseUrl = null;
 let resolvingPromise = null;
 
 const BASE_URLS = [
-  "http://192.168.0.69:5000/api",
+  // "http://192.168.0.69:5000/api",
   "http://localhost:5000/api",
-  "https://10.199.0.10/api",
+  // "https://10.199.0.10/api",
 ];
 
 const detectBaseUrl = async () => {

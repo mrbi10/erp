@@ -35,17 +35,17 @@ export default function PlacementTraining({ user }) {
     if (user.role === 'student') {
         options.push(
             {
-                label: 'My Training History',
+                label: 'My Courses',
                 page: 'my-courses',
                 icon: <FaBookOpen className="text-sky-500" />,
                 description: 'View all placement training programs you are enrolled in.'
             },
-            {
-                label: 'Take Test',
-                page: 'tests',
-                icon: <FaClipboardCheck className="text-green-500" />,
-                description: 'Attempt available placement training tests.'
-            },
+            // {
+            //     label: 'Take Test',
+            //     page: 'tests',
+            //     icon: <FaClipboardCheck className="text-green-500" />,
+            //     description: 'Attempt available placement training tests.'
+            // },
             {
                 label: 'My Results',
                 page: 'results',
