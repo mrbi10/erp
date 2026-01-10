@@ -185,7 +185,7 @@ export default function Home() {
 
         <div className="space-y-6">
           <p className="text-gray-700 text-lg leading-relaxed">
-            Mohamed Sathak AJ College of Engineering (MNMJEC) is an institution
+            Misrimal Navajee Munoth Jain Engineering College (MNMJEC) is an institution
             focused on academic excellence, professional ethics, and holistic
             development. Through industry collaborations, experienced faculty,
             dedicated research centers, and modern facilities, the institution

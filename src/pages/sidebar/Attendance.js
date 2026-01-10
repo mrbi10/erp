@@ -25,24 +25,24 @@ export default function Attendance({ user }) {
     if (user.role === 'HOD') {
         options.push(
             { label: 'View All Reports', page: 'reports', icon: <FaClipboardList className="text-blue-500" />, description: "Access comprehensive attendance reports across departments." },
-            { label: 'Manage Staff & CAs', page: 'manage', icon: <FaUsersCog className="text-purple-500" />, description: "Manage teaching loads and assign course advisors." },
-            { label: 'My Subject Reports', page: 'reports/my-subjects', icon: <FaClipboardList className="text-teal-500" />, description: "Review attendance for the subjects you personally teach." }
+            // { label: 'Manage Staff & CAs', page: 'manage', icon: <FaUsersCog className="text-purple-500" />, description: "Manage teaching loads and assign course advisors." },
+            // { label: 'My Subject Reports', page: 'reports/my-subjects', icon: <FaClipboardList className="text-teal-500" />, description: "Review attendance for the subjects you personally teach." }
         );
     } else if (user.role === 'CA') {
         options.push(
             { label: 'Mark Class Attendance', page: 'mark', icon: <FaUserCheck className="text-green-500" />, description: "Record daily attendance for assigned classes/batches." },
             { label: 'View Class Reports', page: 'reports', icon: <FaClipboardList className="text-yellow-500" />, description: "View attendance summaries for your advised class." },
-            { label: 'My Subject Reports', page: 'reports/my-subjects', icon: <FaClipboardList className="text-red-500" />, description: "Review attendance for the subjects you personally teach." }
+            // { label: 'My Subject Reports', page: 'reports/my-subjects', icon: <FaClipboardList className="text-red-500" />, description: "Review attendance for the subjects you personally teach." }
         );
     } else if (user.role === 'Principal') {
         options.push(
             { label: 'View All Reports', page: 'reports', icon: <FaClipboardList className="text-blue-500" />, description: "Access comprehensive attendance reports across departments." },
         );
-    } else if (user.role === 'Staff') {
-        options.push(
-            { label: 'Mark Class Attendance', page: 'mark', icon: <FaUserCheck className="text-green-500" />, description: "Record daily attendance for classes you teach (if permission is granted)." },
-            { label: 'My Subject Reports', page: 'reports/my-subjects', icon: <FaClipboardList className="text-teal-500" />, description: "Review detailed attendance for your teaching subjects." }
-        );
+    // } else if (user.role === 'Staff') {
+    //     options.push(
+    //         { label: 'Mark Class Attendance', page: 'mark', icon: <FaUserCheck className="text-green-500" />, description: "Record daily attendance for classes you teach (if permission is granted)." },
+    //         { label: 'My Subject Reports', page: 'reports/my-subjects', icon: <FaClipboardList className="text-teal-500" />, description: "Review detailed attendance for your teaching subjects." }
+    //     );
     } else if (user.role === 'student') {
         options.push(
             { label: 'View My Attendance', page: 'view', icon: <FaEye className="text-sky-500" />, description: "Access your overall and date-wise attendance history." }
