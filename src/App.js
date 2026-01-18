@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { useLocation } from "react-router-dom";
+
 
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -97,6 +99,13 @@ export default function App() {
     }
   }, [user]);
 
+  const location = useLocation();
+
+  const isExamRoute =
+    location.pathname.startsWith("/placementtraining/tests/") &&
+    location.pathname.split("/").length === 4;
+
+
 
   const handleLogin = (userData) => {
     localStorage.setItem('user', JSON.stringify(userData));
@@ -119,14 +128,16 @@ export default function App() {
 
 
 
-      <Header
-        user={user}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-        onHamburgerClick={() => setSidebarOpen(prev => !prev)}
-      />
+      {!isExamRoute && (
+        <Header
+          user={user}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onHamburgerClick={() => setSidebarOpen(prev => !prev)}
+        />
+      )}
 
-      {user && (
+      {user && !isExamRoute && (
         <Sidebar
           role={user.role}
           open={sidebarOpen}
@@ -137,10 +148,15 @@ export default function App() {
       {/* <main className="pt-16 p-6 text-slate-800 dark:text-slate-100"> */}
       <main
         className={`
-    pt-24 p-6 text-slate-800 dark:text-slate-100
-    transition-all duration-300
-    ${window.innerWidth <= 768 ? "pl-0" : sidebarOpen ? "pl-64" : "pl-16"}
-  `}
+          ${isExamRoute ? "" : "pt-24 p-6"}
+          text-slate-800 dark:text-slate-100
+          transition-all duration-300
+          ${!isExamRoute && window.innerWidth > 768
+            ? sidebarOpen
+              ? "pl-64"
+              : "pl-16"
+            : "pl-0"}
+        `}
       >
 
         <Routes>

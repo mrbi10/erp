@@ -10,16 +10,54 @@ import {
   FaTh,
   FaExclamationTriangle,
   FaShieldAlt,
-  FaExpand
+  FaWifi,
+  FaExpand,
+  FaLock,
+  FaSpinner
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
 
+
 /* ------------------------------------------------------------------
- * WRAPPER: FULLSCREEN OVERLAY (Fixes Scroll & Z-Index issues)
+ * STYLES & ANIMATIONS
+ * ------------------------------------------------------------------ */
+const GLOBAL_STYLES = `
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+  @keyframes slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .animate-slide-up {
+    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 99px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+  
+  /* Prevent text selection during exam */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+`;
+
+/* ------------------------------------------------------------------
+ * WRAPPER: FULLSCREEN OVERLAY
  * ------------------------------------------------------------------ */
 const FullScreenOverlay = ({ children, className = "" }) => (
-  <div className={`fixed inset-0 z-[9999] bg-slate-50 overflow-y-auto overflow-x-hidden ${className}`}>
+  <div className={`fixed inset-0 z-[50] bg-slate-50 overflow-y-auto overflow-x-hidden hide-scrollbar ${className}`}>
+    <style>{GLOBAL_STYLES}</style>
     {children}
   </div>
 );
@@ -28,12 +66,16 @@ const FullScreenOverlay = ({ children, className = "" }) => (
  * SUB-COMPONENT: LOADING VIEW
  * ------------------------------------------------------------------ */
 const LoadingView = () => (
-  <FullScreenOverlay className="flex flex-col items-center justify-center p-4">
-    <div className="bg-white p-10 rounded-3xl shadow-xl flex flex-col items-center max-w-sm w-full text-center border border-slate-100">
-      <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-6"></div>
+  <FullScreenOverlay className="flex flex-col items-center justify-center p-4 z-[100]">
+    <div className="bg-white p-10 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-full text-center border border-slate-100 animate-slide-up">
+      <div className="relative mb-8">
+        <div className="w-16 h-16 border-4 border-indigo-100 rounded-full"></div>
+        <div className="absolute inset-0 w-16 h-16 border-4 border-t-indigo-600 rounded-full animate-spin"></div>
+        <FaLock className="absolute inset-0 m-auto text-indigo-600 text-lg" />
+      </div>
       <h2 className="text-xl font-bold text-slate-900">Securing Environment</h2>
-      <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-        Please wait while we establish a secure connection for your assessment.
+      <p className="text-slate-500 text-sm mt-3 leading-relaxed">
+        Initializing secure connection and loading assessment data...
       </p>
     </div>
   </FullScreenOverlay>
@@ -42,106 +84,233 @@ const LoadingView = () => (
 /* ------------------------------------------------------------------
  * SUB-COMPONENT: START SCREEN
  * ------------------------------------------------------------------ */
-const StartScreen = ({ onStart, onCancel }) => (
-  <FullScreenOverlay className="flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-indigo-50/50">
-    <div className="bg-white max-w-2xl w-full rounded-3xl shadow-2xl overflow-hidden border border-white/60 my-auto">
-      {/* Header */}
-      <div className="bg-slate-900 p-10 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500"></div>
-        <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 backdrop-blur-md shadow-inner">
-          <FaShieldAlt className="text-4xl text-indigo-400" />
-        </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Secure Assessment Environment</h1>
-        <p className="text-slate-400 mt-2 text-sm font-medium">Strict Malpractice Monitoring Enabled</p>
-      </div>
+const MIN_SPEED_MBPS = 2;
+const READ_TIME = 2;
 
-      {/* Body */}
-      <div className="p-8 space-y-8">
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex gap-5">
-          <div className="bg-amber-100 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-amber-600">
-            <FaExclamationTriangle />
+const StartScreen = ({ onStart, onCancel }) => {
+  const [countdown, setCountdown] = useState(READ_TIME);
+  const [speed, setSpeed] = useState(null);
+  const [speedStatus, setSpeedStatus] = useState("checking");
+  const [testing, setTesting] = useState(true);
+
+  const checkInternetSpeed = async () => {
+    try {
+      const imageUrl =
+        "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg";
+      const startTime = new Date().getTime();
+
+      await fetch(imageUrl, { cache: "no-store" });
+
+      const endTime = new Date().getTime();
+      const duration = (endTime - startTime) / 1000;
+
+      const fileSizeMB = 5.3;
+      const speedMbps = ((fileSizeMB * 8) / duration).toFixed(2);
+
+      setSpeed(speedMbps);
+      setSpeedStatus(speedMbps >= MIN_SPEED_MBPS ? "ok" : "slow");
+    } catch {
+      setSpeed(null);
+      setSpeedStatus("slow");
+    } finally {
+      setTesting(false);
+    }
+  };
+
+
+
+  useEffect(() => {
+    if (countdown === 0) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  useEffect(() => {
+    checkInternetSpeed();
+  }, []);
+
+
+
+  const canStart =
+    countdown === 0 && speedStatus === "ok" && !testing;
+
+  return (
+    <FullScreenOverlay className="flex items-center justify-center p-4 bg-slate-100 overflow-hidden">
+      <div className="bg-white max-w-2xl w-full rounded-3xl shadow-2xl border border-slate-200 flex flex-col">
+
+        {/* Header */}
+        <div className="bg-slate-900 px-8 py-10 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <FaShieldAlt className="text-4xl text-indigo-400" />
           </div>
-          <div className="text-sm text-amber-900">
-            <h3 className="font-bold mb-1 text-base">Two-Strike Policy</h3>
-            <p className="leading-relaxed opacity-90">
-              You are allowed exactly <b>one warning</b>. The second violation (tab switch, exit fullscreen, loss of focus) will <b className="text-red-600">immediately terminate</b> your exam.
+          <h1 className="text-2xl font-bold text-white">
+            Examination Disclaimer
+          </h1>
+          <p className="text-slate-400 mt-2 text-sm">
+            Please read carefully before starting
+          </p>
+        </div>
+
+        {/* Body */}
+        <div className="px-8 py-8 space-y-6 text-sm text-slate-700">
+
+          {/* Rule Block */}
+          <div className="rounded-2xl border border-slate-200 p-6 bg-slate-50">
+            <div className="flex items-center gap-3 mb-3">
+              <FaShieldAlt className="text-indigo-500 text-lg" />
+              <h3 className="font-bold text-slate-800 text-base">
+                Secure Exam Environment
+              </h3>
+            </div>
+            <p className="leading-relaxed text-slate-600">
+              This examination is actively monitored. Once started, it must be
+              completed in a single uninterrupted session.
             </p>
           </div>
+
+          {/* Critical Warning */}
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
+                <FaExclamationTriangle />
+              </div>
+              <div>
+                <h4 className="font-bold text-red-700 mb-1">
+                  Auto-Submission Warning
+                </h4>
+                <p className="text-red-700 leading-relaxed">
+                  If your internet connection becomes slow or disconnected,
+                  the exam may be automatically submitted and will be treated
+                  as a <strong>completed attempt</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Violation Notice */}
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
+                <FaLock />
+              </div>
+              <div>
+                <h4 className="font-bold text-amber-800 mb-1">
+                  Exam Integrity
+                </h4>
+                <p className="text-amber-800 leading-relaxed">
+                  Any suspicious activity or rule violation detected by the system
+                  will result in <strong>immediate termination</strong> of the exam.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Internet Speed Status */}
+          <div className="rounded-2xl border p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FaWifi className="text-indigo-500 text-xl" />
+              <div>
+                <p className="font-semibold text-slate-800">
+                  Internet Readiness Check
+                </p>
+                <p className="text-xs text-slate-500">
+                  Minimum required speed: {MIN_SPEED_MBPS} Mbps
+                </p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              {testing ? (
+                <div className="flex items-center gap-2 text-slate-500">
+                  <FaSpinner className="animate-spin" />
+                  Checking…
+                </div>
+              ) : (
+                <>
+                  <p
+                    className={`font-bold ${speedStatus === "ok"
+                      ? "text-green-600"
+                      : "text-red-600"
+                      }`}
+                  >
+                    {speed ? `${speed} Mbps` : "Unavailable"}
+                  </p>
+                  <p className="text-xs">
+                    {speedStatus === "ok"
+                      ? "Connection Ready"
+                      : "Connection Too Slow"}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-5">
-          <h4 className="font-bold text-slate-800 text-xs uppercase tracking-widest border-b border-slate-100 pb-2">Security Protocols</h4>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-600">
-            <li className="flex items-start gap-3">
-              <span className="w-5 h-5 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-0.5">1</span>
-              <span>Must remain in <strong className="text-slate-800">Fullscreen</strong>.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="w-5 h-5 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-0.5">2</span>
-              <span><strong className="text-red-600">Alt+Tab</strong> is detected instantly.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="w-5 h-5 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-0.5">3</span>
-              <span>Shortcuts (Ctrl+C/V) disabled.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="w-5 h-5 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-0.5">4</span>
-              <span>Right-click menu disabled.</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
+        {/* Footer */}
+        <div className="px-8 py-6 border-t flex gap-4">
           <button
             onClick={onCancel}
-            className="flex-1 py-4 rounded-xl font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-sm"
+            className="flex-1 py-3.5 rounded-xl text-slate-500 hover:bg-slate-50 font-semibold"
           >
             Cancel
           </button>
+
           <button
+            disabled={!canStart}
             onClick={onStart}
-            className="flex-[2] py-4 rounded-xl font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-sm"
+            className={`flex-[2] py-3.5 rounded-xl font-semibold text-white transition
+              ${canStart
+                ? "bg-indigo-600 hover:bg-indigo-700"
+                : "bg-slate-400 cursor-not-allowed"
+              }`}
           >
-            I Agree & Start Exam <FaExpand className="opacity-70" />
+            {countdown > 0
+              ? `Please wait ${countdown}s`
+              : speedStatus !== "ok"
+                ? "Internet too slow"
+                : "Start Exam"}
           </button>
         </div>
       </div>
-    </div>
-  </FullScreenOverlay>
-);
+    </FullScreenOverlay>
+  );
+};
 
-/* ------------------------------------------------------------------
- * MAIN COMPONENT: STUDENT TEST ATTEMPT
- * ------------------------------------------------------------------ */
+
+
 export default function StudentTestAttempt() {
   const { testId } = useParams();
   const navigate = useNavigate();
 
-  // --- State ---
   const [questions, setQuestions] = useState([]);
   const [attemptId, setAttemptId] = useState(null);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
 
-  // Security & UX State
   const [examStarted, setExamStarted] = useState(false);
   const [warningCount, setWarningCount] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Pagination & Palette State
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showPalette, setShowPalette] = useState(false);
 
   const timerRef = useRef(null);
+  const warningRef = useRef(0);
+  const submittingRef = useRef(false);
+  const examEndedRef = useRef(false);
+
   const MAX_WARNINGS = 2;
 
-  // --- Logic: Security & Malpractice ---
+
 
   const enterFullscreen = () => {
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch((err) => console.log(err));
+      elem.requestFullscreen().catch((err) => console.log("Fullscreen request denied:", err));
     } else if (elem.webkitRequestFullscreen) {
       elem.webkitRequestFullscreen();
     } else if (elem.msRequestFullscreen) {
@@ -149,138 +318,167 @@ export default function StudentTestAttempt() {
     }
   };
 
-  const logViolation = async (type) => {
-    if (!attemptId) return;
-    try {
-      fetch(`${BASE_URL}/placement-training/student/tests/log-violation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify({ attempt_id: attemptId, violation_type: type, timestamp: new Date() })
-      });
-    } catch (err) {
-      console.error("Failed to log violation", err);
-    }
-  };
-
-  const handleViolation = useCallback((type) => {
-    if (!examStarted) return;
-    if (Swal.isVisible()) return;
-
-    const newCount = warningCount + 1;
-    setWarningCount(newCount);
-    logViolation(type);
-
-    if (newCount >= MAX_WARNINGS) {
-      Swal.fire({
-        title: "Exam Terminated",
-        html: `
-          <div class="text-center">
-            <p class="text-lg font-bold text-red-600 mb-2">Malpractice Detected</p>
-            <p class="text-sm text-slate-600 mb-4">Reason: <b>${type}</b></p>
-            <p class="text-xs text-slate-500">Multiple violations detected. Auto-submitting...</p>
-          </div>
-        `,
-        icon: "error",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        confirmButtonColor: "#dc2626",
-        confirmButtonText: "Submit & Close"
-      }).then(() => {
-        handleSubmit(true);
-      });
-    } else {
-      Swal.fire({
-        title: "Security Warning",
-        html: `
-          <div class="text-center">
-            <p class="text-lg font-bold text-amber-600 mb-2">${type} Detected</p>
-            <p class="text-sm text-slate-600 mb-4">Focus lost or fullscreen exited.</p>
-            <div class="bg-red-50 border border-red-100 p-3 rounded-lg">
-                <p class="text-red-700 font-bold text-xs">⚠ ONE VIOLATION REMAINING</p>
-                <p class="text-red-500 text-[10px] mt-1">Next violation will terminate the exam.</p>
-            </div>
-          </div>
-        `,
-        icon: "warning",
-        confirmButtonColor: "#f59e0b",
-        confirmButtonText: "Return to Exam",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-      }).then(() => {
-        enterFullscreen();
-      });
-    }
-  }, [examStarted, warningCount, attemptId]);
 
   useEffect(() => {
     if (!examStarted) return;
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) handleViolation("Tab Switch / App Backgrounded");
+    const beforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+      forceSubmit("PAGE_UNLOAD");
     };
 
-    const handleBlur = () => {
-      handleViolation("Window Focus Lost (Alt+Tab)");
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, [examStarted]);
+
+  const lastViolationRef = useRef(0);
+
+  const handleViolation = useCallback((type, source) => {
+    if (!examStarted || examEndedRef.current) return;
+
+    const now = Date.now();
+    if (type !== "EXIT_FULLSCREEN") {
+      if (now - lastViolationRef.current < 1500) return;
+    }
+    lastViolationRef.current = now;
+
+    warningRef.current += 1;
+    setWarningCount(warningRef.current);
+
+    logViolation(type, source);
+
+    if (type === "EXIT_FULLSCREEN" || warningRef.current >= MAX_WARNINGS) {
+      Swal.fire({
+        title: "Exam Terminated",
+        text: `Violation limit exceeded (${type})`,
+        icon: "error",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        confirmButtonText: "Submit & Close"
+      }).then(() => forceSubmit(type));
+    } else {
+      Swal.fire({
+        title: "Security Warning",
+        text: `${type} detected. One more violation will end the exam.`,
+        icon: "warning",
+        confirmButtonText: "Return to Exam",
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      }).then(() => enterFullscreen());
+    }
+  }, [examStarted]);
+
+
+  useEffect(() => {
+    if (!examStarted) return;
+
+    const showLocalWarning = () => {
+      if (Swal.isVisible()) return;
+      Swal.fire({
+        title: "Action Blocked",
+        text: "This action is not allowed during the exam",
+        icon: "warning",
+        timer: 1200,
+        showConfirmButton: false
+      });
     };
 
-    const handleFullscreenChange = () => {
+    const keyHandler = (e) => {
+      const blocked =
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.key === "Escape" ||
+        e.key === "Tab" ||
+        e.key === "F4" ||
+        e.key === "PrintScreen" ||
+        // e.key === "F12" ||
+        e.key === "F11";
+
+      if (blocked) {
+        e.preventDefault();
+        e.stopPropagation();
+        showLocalWarning();
+      }
+    };
+
+    const blurHandler = () => handleViolation("WINDOW_BLUR", "blur");
+
+    const visibilityHandler = () => {
+      if (document.hidden) {
+        handleViolation("TAB_SWITCH", "visibility");
+      }
+    };
+
+    const fullscreenHandler = () => {
       if (!document.fullscreenElement) {
-        setIsFullscreen(false);
-        handleViolation("Exited Fullscreen Mode");
-      } else {
-        setIsFullscreen(true);
+        handleViolation("EXIT_FULLSCREEN", "fullscreen");
+        enterFullscreen();
       }
     };
 
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && ['r', 'p', 's', 'w', 't', 'n'].includes(e.key.toLowerCase())) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (e.key === "Escape" || e.keyCode === 27) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x'].includes(e.key.toLowerCase())) {
-        e.preventDefault();
-        e.stopPropagation();
-        Swal.fire({ title: "Action Blocked", text: "Clipboard is disabled", timer: 1000, showConfirmButton: false, icon: 'error' });
-      }
-      if ((e.ctrlKey || e.metaKey) && (['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(e.key) || e.key === 'Tab')) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (e.altKey) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (e.key === "F12" || ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()))) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-
-    const handleContextMenu = (e) => e.preventDefault();
-
-    window.addEventListener("blur", handleBlur);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("contextmenu", handleContextMenu);
+    window.addEventListener("keydown", keyHandler, true);
+    window.addEventListener("blur", blurHandler);
+    document.addEventListener("visibilitychange", visibilityHandler);
+    document.addEventListener("fullscreenchange", fullscreenHandler);
+    document.addEventListener("contextmenu", e => e.preventDefault());
 
     return () => {
-      window.removeEventListener("blur", handleBlur);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("keydown", keyHandler, true);
+      window.removeEventListener("blur", blurHandler);
+      document.removeEventListener("visibilitychange", visibilityHandler);
+      document.removeEventListener("fullscreenchange", fullscreenHandler);
+      document.removeEventListener("contextmenu", e => e.preventDefault());
     };
   }, [examStarted, handleViolation]);
+
+
+  const logViolation = async (type, source = null, extra = null) => {
+    if (!attemptId || examEndedRef.current) return;
+
+    fetch(`${BASE_URL}/placement-training/student/tests/log-violation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({
+        attempt_id: attemptId,
+        violation_type: type,
+        violation_source: source,
+        extra_payload: extra
+      })
+    });
+  };
+
+  const handleContextMenu = (e) => e.preventDefault();
+
+  const forceSubmit = async (reason) => {
+    if (examEndedRef.current) return;
+
+    examEndedRef.current = true;
+
+    await logViolation("UNKNOWN", "auto_submit");
+
+    handleSubmit(true);
+  };
+
+
+  useEffect(() => {
+    if (!examStarted) return;
+
+    if (!document.fullscreenElement) {
+      enterFullscreen();
+    }
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+    };
+
+  }, [examStarted, handleViolation]);
+
+
 
   const checkTestStillLive = async () => {
     try {
@@ -296,15 +494,17 @@ export default function StudentTestAttempt() {
   };
 
   const handleNext = async () => {
+    await flushPendingAnswer();
     if (currentIndex % 5 === 0) {
       const stillLive = await checkTestStillLive();
       if (!stillLive) {
         return Swal.fire({
           title: "Test Closed",
-          text: "The publish window for this test has ended.",
-          icon: "warning",
+          text: "The exam window has ended.",
+          icon: "info",
           allowOutsideClick: false,
-        }).then(() => handleSubmit(true));
+          confirmButtonText: "Submit & Finish"
+        }).then(() => forceSubmit("PUBLISH_WINDOW_ENDED"));
       }
     }
     setCurrentIndex((prev) => Math.min(prev + 1, questions.length - 1));
@@ -328,18 +528,22 @@ export default function StudentTestAttempt() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = await res.json();
+
       if (!res.ok) {
         setLoading(false);
-        return Swal.fire("Error", data.message, "error").then(() => navigate(-1));
+        if (document.fullscreenElement) document.exitFullscreen();
+        return Swal.fire("Error", data.message || "Failed to start exam", "error").then(() => navigate(-1));
       }
+
       setAttemptId(data.attempt_id);
       setQuestions(data.questions || []);
-      const durationMinutes = data.test.duration_minutes || 30;
-      setTimeLeft(durationMinutes * 60);
+
+      setTimeLeft(data.remaining_seconds);
       setExamStarted(true);
+
     } catch (err) {
       console.error(err);
-      Swal.fire("Error", "Server error", "error");
+      Swal.fire("Connection Error", "Could not start the exam. Please check your internet.", "error");
     } finally {
       setLoading(false);
     }
@@ -347,62 +551,96 @@ export default function StudentTestAttempt() {
 
   useEffect(() => {
     if (!examStarted || loading || timeLeft <= 0) return;
+
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          handleSubmit(true);
+          forceSubmit("TIME_ENDED");
           return 0;
         }
         return t - 1;
       });
     }, 1000);
+
     return () => clearInterval(timerRef.current);
-  }, [examStarted, loading, timeLeft]);
+  }, [examStarted, loading]);
 
   const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
+
+    if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  const flushPendingAnswer = async () => {
+    if (!pendingAnswerRef.current || !attemptId) return;
+
+    const { qid, option } = pendingAnswerRef.current;
+    pendingAnswerRef.current = null;
+
+    await fetch(`${BASE_URL}/placement-training/student/tests/${testId}/answer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({
+        attempt_id: attemptId,
+        question_id: qid,
+        selected_option: option
+      })
+    });
+  };
+
+  const pendingAnswerRef = useRef(null);
+
   const selectOption = (qid, option) => {
-    setAnswers({ ...answers, [qid]: option });
+    if (examEndedRef.current) return;
+
+    setAnswers(prev => ({ ...prev, [qid]: option }));
+    pendingAnswerRef.current = { qid, option };
   };
 
   const handleSubmit = async (auto = false) => {
+    await flushPendingAnswer();
+
+
     if (!auto) {
       const answeredCount = Object.keys(answers).length;
       const totalCount = questions.length;
+
       const result = await Swal.fire({
         title: "Submit Assessment?",
-        html: `<p class="text-slate-500">You have answered <b class="text-indigo-600">${answeredCount} / ${totalCount}</b> questions.</p>`,
-        icon: "warning",
+        html: `
+          <div class="text-slate-600">
+            You have answered <b class="text-indigo-600 text-lg">${answeredCount}</b> out of <b class="text-slate-800 text-lg">${totalCount}</b> questions.
+          </div>
+          <p class="text-xs text-slate-400 mt-2">Action cannot be undone.</p>
+        `,
+        icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#10b981",
+        confirmButtonColor: "#4f46e5",
         cancelButtonColor: "#94a3b8",
-        confirmButtonText: "Yes, Submit",
-        cancelButtonText: "Review",
-        customClass: {
-          popup: "rounded-3xl",
-          confirmButton: "rounded-xl font-bold",
-          cancelButton: "rounded-xl font-bold"
-        }
+        confirmButtonText: "Yes, Submit Exam",
+        cancelButtonText: "Keep Reviewing",
       });
       if (!result.isConfirmed) return;
     }
 
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    examEndedRef.current = true;
+
     if (document.exitFullscreen && document.fullscreenElement) {
-      document.exitFullscreen().catch(err => { });
+      try { await document.exitFullscreen(); } catch (e) { }
     }
 
     const payload = {
       attempt_id: attemptId,
-      answers: Object.entries(answers).map(([qid, selected]) => ({
-        question_id: Number(qid),
-        selected_option: selected,
-      })),
-      forced_submission: auto
+      forced_submission: auto ? 1 : 0
     };
 
     try {
@@ -414,30 +652,38 @@ export default function StudentTestAttempt() {
         },
         body: JSON.stringify(payload),
       });
+
       const data = await res.json();
-      if (!res.ok) return Swal.fire("Error", data.message, "error");
+      if (!res.ok) throw new Error(data.message);
 
       Swal.fire({
         title: "Assessment Complete!",
         html: `
-            <div class="flex flex-col items-center gap-2 mt-2">
-                <div class="text-4xl font-black text-slate-800">${data.score}%</div>
-                <div class="px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${data.pass_status === 'pass' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
-                    ${data.pass_status}
+            <div class="flex flex-col items-center gap-3 mt-4">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center ${data.pass_status === 'pass' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
+                    ${data.pass_status === 'pass' ? '<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : '<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'}
+                </div>
+                <div class="text-center">
+                    <div class="text-5xl font-black text-slate-800 tracking-tighter">${data.percentage}%</div>
+                    <div class="text-slate-500 font-medium">Final Score</div>
+                </div>
+                <div class="px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mt-2 ${data.pass_status === 'pass' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200'}">
+                    ${data.pass_status === 'pass' ? 'PASSED' : 'FAILED'}
                 </div>
             </div>
         `,
-        icon: data.pass_status === 'pass' ? "success" : "info",
-        confirmButtonText: "View Results",
-        confirmButtonColor: "#4f46e5",
+        showConfirmButton: true,
+        confirmButtonText: "View Detailed Results",
+        confirmButtonColor: "#1e293b",
         allowOutsideClick: false,
-        customClass: { popup: "rounded-3xl", confirmButton: "rounded-xl" }
+        padding: "2em"
       }).then(() => {
         navigate("/placementtraining/results");
       });
+
     } catch (err) {
       console.error(err);
-      Swal.fire("Error", "Server error", "error");
+      Swal.fire("Submission Error", err.message || "Could not submit results. Please contact admin.", "error");
     }
   };
 
@@ -446,26 +692,28 @@ export default function StudentTestAttempt() {
   const q = questions[currentIndex];
   const isAnswered = q && answers[q.question_id] !== undefined;
 
-  // --- RENDER FLOW ---
   if (loading) return <LoadingView />;
   if (!examStarted) return <StartScreen onStart={initiateExam} onCancel={() => navigate(-1)} />;
 
   return (
-    <FullScreenOverlay className="bg-[#F8FAFC] font-sans text-slate-800 pb-32 select-none">
+    <FullScreenOverlay className="p-10 bg-[#F8FAFC] font-sans text-slate-800 pb-32 no-select overflow-hidden">
+
       {/* STICKY HEADER */}
-      <div className="sticky top-0 z-40">
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-lg border-b border-slate-200/60 shadow-sm"></div>
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
           {/* Left: Progress & Warnings */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden sm:flex items-center gap-3 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
-              <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                <FaListUl />
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="hidden sm:flex items-center gap-3 bg-slate-100/50 px-3 py-1.5 rounded-lg border border-slate-200/60">
+              <div className="text-xs font-bold text-slate-500 flex items-center gap-2">
+                <FaListUl className="text-slate-400" />
                 <span>{currentIndex + 1} <span className="text-slate-300">/</span> {questions.length}</span>
               </div>
-              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
+              <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
               </div>
             </div>
 
@@ -479,40 +727,42 @@ export default function StudentTestAttempt() {
 
           {/* Right: Timer & Submit */}
           <div className="flex items-center gap-3">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono font-bold text-sm ${isLowTime ? "bg-red-50 text-red-600 animate-pulse" : "bg-slate-100 text-slate-700"}`}>
-              <FaClock /> {formatTime(timeLeft)}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono font-bold text-base transition-colors ${isLowTime ? "bg-red-50 text-red-600 border border-red-100 animate-pulse" : "bg-slate-100 text-slate-700 border border-slate-200"}`}>
+              <FaClock className={isLowTime ? "text-red-500" : "text-slate-400"} />
+              {formatTime(timeLeft)}
             </div>
+
             <button
               onClick={() => handleSubmit(false)}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95"
+              className="hidden sm:flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-95"
             >
-              Submit <FaPaperPlane className="text-xs" />
+              Submit <FaPaperPlane className="text-xs opacity-80" />
             </button>
           </div>
         </div>
       </div>
 
       {/* QUESTION CARD */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8">
         {q && (
-          <div key={q.question_id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className={`bg-white rounded-[2rem] border transition-all duration-300 ${isAnswered ? "border-indigo-100 shadow-xl shadow-indigo-100/40" : "border-slate-100 shadow-lg shadow-slate-200/50"}`}>
-              
+          <div key={q.question_id} className="animate-slide-up">
+            <div className={`bg-white rounded-3xl border transition-all duration-300 overflow-hidden ${isAnswered ? "border-indigo-100 shadow-xl shadow-indigo-100/40 ring-1 ring-indigo-50" : "border-slate-100 shadow-lg shadow-slate-200/50"}`}>
+
               {/* Question Text */}
-              <div className="p-6 md:p-8 border-b border-slate-50">
-                <div className="flex gap-5">
-                  <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-2xl text-base font-bold transition-colors ${isAnswered ? "bg-indigo-600 text-white shadow-indigo-200 shadow-lg" : "bg-slate-100 text-slate-400"}`}>
+              <div className="p-6 md:p-10 border-b border-slate-50">
+                <div className="flex gap-5 items-start">
+                  <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-2xl text-lg font-bold transition-all duration-300 ${isAnswered ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110" : "bg-slate-100 text-slate-400"}`}>
                     {isAnswered ? <FaCheck /> : currentIndex + 1}
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-slate-800 leading-relaxed pt-1.5 select-none">
+                  <h3 className="text-lg md:text-xl font-bold text-slate-800 leading-relaxed pt-1 select-none">
                     {q.question}
                   </h3>
                 </div>
               </div>
 
               {/* Options */}
-              <div className="p-6 md:p-8 bg-slate-50/50 rounded-b-[2rem]">
-                <div className="grid grid-cols-1 gap-3">
+              <div className="p-6 md:p-10 bg-slate-50/50">
+                <div className="grid grid-cols-1 gap-4">
                   {["A", "B", "C", "D"].map((opt) => {
                     const key = `option_${opt.toLowerCase()}`;
                     const isSelected = answers[q.question_id] === opt;
@@ -520,15 +770,20 @@ export default function StudentTestAttempt() {
                       <button
                         key={opt}
                         onClick={() => selectOption(q.question_id, opt)}
-                        className={`group relative w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-4 active:scale-[0.99] outline-none focus:ring-4 focus:ring-indigo-100 ${isSelected ? "border-indigo-500 bg-indigo-50/60 shadow-sm z-10" : "border-white bg-white hover:border-indigo-100 shadow-sm hover:z-10"}`}
+                        className={`group relative w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 flex items-center gap-5 outline-none focus:ring-4 focus:ring-indigo-100/50 ${isSelected
+                          ? "border-indigo-500 bg-white shadow-md shadow-indigo-100 z-10 scale-[1.01]"
+                          : "border-transparent bg-white shadow-sm hover:border-indigo-200 hover:shadow-md"
+                          }`}
                       >
-                        <div className={`w-6 h-6 rounded-full border-[3px] flex items-center justify-center transition-colors ${isSelected ? "border-indigo-500" : "border-slate-200 bg-slate-50 group-hover:border-indigo-200"}`}>
-                          {isSelected && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
+                        <div className={`w-7 h-7 rounded-full border-[2px] flex items-center justify-center transition-all ${isSelected ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-slate-50 group-hover:border-indigo-300"}`}>
+                          <div className={`w-3 h-3 bg-indigo-500 rounded-full transition-transform duration-200 ${isSelected ? "scale-100" : "scale-0"}`} />
                         </div>
-                        <span className={`font-medium select-none text-base ${isSelected ? "text-indigo-900" : "text-slate-600"}`}>
+                        <span className={`font-medium text-base md:text-lg transition-colors ${isSelected ? "text-indigo-900 font-bold" : "text-slate-600 group-hover:text-slate-900"}`}>
                           {q[key]}
                         </span>
-                        <span className="absolute right-4 text-5xl font-black text-slate-900 opacity-[0.03] pointer-events-none group-hover:opacity-[0.06] transition-opacity">
+
+                        {/* Background Letter Watermark */}
+                        <span className="absolute right-6 text-6xl font-black text-slate-900 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none font-serif">
                           {opt}
                         </span>
                       </button>
@@ -542,84 +797,88 @@ export default function StudentTestAttempt() {
       </div>
 
       {/* BOTTOM NAVIGATION */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-slate-200 z-50">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-slate-200 z-40 supports-[backdrop-filter]:bg-white/60">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <button
             onClick={handlePrev}
             disabled={currentIndex === 0}
-            className={`w-14 h-14 flex items-center justify-center rounded-2xl border transition-all ${currentIndex === 0 ? "border-slate-100 text-slate-300 cursor-not-allowed bg-slate-50" : "border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 shadow-sm"}`}
+            className={`w-14 h-14 flex items-center justify-center rounded-2xl border transition-all ${currentIndex === 0 ? "border-slate-100 text-slate-300 cursor-not-allowed bg-slate-50" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:scale-95 shadow-sm"}`}
             aria-label="Previous Question"
           >
-            <FaChevronLeft size={18} />
+            <FaChevronLeft size={20} />
           </button>
 
           <button
             onClick={() => setShowPalette(!showPalette)}
-            className="flex-1 h-14 bg-slate-100 rounded-2xl flex items-center justify-center gap-2 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-colors shadow-inner"
-            aria-label="Toggle Question Palette"
+            className="flex-1 h-14 bg-slate-100 hover:bg-slate-200 rounded-2xl flex items-center justify-center gap-2.5 text-slate-600 font-bold text-sm transition-all active:scale-[0.98]"
           >
-            <FaTh /> Question {currentIndex + 1}
+            <FaTh className="text-slate-400" />
+            <span className="hidden sm:inline">Question Palette</span>
+            <span className="sm:hidden">Q {currentIndex + 1}</span>
           </button>
 
           <button
             onClick={handleNext}
             disabled={currentIndex === questions.length - 1}
-            className={`w-14 h-14 flex items-center justify-center rounded-2xl border transition-all ${currentIndex === questions.length - 1 ? "border-slate-100 text-slate-300 cursor-not-allowed bg-slate-50" : "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-300 active:scale-95 hover:bg-slate-800"}`}
+            className={`w-14 h-14 flex items-center justify-center rounded-2xl border transition-all ${currentIndex === questions.length - 1 ? "border-slate-100 text-slate-300 cursor-not-allowed bg-slate-50" : "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-300 hover:shadow-xl hover:bg-slate-800 active:scale-95"}`}
             aria-label="Next Question"
           >
-            <FaChevronRight size={18} />
+            <FaChevronRight size={20} />
           </button>
         </div>
       </div>
 
       {/* QUESTION PALETTE DRAWER */}
       {showPalette && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setShowPalette(false)}></div>
-          <div className="relative bg-white w-full max-w-lg rounded-t-[2rem] sm:rounded-[2rem] p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-300 flex flex-col max-h-[80vh]">
-            <div className="flex justify-between items-center mb-6 px-2">
-              <h3 className="text-lg font-bold text-slate-800">Question Palette</h3>
-              <button onClick={() => setShowPalette(false)} className="text-slate-400 hover:text-slate-600 text-sm font-bold bg-slate-100 px-3 py-1.5 rounded-lg transition-colors">Close</button>
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowPalette(false)}
+          ></div>
+          <div className="relative bg-white w-full max-w-2xl rounded-3xl p-6 shadow-2xl animate-slide-up flex flex-col max-h-[80vh] border border-slate-100">
+            <div className="flex justify-between items-center mb-6 px-1">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">Question Palette</h3>
+                <p className="text-xs text-slate-400 font-medium mt-1">Jump to any question instantly</p>
+              </div>
+              <button
+                onClick={() => setShowPalette(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+              >
+                <span className="font-bold text-lg">×</span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-5 sm:grid-cols-6 gap-3 overflow-y-auto p-2 custom-scrollbar">
-              {questions.map((_, idx) => {
-                const status = answers[questions[idx].question_id] !== undefined ? "answered" : "unanswered";
-                const isCurrent = idx === currentIndex;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => jumpToQuestion(idx)}
-                    className={`
-                      h-12 rounded-xl font-bold text-sm transition-all border-2
+            <div className="grid grid-cols-5 sm:grid-cols-8 gap-3 overflow-y-auto p-1 hide-scrollbar">              {questions.map((_, idx) => {
+              const status = answers[questions[idx].question_id] !== undefined ? "answered" : "unanswered";
+              const isCurrent = idx === currentIndex;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => jumpToQuestion(idx)}
+                  className={`
+                      aspect-square rounded-xl font-bold text-sm transition-all border-2 flex items-center justify-center
                       ${isCurrent
-                        ? "border-indigo-600 text-indigo-700 bg-indigo-50 ring-2 ring-indigo-200"
-                        : status === "answered"
-                          ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-200"
-                          : "bg-slate-50 border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-600"}
+                      ? "border-indigo-600 text-indigo-700 bg-indigo-50 ring-2 ring-indigo-200 z-10"
+                      : status === "answered"
+                        ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-200"
+                        : "bg-slate-50 border-slate-100 text-slate-400 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white"}
                     `}
-                  >
-                    {idx + 1}
-                  </button>
-                )
-              })}
+                >
+                  {idx + 1}
+                </button>
+              )
+            })}
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-4 text-xs font-bold text-slate-500 justify-center pt-4 border-t border-slate-100">
+            <div className="mt-6 flex flex-wrap gap-6 text-xs font-bold text-slate-500 justify-center pt-5 border-t border-slate-100">
               <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div> Answered</div>
               <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-50 border-2 border-indigo-600 rounded-full"></div> Current</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-100 border border-slate-200 rounded-full"></div> Skipped</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-50 border-2 border-slate-200 rounded-full"></div> Not Visited</div>
             </div>
           </div>
         </div>
       )}
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 99px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
-      `}</style>
     </FullScreenOverlay>
   );
 }

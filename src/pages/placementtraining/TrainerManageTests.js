@@ -22,6 +22,8 @@ import {
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
 import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { parseUTC, now, formatIST, toMysqlDatetime, toLocalDateTimeInput, parseLocalDateTime } from "../../constants/dateUtils";
+
 
 // --- Components ---
 
@@ -122,6 +124,9 @@ export default function TrainerManageTests() {
         publish_end: "",
     });
 
+
+
+
     // --- Handlers ---
 
     const openEditTest = (test) => {
@@ -163,20 +168,6 @@ export default function TrainerManageTests() {
 
     };
 
-    const toLocalDateTimeInput = (date) => {
-        const pad = (n) => n.toString().padStart(2, "0");
-        return (
-            date.getFullYear() +
-            "-" +
-            pad(date.getMonth() + 1) +
-            "-" +
-            pad(date.getDate()) +
-            "T" +
-            pad(date.getHours()) +
-            ":" +
-            pad(date.getMinutes())
-        );
-    };
 
     const openAttempts = async (test) => {
         setAttemptsModal({
@@ -218,24 +209,6 @@ export default function TrainerManageTests() {
 
     };
 
-    const getTestStatus = (t) => {
-        if (!t.publish_start || !t.publish_end || t.published !== 1) {
-            return "IDLE";
-        }
-
-
-        const now = new Date();
-        const start = new Date(t.publish_start);
-        const end = new Date(t.publish_end);
-
-        if (now < start) return "SCHEDULED";
-        if (now >= start && now <= end) return "LIVE";
-        return "IDLE";
-
-
-
-    };
-
     const toggleAllDepts = () => {
         const allIds = Object.keys(DEPT_MAP).map(Number);
         if (assignForm.dept_ids.length === allIds.length) {
@@ -255,14 +228,14 @@ export default function TrainerManageTests() {
     };
 
     const handleDurationSelect = (hours) => {
-        const now = new Date();
-
+        const nowtime = now();
 
         let start = assignForm.publish_start
-            ? new Date(assignForm.publish_start)
-            : now;
+            ? parseLocalDateTime(assignForm.publish_start)
+            : nowtime;
 
-        if (start < now) start = now;
+
+        if (start < nowtime) start = nowtime;
 
         const end = new Date(start.getTime() + hours * 60 * 60 * 1000);
 
@@ -271,10 +244,8 @@ export default function TrainerManageTests() {
             publish_start: toLocalDateTimeInput(start),
             publish_end: toLocalDateTimeInput(end),
         });
-
-
-
     };
+
 
     const submitTestAssignment = async () => {
         if (!form.duration_minutes) {
@@ -290,8 +261,16 @@ export default function TrainerManageTests() {
             );
         }
 
-        const start = new Date(assignForm.publish_start);
-        const end = new Date(assignForm.publish_end);
+
+
+        const start = parseLocalDateTime(assignForm.publish_start);
+        const end = parseLocalDateTime(assignForm.publish_end);
+
+        if (!start || !end) {
+            return Swal.fire("Error", "Invalid date/time selected", "error");
+        }
+
+
 
         const minEnd = new Date(start);
         minEnd.setMinutes(minEnd.getMinutes() + Number(form.duration_minutes));
@@ -323,10 +302,11 @@ export default function TrainerManageTests() {
         try {
             const payload = {
                 assignments,
-                publish_start: assignForm.publish_start,
-                publish_end: assignForm.publish_end,
                 published: 1,
+                publish_start: toMysqlDatetime(parseLocalDateTime(assignForm.publish_start)),
+                publish_end: toMysqlDatetime(parseLocalDateTime(assignForm.publish_end)),
             };
+
 
             const res = await fetch(
                 `${BASE_URL}/placement-training/tests/${assignTest.testId}/assign`,
@@ -401,7 +381,7 @@ export default function TrainerManageTests() {
                     ? toLocalDateTimeInput(new Date(currentTest.publish_start))
                     : "",
                 publish_end: currentTest?.publish_end
-                    ? toLocalDateTimeInput(new Date(currentTest.publish_end))
+                    ? toLocalDateTimeInput(parseUTC(currentTest.publish_end))
                     : "",
             });
         } catch (err) {
@@ -515,10 +495,7 @@ export default function TrainerManageTests() {
     };
 
     const deleteTest = async (test) => {
-        const status = getTestStatus(test);
-
-
-        if (status === "LIVE") {
+        if (test.status === "LIVE") {
             return Swal.fire("Blocked", "Stop the exam before deleting", "warning");
         }
 
@@ -601,44 +578,81 @@ export default function TrainerManageTests() {
     };
 
 
+
     const updateTestStatus = async (test, action) => {
-
-        if (test.total_marks <= 0) {
-            Swal.fire("Cannot publish", "Total marks must be greater than zero", "warning");
-            return;
-        }
-
-        let payload = {};
-
-
-        if (action === "publish_now") {
-            if (!test.assignments || test.assignments.length === 0) {
-                return Swal.fire(
-                    "Action Blocked",
-                    "You must assign classes before publishing.",
-                    "warning"
-                );
-            }
-
-            const now = new Date();
-            const end = new Date(now.getTime() + test.duration_minutes * 60000);
-
-            payload = {
-                published: 1,
-                publish_start: toLocalDateTimeInput(now),
-                publish_end: toLocalDateTimeInput(end),
-            };
-        }
-
-        if (action === "stop" || action === "cancel") {
-            payload = {
-                published: 0,
-                publish_start: null,
-                publish_end: null,
-            };
-        }
+        if (submitting) return;
+        setSubmitting(true);
 
         try {
+            if (test.total_marks <= 0) {
+                Swal.fire(
+                    "Cannot publish",
+                    "Total marks must be greater than zero",
+                    "warning"
+                );
+                return;
+            }
+
+            let payload = {};
+
+            if (action === "publish_now") {
+                const resAssign = await fetch(
+                    `${BASE_URL}/placement-training/tests/${test.test_id}/assignments`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
+                    }
+                );
+
+                if (!resAssign.ok) {
+                    Swal.fire("Error", "Failed to verify assignments", "error");
+                    return;
+                }
+
+                const assignData = await resAssign.json();
+
+                if (!assignData.assignments || assignData.assignments.length === 0) {
+                    Swal.fire(
+                        "Action Blocked",
+                        "You must assign classes before publishing.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                const nowTime = now();
+                const duration = Number(test.duration_minutes);
+
+                if (!Number.isFinite(duration) || duration <= 0) {
+                    Swal.fire(
+                        "Invalid Test",
+                        "Test duration is invalid. Please edit test details.",
+                        "error"
+                    );
+                    return;
+                }
+
+                const end = new Date(nowTime.getTime() + duration * 60000);
+
+                console.log(nowTime, end);
+
+
+                payload = {
+                    published: 1,
+                    publish_start: toMysqlDatetime(nowTime),
+                    publish_end: toMysqlDatetime(end),
+                };
+            }
+
+            if (action === "stop" || action === "cancel") {
+                payload = {
+                    published: 0,
+                    publish_start: null,
+                    publish_end: null,
+                };
+            }
+
             const res = await fetch(
                 `${BASE_URL}/placement-training/tests/${test.test_id}`,
                 {
@@ -657,17 +671,18 @@ export default function TrainerManageTests() {
             let successMsg = "";
             if (action === "publish_now") successMsg = "Test is now LIVE";
             if (action === "stop") successMsg = "Test returned to IDLE state";
-            if (action === "cancel") successMsg = "Schedule cancelled. Test is now IDLE.";
+            if (action === "cancel")
+                successMsg = "Schedule cancelled. Test is now IDLE.";
 
             Swal.fire("Success", successMsg, "success");
             fetchTests();
         } catch (err) {
             Swal.fire("Error", err.message || "Server error", "error");
+        } finally {
+            setSubmitting(false);
         }
-
-
-
     };
+
 
     const confirmCancelSchedule = (test) => {
         Swal.fire({
@@ -727,11 +742,13 @@ export default function TrainerManageTests() {
                     <div className="grid gap-6">
                         {tests.map((t) => {
                             const isAssigned = t.assignments && t.assignments.length > 0;
-                            const status = getTestStatus(t);
+                            const status = t.status;
                             const lockQuestions = status === "LIVE" || status === "SCHEDULED";
 
                             return (
+
                                 <div
+
                                     key={t.test_id}
                                     className={`group bg-white rounded-2xl p-6 shadow-sm border transition-all duration-300 relative overflow-hidden
                 ${status === "LIVE" ? "border-red-200 shadow-red-50 ring-1 ring-red-100" :
@@ -742,6 +759,7 @@ export default function TrainerManageTests() {
 
                                         {/* Left: Info */}
                                         <div className="flex-grow space-y-5">
+
                                             <div className="flex flex-wrap items-center gap-4">
                                                 <h2 className="text-xl font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
                                                     {t.title}
@@ -789,12 +807,12 @@ export default function TrainerManageTests() {
                                                         <FaCalendarAlt className={status === "LIVE" ? "text-red-500 mt-1" : "text-amber-500 mt-1"} />
                                                         {status === "SCHEDULED" && (
                                                             <span>
-                                                                Scheduled: <strong>{new Date(t.publish_start).toLocaleString()}</strong> to <strong>{new Date(t.publish_end).toLocaleString()}</strong>
+                                                                Scheduled: <strong>{formatIST(new Date(t.publish_start))}</strong> to <strong>{formatIST(new Date(t.publish_end))}</strong>
                                                             </span>
                                                         )}
                                                         {status === "LIVE" && (
                                                             <span className="text-red-700 font-semibold">
-                                                                Exam Ends at {new Date(t.publish_end).toLocaleString()}
+                                                                Exam Ends at {formatIST(new Date(t.publish_end))} IST
                                                             </span>
                                                         )}
                                                     </div>
@@ -1112,7 +1130,7 @@ export default function TrainerManageTests() {
                                                 <input
                                                     type="datetime-local"
                                                     className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
-                                                    min={toLocalDateTimeInput(new Date())}
+                                                    min={toLocalDateTimeInput(now())}
                                                     value={assignForm.publish_start || ""}
                                                     onChange={(e) => setAssignForm({ ...assignForm, publish_start: e.target.value })}
                                                 />
@@ -1122,7 +1140,7 @@ export default function TrainerManageTests() {
                                                 <input
                                                     type="datetime-local"
                                                     className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
-                                                    min={toLocalDateTimeInput(new Date())}
+                                                    min={toLocalDateTimeInput(now())}
                                                     value={assignForm.publish_end || ""}
                                                     onChange={(e) => setAssignForm({ ...assignForm, publish_end: e.target.value })}
                                                 />
