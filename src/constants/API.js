@@ -2,8 +2,8 @@ let resolvedBaseUrl = null;
 let resolvingPromise = null;
 
 const BASE_URLS = [
-  // "http://localhost:5000/api",
   "https://erp-mnmjec-backend.onrender.com/api",
+  // "http://localhost:5000/api",
 ];
 
 const detectBaseUrl = async () => {
@@ -24,20 +24,24 @@ const detectBaseUrl = async () => {
       }
     } catch {}
   }
-
   return null;
 };
 
-export const getBaseUrl = async () => {
-  if (resolvedBaseUrl) return resolvedBaseUrl;
-  if (!resolvingPromise) resolvingPromise = detectBaseUrl();
-  resolvedBaseUrl = await resolvingPromise;
-  return resolvedBaseUrl;
-};
+// 🔑 SINGLE source of truth
+export let BASE_URL = "";
 
-export let BASE_URL = null;
-
+// 🔑 MUST be awaited once before app renders
 export const initBaseUrl = async () => {
-  BASE_URL = await getBaseUrl();
+  if (BASE_URL) return BASE_URL;
+
+  if (!resolvingPromise) {
+    resolvingPromise = detectBaseUrl();
+  }
+
+  resolvedBaseUrl = await resolvingPromise;
+
+  // IMPORTANT: never leave BASE_URL as null
+  BASE_URL = resolvedBaseUrl || "";
+
   return BASE_URL;
 };
