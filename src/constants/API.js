@@ -20,26 +20,24 @@ const detectBaseUrl = async () => {
 
       if (res.ok) {
         const data = await res.json();
-        if (data?.ok) {
-          console.log("✅ Backend connected:", url);
-          return url;
-        }
+        if (data?.ok) return url;
       }
-    } catch {
-      // try next
-    }
+    } catch {}
   }
 
-  throw new Error("No backend reachable");
+  return null;
 };
 
-export const BASE_URL = await (async () => {
+export const getBaseUrl = async () => {
   if (resolvedBaseUrl) return resolvedBaseUrl;
-
-  if (!resolvingPromise) {
-    resolvingPromise = detectBaseUrl();
-  }
-
+  if (!resolvingPromise) resolvingPromise = detectBaseUrl();
   resolvedBaseUrl = await resolvingPromise;
   return resolvedBaseUrl;
-})();
+};
+
+export let BASE_URL = null;
+
+export const initBaseUrl = async () => {
+  BASE_URL = await getBaseUrl();
+  return BASE_URL;
+};
