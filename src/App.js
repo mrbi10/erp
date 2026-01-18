@@ -8,7 +8,7 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import ForgotPassword from './components/forgotpassword';
 import ResetPassword from './components/resetpassword';
-import NetworkAlert from './components/NetworkAlert';
+// import NetworkAlert from './components/NetworkAlert';
 import ServerGate from "./components/ServerGate";
 //import AssistantButton from './components/AssistantButton';
 
@@ -128,7 +128,7 @@ export default function App() {
 
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950 relative">
 
-        <NetworkAlert />
+        {/* <NetworkAlert /> */}
 
 
 
