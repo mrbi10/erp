@@ -2,8 +2,8 @@ let resolvedBaseUrl = null;
 let resolvingPromise = null;
 
 const BASE_URLS = [
-  "http://localhost:5000/api",
-  // "https://erp-mnmjec-backend.onrender.com/api",
+  // "http://localhost:5000/api",
+  "https://erp-mnmjec-backend.onrender.com/api",
 ];
 
 const detectBaseUrl = async () => {
