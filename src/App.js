@@ -61,6 +61,7 @@ import TrainerCourses from './pages/placementtraining/TrainerCourses';
 import TrainerManageTests from './pages/placementtraining/TrainerManageTests';
 import PlacementAnalytics from './pages/placementtraining/PlacementAnalytics';
 import TrainerAddQuestions from './pages/placementtraining/TrainerAddQuestions';
+import StudentResults from './pages/placementtraining/StudentResults';
 
 
 
@@ -238,6 +239,11 @@ export default function App() {
                   />
 
                   <Route
+                    path="result"
+                    element={user.role === 'student' ? <StudentResults user={user} /> : <PageNotFound />}
+                  />
+
+                  <Route
                     path="tests"
                     element={user.role === 'student' ? <StudentTests user={user} /> : <PageNotFound />}
                   />
@@ -251,7 +257,7 @@ export default function App() {
                   <Route
                     path="results"
                     element={
-                      ['student', 'trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
+                      ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <PlacementResults user={user} />
                         : <PageNotFound />
                     }

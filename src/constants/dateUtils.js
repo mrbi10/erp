@@ -114,3 +114,22 @@ export function addHours(date, hours) {
   if (!(date instanceof Date)) return null;
   return new Date(date.getTime() + hours * 60 * 60000);
 }
+
+
+export function formatSubmittedAt(value) {
+  if (!value) return "-";
+
+  // "2026-01-21T12:39:58.000Z"
+  const [datePart, timePart] = value.split("T");
+  if (!datePart || !timePart) return "-";
+
+  const [hh, mm] = timePart.split(":");
+
+  const [yyyy, mmDate, dd] = datePart.split("-");
+
+  const date = `${dd} ${new Date(`${yyyy}-${mmDate}-01`).toLocaleString("en-IN", {
+    month: "short",
+  })} ${yyyy}`;
+
+  return `${date}, ${hh}:${mm}`;
+}

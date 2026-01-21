@@ -48,7 +48,7 @@ export default function PlacementTraining({ user }) {
             // },
             {
                 label: 'My Results',
-                page: 'results',
+                page: 'result',
                 icon: <FaChartBar className="text-indigo-500" />,
                 description: 'View your test scores and performance.'
             }

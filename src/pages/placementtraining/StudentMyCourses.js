@@ -28,11 +28,11 @@ import { BASE_URL } from "../../constants/API";
  * ------------------------------------------------------------------
  */
 const StatCard = ({ icon: Icon, label, value, color }) => (
-  <article 
+  <article
     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5 transition-all hover:shadow-md"
     role="status"
   >
-    <div 
+    <div
       className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-sm ${color}`}
       aria-hidden="true"
     >
@@ -55,30 +55,31 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
  * Displays individual test details with progress visualization.
  * ------------------------------------------------------------------
  */
-const TestItemCard = ({ test, attemptsTaken, onStart }) => {
+const TestItemCard = ({ test, attemptsTaken, onStart, isMobile }) => {
   const maxAttempts = test.max_attempts || 1;
   const isLimitReached = attemptsTaken >= maxAttempts;
   const percentage = Math.min((attemptsTaken / maxAttempts) * 100, 100);
+  const isBlockedByDevice = isMobile;
+  const isDisabled = isLimitReached || isBlockedByDevice;
+
 
   // Helper for accessibility labels
   const statusLabel = isLimitReached ? "Completed" : "Available";
   const actionLabel = isLimitReached ? "Test Locked" : `Start ${test.title}`;
 
   return (
-    <div 
-      className={`group relative bg-white p-5 rounded-2xl border transition-all duration-300 ${
-        isLimitReached
-          ? "border-slate-100 bg-slate-50/80 opacity-90"
-          : "border-slate-200 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/5"
-      }`}
+    <div
+      className={`group relative bg-white p-5 rounded-2xl border transition-all duration-300 ${isLimitReached
+        ? "border-slate-100 bg-slate-50/80 opacity-90"
+        : "border-slate-200 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/5"
+        }`}
       role="article"
       aria-label={`${test.title} - ${statusLabel}`}
     >
       {/* Status Strip */}
-      <div 
-        className={`absolute left-0 top-5 bottom-5 w-1 rounded-r-full transition-colors ${
-          isLimitReached ? "bg-slate-300" : "bg-indigo-500"
-        }`} 
+      <div
+        className={`absolute left-0 top-5 bottom-5 w-1 rounded-r-full transition-colors ${isLimitReached ? "bg-slate-300" : "bg-indigo-500"
+          }`}
         aria-hidden="true"
       />
 
@@ -86,9 +87,8 @@ const TestItemCard = ({ test, attemptsTaken, onStart }) => {
         {/* Content Section */}
         <div className="flex-1 space-y-3 w-full">
           <div className="flex items-center gap-3 flex-wrap">
-            <h4 className={`text-lg font-bold leading-tight ${
-              isLimitReached ? 'text-slate-500' : 'text-slate-900'
-            }`}>
+            <h4 className={`text-lg font-bold leading-tight ${isLimitReached ? 'text-slate-500' : 'text-slate-900'
+              }`}>
               {test.title}
             </h4>
             {isLimitReached && (
@@ -100,7 +100,7 @@ const TestItemCard = ({ test, attemptsTaken, onStart }) => {
 
           {/* Metadata Chips */}
           <div className="flex flex-wrap items-center gap-3">
-            <div 
+            <div
               className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/50"
               title="Duration"
             >
@@ -108,14 +108,13 @@ const TestItemCard = ({ test, attemptsTaken, onStart }) => {
               <span>{test.duration_minutes} Mins</span>
             </div>
 
-            <div 
-              className={`flex items-center gap-2 text-xs font-semibold bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/50 ${
-                isLimitReached ? "text-slate-500" : "text-slate-700"
-              }`}
+            <div
+              className={`flex items-center gap-2 text-xs font-semibold bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/50 ${isLimitReached ? "text-slate-500" : "text-slate-700"
+                }`}
               title="Attempts Used"
             >
-              <FaHistory 
-                className={isLimitReached ? "text-slate-400" : "text-emerald-500"} 
+              <FaHistory
+                className={isLimitReached ? "text-slate-400" : "text-emerald-500"}
                 aria-hidden="true"
               />
               <span>{attemptsTaken} / {maxAttempts} Attempts</span>
@@ -127,23 +126,33 @@ const TestItemCard = ({ test, attemptsTaken, onStart }) => {
         <div className="w-full md:w-auto flex-shrink-0">
           <button
             onClick={() => onStart(test.test_id)}
-            disabled={isLimitReached}
+            disabled={isDisabled}
             aria-label={actionLabel}
-            className={`w-full md:w-auto px-6 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-              isLimitReached
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 active:scale-[0.98]"
-            }`}
+            className={`w-full md:w-auto px-6 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLimitReached
+              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+              : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 active:scale-[0.98]"
+              }`}
           >
-            {isLimitReached ? <FaLock aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
-            <span>{isLimitReached ? "Locked" : "Start Now"}</span>
+            {isLimitReached ? (
+              <>
+                <FaLock /> Locked
+              </>
+            ) : isBlockedByDevice ? (
+              <>
+                <FaLock /> Desktop Only
+              </>
+            ) : (
+              <>
+                <FaPlay /> Start Now
+              </>
+            )}
           </button>
         </div>
       </div>
 
       {/* Progress Bar */}
       {!isLimitReached && (
-        <div 
+        <div
           className="mt-5 w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"
           role="progressbar"
           aria-valuenow={attemptsTaken}
@@ -166,7 +175,7 @@ const TestItemCard = ({ test, attemptsTaken, onStart }) => {
  * ------------------------------------------------------------------
  */
 const CourseSkeleton = () => (
-  <div 
+  <div
     className="bg-white p-6 rounded-[1.5rem] border border-slate-200 shadow-sm flex flex-col h-72 animate-pulse"
     aria-hidden="true"
   >
@@ -191,6 +200,14 @@ const CourseSkeleton = () => (
 export default function StudentMyCourses() {
   const navigate = useNavigate();
 
+  const isMobileDevice = () => {
+    if (typeof navigator === "undefined") return false;
+
+    return /android|iphone|ipad|ipod|opera mini|iemobile|mobile/i.test(
+      navigator.userAgent
+    );
+  };
+
   // --- Global State ---
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
@@ -202,6 +219,8 @@ export default function StudentMyCourses() {
   const [activeTests, setActiveTests] = useState([]);
   const [loadingTests, setLoadingTests] = useState(false);
   const [attemptsMap, setAttemptsMap] = useState({});
+  const isMobile = useMemo(() => isMobileDevice(), []);
+
 
   // ----------------------------------------------------------------
   // API: Fetch All Courses & Preload Stats
@@ -274,6 +293,8 @@ export default function StudentMyCourses() {
     preloadActiveTests();
   }, [courses]);
 
+
+
   // ----------------------------------------------------------------
   // Helper: Live Check
   // ----------------------------------------------------------------
@@ -284,6 +305,7 @@ export default function StudentMyCourses() {
     const end = new Date(test.publish_end);
     return now >= start && now <= end;
   };
+
 
   // ----------------------------------------------------------------
   // Memoized Calculation: Active Tests (with original logs preserved)
@@ -337,7 +359,7 @@ export default function StudentMyCourses() {
   const loadTestsForCourse = async (course) => {
     setSelectedCourse(course);
     setLoadingTests(true);
-    setActiveTests([]); 
+    setActiveTests([]);
 
     try {
       const res = await fetch(`${BASE_URL}/placement-training/student/courses/${course.course_id}/tests`, {
@@ -386,9 +408,24 @@ export default function StudentMyCourses() {
     setSelectedCourse(null);
   };
 
+  const handleStartTest = (testId) => {
+    if (isMobile) {
+      Swal.fire({
+        icon: "warning",
+        title: "Mobile Not Supported",
+        text: "Please use a laptop or desktop to start the exam.",
+        confirmButtonColor: "#4f46e5",
+      });
+      return;
+    }
+
+    navigate(`/placementtraining/tests/${testId}`);
+  };
+
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20 relative overflow-x-hidden">
-      
+
       {/* 1. Dashboard Metrics */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 mb-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -418,9 +455,9 @@ export default function StudentMyCourses() {
               {filteredCourses.length}
             </span>
           </div>
-          
-          <button 
-            onClick={fetchCourses} 
+
+          <button
+            onClick={fetchCourses}
             className="p-2.5 rounded-full text-slate-500 hover:text-indigo-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 transition-all"
             aria-label="Refresh Courses"
             title="Refresh Courses"
@@ -489,7 +526,7 @@ export default function StudentMyCourses() {
 
       {/* 4. Drawer / Modal Overlay */}
       {selectedCourse && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex justify-end"
           role="dialog"
           aria-modal="true"
@@ -504,7 +541,7 @@ export default function StudentMyCourses() {
 
           {/* Drawer Panel */}
           <div className="relative w-full md:w-[600px] h-full bg-slate-50 shadow-2xl flex flex-col transform transition-transform duration-300 animate-slide-in-right">
-            
+
             {/* Drawer Header */}
             <div className="bg-white px-6 py-5 border-b border-slate-200 flex justify-between items-center shadow-sm z-10 sticky top-0">
               <div className="flex items-center gap-4">
@@ -574,7 +611,8 @@ export default function StudentMyCourses() {
                           key={test.test_id}
                           test={test}
                           attemptsTaken={attemptsMap[test.test_id] || 0}
-                          onStart={(id) => navigate(`/placementtraining/tests/${id}`)}
+                          onStart={handleStartTest}
+                          isMobile={isMobile}
                         />
                       ))}
                     </div>

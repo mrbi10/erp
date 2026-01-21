@@ -15,3 +15,13 @@ export const CLASS_MAP = {
   3: "III Year",
   4: "IV Year",
 };
+
+
+// used for placement training results year options
+export const yearoptions = [
+  { value: 1, label: "I Year" },
+  { value: 2, label: "II Year" },
+  { value: 3, label: "III Year" },
+  { value: 4, label: "IV Year" },
+];
+

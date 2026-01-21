@@ -660,11 +660,11 @@ export default function StudentTestAttempt() {
         title: "Assessment Complete!",
         html: `
             <div class="flex flex-col items-center gap-3 mt-4">
-                <div class="w-20 h-20 rounded-full flex items-center justify-center ${data.pass_status === 'pass' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
+              <!--  <div class="w-20 h-20 rounded-full flex items-center justify-center ${data.pass_status === 'pass' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
                     ${data.pass_status === 'pass' ? '<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : '<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'}
-                </div>
+                </div> -->
                 <div class="text-center">
-                    <div class="text-5xl font-black text-slate-800 tracking-tighter">${data.percentage}%</div>
+                    <div class="text-5xl font-black text-slate-800 tracking-tighter">${data.percentage || 0}%</div>
                     <div class="text-slate-500 font-medium">Final Score</div>
                 </div>
                 <div class="px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mt-2 ${data.pass_status === 'pass' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200'}">
@@ -678,7 +678,7 @@ export default function StudentTestAttempt() {
         allowOutsideClick: false,
         padding: "2em"
       }).then(() => {
-        navigate("/placementtraining/results");
+        navigate("/placementtraining/result");
       });
 
     } catch (err) {
