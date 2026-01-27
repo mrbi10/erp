@@ -221,7 +221,7 @@ export default function EnhancedDashboard({ user }) {
 
     const fetchMessMenu = async () => {
       try {
-        const res = await api.get("/messmenu");
+        const res = await api.get("/mess");
         console.log("🍽️ Mess Menu:", res.data);
         setMessMenu(res.data);
       } catch (err) {

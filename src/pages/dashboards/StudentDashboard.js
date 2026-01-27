@@ -429,71 +429,74 @@ export const AnnouncementsCard = ({
     onRefresh,
     refreshing = false,
 }) => (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_10px_30px_rgba(0,0,0,0.06)] overflow-hidden">
+    <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
 
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
                     <FaBell className="text-red-500 text-lg" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                    Latest Announcements
-                </h3>
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                        Announcements
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                        College & department updates
+                    </p>
+                </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
                 <button
                     onClick={onRefresh}
                     disabled={refreshing}
-                    title="Refresh announcements"
+                    title="Refresh"
                     className="p-2 rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
                 >
                     <FaSyncAlt
-                        className={`text-gray-500 ${refreshing ? "animate-spin" : ""
-                            }`}
+                        className={`text-gray-500 ${refreshing ? "animate-spin" : ""}`}
                     />
                 </button>
 
                 <Link
                     to="/announcement"
-                    className="text-sm font-semibold text-red-500 hover:text-red-600 flex items-center gap-1"
+                    className="px-4 py-2 text-sm font-semibold rounded-xl bg-red-500 text-white hover:bg-red-600 transition shadow-sm"
                 >
                     View all
-                    <FaArrowRight className="text-xs" />
                 </Link>
             </div>
         </div>
 
-        <div className="px-5 py-4">
+        {/* Body */}
+        <div className="px-6 py-5">
             {(announcements || []).length > 0 ? (
-                <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
-                    {announcements.slice(0, 5).map((a, i) => (
+                <ul className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+                    {announcements.slice(0, 6).map((a, i) => (
                         <motion.li
                             key={a.id || i}
                             whileHover={{ y: -2 }}
                             transition={{ duration: 0.2 }}
-                            className="p-4 rounded-2xl bg-gradient-to-br from-red-50 to-white border border-red-100 hover:border-red-200 shadow-sm"
+                            className="p-5 rounded-2xl bg-gradient-to-br from-red-50 to-white border border-red-100 hover:border-red-200 shadow-sm"
                         >
                             <p className="font-semibold text-gray-900 text-sm">
                                 {a.title}
                             </p>
-                            <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                            <p className="text-sm text-gray-600 mt-2 leading-relaxed line-clamp-3">
                                 {a.message}
                             </p>
-                            <p className="text-xs text-gray-400 mt-2">
+                            <p className="text-xs text-gray-400 mt-3">
                                 {formatdatetime(a.created_at)}
                             </p>
                         </motion.li>
                     ))}
                 </ul>
             ) : (
-                <div className="text-center text-sm text-gray-500 bg-gray-50 rounded-xl py-6">
-                    No new announcements
+                <div className="text-center text-sm text-gray-500 bg-gray-50 rounded-xl py-10">
+                    No announcements right now
                 </div>
             )}
         </div>
-
-
     </div>
 );
 
@@ -664,22 +667,14 @@ export default function StudentDashboard({
                     </div> */}
                 </div>
 
-                <div className="grid grid-cols-3 md:grid-cols-3 gap-8">
-                    <div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-3">
                         <AnnouncementsCard
                             announcements={announcements}
                             onRefresh={refreshAnnouncements}
                             refreshing={refreshing}
                         />
                     </div>
-
-                    {/* <div>
-                        <AssignmentsCard assignments={assignments} />
-                    </div> */}
-
-                    {/* <div>
-                        <FeesCard fees={fees} />
-                    </div> */}
                 </div>
             </div>
         </div>
