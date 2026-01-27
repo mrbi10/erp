@@ -348,7 +348,7 @@ export default function StudentTestAttempt() {
 
     logViolation(type, source);
 
-    if (type === "EXIT_FULLSCREEN" || warningRef.current >= MAX_WARNINGS) {
+    if (warningRef.current >= MAX_WARNINGS) {
       Swal.fire({
         title: "Exam Terminated",
         text: `Violation limit exceeded (${type})`,
@@ -459,7 +459,7 @@ export default function StudentTestAttempt() {
 
     examEndedRef.current = true;
 
-    await logViolation("UNKNOWN", "auto_submit");
+    // await logViolation("UNKNOWN", "auto_submit");
 
     handleSubmit(true);
   };

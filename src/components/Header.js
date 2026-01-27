@@ -63,7 +63,7 @@ export default function PremiumHeader({
           alignItems: "center",
           justifyContent: "space-between",
           background: "#1c3faa",
-          zIndex: 100,
+          zIndex: 50,
           boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
           color: "#fff",
         }}

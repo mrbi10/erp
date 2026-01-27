@@ -177,7 +177,7 @@ export default function MessDashboard() {
       return;
     }
 
-    if (new Date(range.from) >= new Date(range.to)) {
+    if (new Date(range.from) > new Date(range.to)) {
       Swal.fire("Invalid Range", "Start date must be before the end date.", "warning");
       return;
     }
@@ -274,9 +274,14 @@ export default function MessDashboard() {
     if (!analysisRange.from || !analysisRange.to) return [];
 
     return paymentHistory.filter(p => {
+      const start = new Date(analysisRange.from);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(analysisRange.to);
+      end.setHours(23, 59, 59, 999);
+
       const d = new Date(p.paid_on);
-      return d >= new Date(analysisRange.from) &&
-        d <= new Date(analysisRange.to);
+      return d >= start && d <= end;
     });
   }, [analysisRange, paymentHistory]);
 
@@ -576,120 +581,120 @@ export default function MessDashboard() {
 
       </div>
 
-        {/* --- DETAILED ANALYSIS --- */}
-        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 mt-10">
-          <h2 className="text-2xl font-bold mb-6 text-gray-700 flex items-center">
-            <FaHistory className="mr-3 text-purple-600" />
-            Detailed Mess Analysis
-          </h2>
+      {/* --- DETAILED ANALYSIS --- */}
+      <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 mt-10">
+        <h2 className="text-2xl font-bold mb-6 text-gray-700 flex items-center">
+          <FaHistory className="mr-3 text-purple-600" />
+          Detailed Mess Analysis
+        </h2>
 
-          {/* Date Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <StyledFlatpickr
-              placeholder="From Date"
-              value={analysisRange.from}
-              options={{ maxDate: todayDate }}
-              onChange={(d) =>
-                setAnalysisRange({ ...analysisRange, from: formatLocalDate(d[0]) })
-              }
-            />
+        {/* Date Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <StyledFlatpickr
+            placeholder="From Date"
+            value={analysisRange.from}
+            options={{ maxDate: todayDate }}
+            onChange={(d) =>
+              setAnalysisRange({ ...analysisRange, from: formatLocalDate(d[0]) })
+            }
+          />
 
-            <StyledFlatpickr
-              placeholder="To Date"
-              value={analysisRange.to}
-              options={{ maxDate: todayDate }}
-              onChange={(d) =>
-                setAnalysisRange({ ...analysisRange, to: formatLocalDate(d[0]) })
-              }
-            />
+          <StyledFlatpickr
+            placeholder="To Date"
+            value={analysisRange.to}
+            options={{ maxDate: todayDate }}
+            onChange={(d) =>
+              setAnalysisRange({ ...analysisRange, to: formatLocalDate(d[0]) })
+            }
+          />
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          <div className="p-4 bg-green-50 rounded-xl border">
+            <p className="text-sm text-green-700 font-semibold">Total Jain</p>
+            <p className="text-3xl font-extrabold text-green-800">{analysisData.totalJain}</p>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            <div className="p-4 bg-green-50 rounded-xl border">
-              <p className="text-sm text-green-700 font-semibold">Total Jain</p>
-              <p className="text-3xl font-extrabold text-green-800">{analysisData.totalJain}</p>
-            </div>
+          <div className="p-4 bg-blue-50 rounded-xl border">
+            <p className="text-sm text-blue-700 font-semibold">Total Non-Jain</p>
+            <p className="text-3xl font-extrabold text-blue-800">{analysisData.totalNonJain}</p>
+          </div>
 
-            <div className="p-4 bg-blue-50 rounded-xl border">
-              <p className="text-sm text-blue-700 font-semibold">Total Non-Jain</p>
-              <p className="text-3xl font-extrabold text-blue-800">{analysisData.totalNonJain}</p>
-            </div>
+          <div className="p-4 bg-indigo-50 rounded-xl border">
+            <p className="text-sm text-indigo-700 font-semibold">Total Plates</p>
+            <p className="text-3xl font-extrabold text-indigo-800">{analysisData.totalPlates}</p>
+          </div>
 
-            <div className="p-4 bg-indigo-50 rounded-xl border">
-              <p className="text-sm text-indigo-700 font-semibold">Total Plates</p>
-              <p className="text-3xl font-extrabold text-indigo-800">{analysisData.totalPlates}</p>
-            </div>
+          <div className="p-4 bg-purple-50 rounded-xl border">
+            <p className="text-sm text-purple-700 font-semibold">Total Paid</p>
+            <p className="text-3xl font-extrabold text-purple-800">
+              {formatCurrency(analysisData.totalPaid)}
+            </p>
+          </div>
+        </div>
 
-            <div className="p-4 bg-purple-50 rounded-xl border">
-              <p className="text-sm text-purple-700 font-semibold">Total Paid</p>
-              <p className="text-3xl font-extrabold text-purple-800">
-                {formatCurrency(analysisData.totalPaid)}
-              </p>
+        {/* Detailed Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Daily Count Details */}
+          <div>
+            <h3 className="font-bold text-gray-700 mb-3">Daily Plate Breakdown</h3>
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-gray-50 border-b">
+                  <tr>
+                    <th className="p-2">Date</th>
+                    <th className="p-2">Jain</th>
+                    <th className="p-2">Non-Jain</th>
+                    <th className="p-2">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.map((h, i) => (
+                    <tr key={i} className="border-b">
+                      <td className="p-2">{formatDate(h.date)}</td>
+                      <td className="p-2">{h.jain_count}</td>
+                      <td className="p-2">{h.non_jain_count}</td>
+                      <td className="p-2 font-semibold">
+                        {h.jain_count + h.non_jain_count}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Detailed Tables */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Daily Count Details */}
-            <div>
-              <h3 className="font-bold text-gray-700 mb-3">Daily Plate Breakdown</h3>
-              <div className="max-h-72 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-gray-50 border-b">
-                    <tr>
-                      <th className="p-2">Date</th>
-                      <th className="p-2">Jain</th>
-                      <th className="p-2">Non-Jain</th>
-                      <th className="p-2">Total</th>
+          {/* Payment Details */}
+          <div>
+            <h3 className="font-bold text-gray-700 mb-3">Payment Details</h3>
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-gray-50 border-b">
+                  <tr>
+                    <th className="p-2">Period</th>
+                    <th className="p-2">Plates</th>
+                    <th className="p-2">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPayments.map((p, i) => (
+                    <tr key={i} className="border-b">
+                      <td className="p-2">
+                        {formatDate(p.from_date)} – {formatDate(p.to_date)}
+                      </td>
+                      <td className="p-2">{p.total_plates}</td>
+                      <td className="p-2 font-semibold text-green-700">
+                        {formatCurrency(p.total_amount)}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredHistory.map((h, i) => (
-                      <tr key={i} className="border-b">
-                        <td className="p-2">{formatDate(h.date)}</td>
-                        <td className="p-2">{h.jain_count}</td>
-                        <td className="p-2">{h.non_jain_count}</td>
-                        <td className="p-2 font-semibold">
-                          {h.jain_count + h.non_jain_count}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Payment Details */}
-            <div>
-              <h3 className="font-bold text-gray-700 mb-3">Payment Details</h3>
-              <div className="max-h-72 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-gray-50 border-b">
-                    <tr>
-                      <th className="p-2">Period</th>
-                      <th className="p-2">Plates</th>
-                      <th className="p-2">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPayments.map((p, i) => (
-                      <tr key={i} className="border-b">
-                        <td className="p-2">
-                          {formatDate(p.from_date)} – {formatDate(p.to_date)}
-                        </td>
-                        <td className="p-2">{p.total_plates}</td>
-                        <td className="p-2 font-semibold text-green-700">
-                          {formatCurrency(p.total_amount)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
+      </div>
     </div>
   );
 }

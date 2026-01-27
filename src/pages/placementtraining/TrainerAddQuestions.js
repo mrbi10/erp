@@ -75,11 +75,10 @@ const QuestionCard = React.memo(({
     <div
       ref={provided.innerRef}
       {...provided.draggableProps}
-      className={`group bg-white border rounded-xl transition-all duration-200 ${
-        snapshot.isDragging 
-          ? "shadow-2xl ring-2 ring-indigo-500 rotate-1 z-50 border-transparent" 
-          : "shadow-sm border-slate-200 hover:border-slate-300"
-      }`}
+      className={`group bg-white border rounded-xl transition-all duration-200 ${snapshot.isDragging
+        ? "shadow-2xl ring-2 ring-indigo-500 rotate-1 z-50 border-transparent"
+        : "shadow-sm border-slate-200 hover:border-slate-300"
+        }`}
     >
       <div className="p-5">
         {/* Card Header: Drag Handle, Title, Status, Actions */}
@@ -92,7 +91,7 @@ const QuestionCard = React.memo(({
             >
               <FaGripVertical />
             </div>
-            
+
             <div className="flex flex-col">
               <span className="font-bold text-slate-700 text-sm">Question {index + 1}</span>
               {q.isNew ? (
@@ -110,11 +109,10 @@ const QuestionCard = React.memo(({
           <button
             disabled={isPublished}
             onClick={() => markDelete(q.question_id || q.__tempId)}
-            className={`p-2 rounded-lg transition-colors ${
-              isPublished
-                ? "text-slate-300 cursor-not-allowed"
-                : "text-slate-400 hover:text-red-600 hover:bg-red-50"
-            }`}
+            className={`p-2 rounded-lg transition-colors ${isPublished
+              ? "text-slate-300 cursor-not-allowed"
+              : "text-slate-400 hover:text-red-600 hover:bg-red-50"
+              }`}
             title="Delete Question"
           >
             <FaTrash size={14} />
@@ -151,52 +149,52 @@ const QuestionCard = React.memo(({
 
           {/* Footer Controls: Note, Correct Option, Marks */}
           <div className="pt-4 border-t border-slate-100 flex flex-col md:flex-row gap-4 items-start md:items-center">
-             <div className="flex-1 w-full">
+            <div className="flex-1 w-full">
+              <input
+                disabled={isPublished}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="Add a note or explanation (Optional)"
+                value={q.note || ""}
+                onChange={(e) => update(q, "note", e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-3 w-full md:w-auto">
+              <div className="w-32">
+                <Select
+                  isDisabled={isPublished}
+                  value={CORRECT_OPTIONS.find((o) => o.value === q.correct_option)}
+                  onChange={(opt) => update(q, "correct_option", opt.value)}
+                  options={CORRECT_OPTIONS}
+                  styles={SELECT_STYLES}
+                  isSearchable={false}
+                  placeholder="Correct Answer"
+                />
+              </div>
+
+              <div className="relative w-20">
+                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-medium pointer-events-none">Marks</span>
                 <input
                   disabled={isPublished}
+                  type="number"
+                  min={1}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="Add a note or explanation (Optional)"
-                  value={q.note || ""}
-                  onChange={(e) => update(q, "note", e.target.value)}
+                  value={q.marks}
+                  onChange={(e) => update(q, "marks", e.target.value)}
                 />
-             </div>
-
-             <div className="flex gap-3 w-full md:w-auto">
-               <div className="w-32">
-                 <Select
-                   isDisabled={isPublished}
-                   value={CORRECT_OPTIONS.find((o) => o.value === q.correct_option)}
-                   onChange={(opt) => update(q, "correct_option", opt.value)}
-                   options={CORRECT_OPTIONS}
-                   styles={SELECT_STYLES}
-                   isSearchable={false}
-                   placeholder="Correct Answer"
-                 />
-               </div>
-
-               <div className="relative w-20">
-                  <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-medium pointer-events-none">Marks</span>
-                  <input
-                    disabled={isPublished}
-                    type="number"
-                    min={1}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    value={q.marks}
-                    onChange={(e) => update(q, "marks", e.target.value)}
-                  />
-               </div>
-             </div>
+              </div>
+            </div>
           </div>
 
           {/* Quick Add Action */}
           {!isPublished && (
             <div className="flex justify-center pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-               <button
-                 onClick={() => addQuestionAfter(q)}
-                 className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-colors"
-               >
-                 <FaPlus /> Insert Question Below
-               </button>
+              <button
+                onClick={() => addQuestionAfter(q)}
+                className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-colors"
+              >
+                <FaPlus /> Insert Question Below
+              </button>
             </div>
           )}
         </div>
@@ -261,6 +259,44 @@ export default function TrainerAddQuestions() {
       )
     );
   }, []);
+
+  const addNewQuestion = () => {
+    setQuestions((prev) => ([
+      {
+        __tempId: uuid(),
+        question: "",
+        option_a: "",
+        option_b: "",
+        option_c: "",
+        option_d: "",
+        correct_option: "A",
+        marks: 1,
+        note: "",
+        isNew: true,
+        isDeleted: false
+      },
+      ...prev
+    ]));
+  };
+
+  const addNewQuestionTop = () => {
+    setQuestions(prev => ([
+      {
+        __tempId: uuid(),
+        question: "",
+        option_a: "",
+        option_b: "",
+        option_c: "",
+        option_d: "",
+        correct_option: "A",
+        marks: 1,
+        note: "",
+        isNew: true,
+        isDeleted: false
+      },
+      ...prev
+    ]));
+  };
 
   const addQuestionAfter = useCallback((ref) => {
     setQuestions((prev) => {
@@ -372,57 +408,57 @@ export default function TrainerAddQuestions() {
 
     // Alert if nothing to save
     if (toDelete.length === 0 && toAdd.length === 0) {
-        return Swal.fire("No Changes", "There are no new changes to save.", "info");
+      return Swal.fire("No Changes", "There are no new changes to save.", "info");
     }
 
     try {
-        // 1. Delete Removed Questions
-        for (const q of toDelete) {
-            await fetch(`${BASE_URL}/placement-training/questions/${q.question_id}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-            });
-        }
+      // 1. Delete Removed Questions
+      for (const q of toDelete) {
+        await fetch(`${BASE_URL}/placement-training/questions/${q.question_id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+      }
 
-        // 2. Add New Questions
-        if (toAdd.length) {
-            await fetch(`${BASE_URL}/placement-training/tests/${testId}/questions`, {
-                method: "POST",
-                headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-                },
-                body: JSON.stringify({ questions: toAdd })
-            });
-        }
+      // 2. Add New Questions
+      if (toAdd.length) {
+        await fetch(`${BASE_URL}/placement-training/tests/${testId}/questions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          },
+          body: JSON.stringify({ questions: toAdd })
+        });
+      }
 
-        Swal.fire("Saved", "All changes applied successfully", "success");
-        window.location.reload();
+      Swal.fire("Saved", "All changes applied successfully", "success");
+      window.location.reload();
 
     } catch (error) {
-        console.error(error);
-        Swal.fire("Error", "Failed to save changes. Please try again.", "error");
+      console.error(error);
+      Swal.fire("Error", "Failed to save changes. Please try again.", "error");
     }
   };
 
   // --- Render ---
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
-      
+
       {/* ----------------------------------------------------
           STICKY HEADER TOOLBAR
          ---------------------------------------------------- */}
       <div className="sticky top-0 bg-white border-b border-slate-200 z-40 shadow-sm">
         <div className="max-w-6xl mx-auto h-16 px-4 lg:px-8 flex justify-between items-center">
-          
+
           {/* Test Info */}
           <div className="flex flex-col">
             <h1 className="text-base font-bold text-slate-800 flex items-center gap-2">
               {testName}
               {isPublished && (
-                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wider border border-amber-200">
-                    Published
-                 </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wider border border-amber-200">
+                  Published
+                </span>
               )}
             </h1>
             <p className="text-xs font-medium text-slate-500">
@@ -433,42 +469,61 @@ export default function TrainerAddQuestions() {
           {/* Action Toolbar */}
           <div className="flex items-center gap-3">
             {!isPublished && (
-              <div className="flex items-center bg-slate-50 p-1 rounded-lg border border-slate-200">
+              <>
+                {/* Add Question */}
                 <button
-                  onClick={downloadExcelTemplate}
-                  className="px-3 py-1.5 rounded text-xs font-bold text-slate-600 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all flex items-center gap-2"
-                  title="Download Template"
+                  onClick={addNewQuestion}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold
+                   bg-emerald-600 hover:bg-emerald-700 text-white shadow
+                   active:scale-95 transition-all"
                 >
-                  <FaDownload /> <span className="hidden sm:inline">Template</span>
+                  <FaPlus /> Add Question
                 </button>
 
-                <div className="w-px h-4 bg-slate-200 mx-1"></div>
+                {/* Excel Actions */}
+                <div className="flex items-center bg-slate-50 p-1 rounded-lg border border-slate-200">
+                  <button
+                    onClick={downloadExcelTemplate}
+                    className="px-3 py-1.5 rounded text-xs font-bold text-slate-600
+                     hover:bg-white hover:text-indigo-600 hover:shadow-sm
+                     transition-all flex items-center gap-2"
+                    title="Download Template"
+                  >
+                    <FaDownload /> <span className="hidden sm:inline">Template</span>
+                  </button>
 
-                <input
-                  type="file"
-                  hidden
-                  id="excelUpload"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleExcelUpload}
-                />
-                <button
-                  onClick={() => document.getElementById("excelUpload").click()}
-                  className="px-3 py-1.5 rounded text-xs font-bold text-slate-600 hover:bg-white hover:text-emerald-600 hover:shadow-sm transition-all flex items-center gap-2"
-                  title="Import from Excel"
-                >
-                  <FaFileExcel /> <span className="hidden sm:inline">Import</span>
-                </button>
-              </div>
+                  <div className="w-px h-4 bg-slate-200 mx-1"></div>
+
+                  <input
+                    type="file"
+                    hidden
+                    id="excelUpload"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleExcelUpload}
+                  />
+
+                  <button
+                    onClick={() => document.getElementById("excelUpload").click()}
+                    className="px-3 py-1.5 rounded text-xs font-bold text-slate-600
+                     hover:bg-white hover:text-emerald-600 hover:shadow-sm
+                     transition-all flex items-center gap-2"
+                    title="Import from Excel"
+                  >
+                    <FaFileExcel /> <span className="hidden sm:inline">Import</span>
+                  </button>
+                </div>
+              </>
             )}
 
+            {/* Save */}
             <button
               disabled={isPublished}
               onClick={submitAllChanges}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-white shadow-lg transition-all active:scale-95 ${
-                isPublished 
-                  ? "bg-slate-300 shadow-none cursor-not-allowed" 
+              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-white
+      shadow-lg transition-all active:scale-95 ${isPublished
+                  ? "bg-slate-300 shadow-none cursor-not-allowed"
                   : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200"
-              }`}
+                }`}
             >
               <FaSave /> Save All
             </button>
@@ -480,20 +535,20 @@ export default function TrainerAddQuestions() {
           CONTENT AREA
          ---------------------------------------------------- */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        
+
         {isPublished && (
-            <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-amber-800">
-                <FaExclamationCircle className="mt-0.5" />
-                <div className="text-sm">
-                    <strong>Read-Only Mode:</strong> This test has been published. Questions cannot be edited or deleted to preserve historical result integrity.
-                </div>
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-amber-800">
+            <FaExclamationCircle className="mt-0.5" />
+            <div className="text-sm">
+              <strong>Read-Only Mode:</strong> This test has been published. Questions cannot be edited or deleted to preserve historical result integrity.
             </div>
+          </div>
         )}
 
-        
+
 
         {!loading && (
-          <DragDropContext onDragEnd={() => {}}>
+          <DragDropContext onDragEnd={() => { }}>
             <Droppable droppableId="questions">
               {(provided) => (
                 <div
@@ -533,15 +588,15 @@ export default function TrainerAddQuestions() {
 
         {/* Empty State */}
         {!loading && questions.filter(q => !q.isDeleted).length === 0 && (
-            <div className="text-center py-20 border-2 border-dashed border-slate-300 rounded-2xl">
-                <p className="text-slate-400 font-medium mb-4">No questions added yet.</p>
-                <button 
-                    onClick={() => document.getElementById("excelUpload").click()}
-                    className="text-indigo-600 font-bold hover:underline"
-                >
-                    Upload Excel
-                </button>
-            </div>
+          <div className="flex justify-center gap-4">
+            <button onClick={addNewQuestionTop} className="text-emerald-600 font-bold">
+              Add Question
+            </button>
+            <button onClick={() => document.getElementById("excelUpload").click()}
+              className="text-indigo-600 font-bold">
+              Upload Excel
+            </button>
+          </div>
         )}
       </div>
     </div>

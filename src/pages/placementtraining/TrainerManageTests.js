@@ -22,6 +22,7 @@ import {
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
 import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import NotifyModal from "../../components/NotifyModal";
 import { parseUTC, now, formatIST, toMysqlDatetime, toLocalDateTimeInput, parseLocalDateTime } from "../../constants/dateUtils";
 
 
@@ -97,6 +98,11 @@ export default function TrainerManageTests() {
     const [editingTest, setEditingTest] = useState(null);
     const [courseName, setCourseName] = useState("");
 
+    const [notifyModal, setNotifyModal] = useState({
+        open: false,
+        test: null,
+    });
+
     const [attemptsModal, setAttemptsModal] = useState({
         open: false,
         test: null,
@@ -139,6 +145,10 @@ export default function TrainerManageTests() {
             max_attempts: test.max_attempts,
         });
         setShowModal(true);
+    };
+
+    const openNotifyModal = (test) => {
+        setNotifyModal({ open: true, test });
     };
 
     const fetchCourseName = async () => {
@@ -857,6 +867,13 @@ export default function TrainerManageTests() {
                                                 Delete Test
                                             </button>
 
+                                            {/* <button
+                                                onClick={() => openNotifyModal(t)}
+                                                className="btn-action flex-1 lg:flex-none lg:w-full flex items-center justify-center lg:justify-end gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg transition-all"
+                                            >
+                                                Manage Notifications <FaBullhorn />
+                                            </button> */}
+
                                             <button
                                                 onClick={() => navigate(`/placementtraining/trainer-results/${t.test_id}`)}
                                                 className="btn-action flex-1 lg:flex-none lg:w-full flex items-center justify-center lg:justify-end gap-2 text-sm font-semibold text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-4 py-2 rounded-lg transition-all"
@@ -906,7 +923,7 @@ export default function TrainerManageTests() {
                 {showModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <div
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+                            className="absolute absolute inset-x-0 bottom-0 -top-8 bg-slate-900/40 backdrop-blur-sm transition-opacity"
                             onClick={() => setShowModal(false)}
                         />
                         <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-fadeInUp">
@@ -1016,7 +1033,7 @@ export default function TrainerManageTests() {
                 {assignTest.open && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <div
-                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                            className="absolute absolute inset-x-0 bottom-0 -top-8 bg-slate-900/60 backdrop-blur-sm transition-opacity"
                             onClick={() => setAssignTest({ open: false, testId: null })}
                         />
 
@@ -1187,6 +1204,13 @@ export default function TrainerManageTests() {
                     </div>
                 )}
             </div>
+
+            <NotifyModal
+                open={notifyModal.open}
+                test={notifyModal.test}
+                onClose={() => setNotifyModal({ open: false, test: null })}
+            />
+
 
             <style>{`
     @keyframes fadeInUp {
