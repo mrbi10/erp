@@ -404,7 +404,7 @@ export default function AdminDashboard({ profileCard, profileData, announcements
           </div>
 
           {/* Class Filter Dropdown */}
-          <div className="flex gap-4 w-full md:w-auto relative z-50">
+          <div className="flex gap-4 w-full md:w-auto relative z-10">
 
             {/* Department Filter */}
             <div className="w-full md:w-60">
@@ -414,7 +414,7 @@ export default function AdminDashboard({ profileCard, profileData, announcements
                 onChange={(opt) => setSelectedDept(opt?.value || "")}
                 styles={selectStyles}
                 placeholder="Filter by Department"
-                isSearchable={false}
+                isSearchable={true}
               />
             </div>
 
@@ -426,7 +426,7 @@ export default function AdminDashboard({ profileCard, profileData, announcements
                 onChange={(opt) => setSelectedClass(opt?.value || "")}
                 styles={selectStyles}
                 placeholder="Filter by Year"
-                isSearchable={false}
+                isSearchable={true}
               />
             </div>
 
