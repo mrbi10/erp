@@ -17,7 +17,7 @@ import PageNotFound from './pages/orthers/PageNotFound';
 
 import Dashboard from './pages/sidebar/Dashboard';
 import Attendance from './pages/sidebar/Attendance';
-// import Marks from './pages/sidebar/Marks';
+import Marks from './pages/sidebar/Marks';
 import Mess from './pages/sidebar/Mess';
 // import Reports from './pages/sidebar/Reports';
 import Late from './pages/sidebar/Late';
@@ -37,11 +37,11 @@ import MarkAttendance from './pages/attendance/MarkAttendance';
 import ReportsPage from './pages/attendance/Reports';
 import ManageStaff from './pages/attendance/ManageStaff';
 
-// import EnterMarks from './pages/marks/EnterMarks';
-// import ViewMarks from './pages/marks/ViewMarks'
-// import PrincipalOverview from './pages/marks/PrincipalOverview';
-// import DepartmentAnalysis from './pages/marks/DepartmentAnalysis';
-// import TopPerformers from './pages/marks/TopPerformers';
+import EnterMarks from './pages/marks/EnterMarks';
+import ViewMarks from './pages/marks/ViewMarks'
+import PrincipalOverview from './pages/marks/PrincipalOverview';
+import DepartmentAnalysis from './pages/marks/DepartmentAnalysis';
+import TopPerformers from './pages/marks/TopPerformers';
 
 // import FeesStudentView from './pages/fees/FeesStudentView';
 // import FeesList from './pages/fees/FeesList';
@@ -207,14 +207,14 @@ export default function App() {
                   />
                   <Route path="*" element={<PageNotFound />} />
                 </Route>
-                {/* 
+                
               <Route path="/marks" element={<Marks user={user} />}>
                 <Route path="enter" element={<EnterMarks />} />
                 <Route path="view" element={<ViewMarks />} />
                 <Route path="overview" element={<PrincipalOverview />} />
                 <Route path="analysis" element={<DepartmentAnalysis />} />
                 <Route path="top" element={<TopPerformers />} />
-              </Route> */}
+              </Route>
 
                 {/* <Route path="/fees" element={<Fees user={user} />}>
                 <Route path="list" element={<FeesList user={user} />} />

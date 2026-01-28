@@ -867,15 +867,16 @@ export default function TrainerManageTests() {
                                                 Delete Test
                                             </button>
 
-                                            {/* <button
+                                            <button
                                                 onClick={() => openNotifyModal(t)}
                                                 className="btn-action flex-1 lg:flex-none lg:w-full flex items-center justify-center lg:justify-end gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg transition-all"
                                             >
                                                 Manage Notifications <FaBullhorn />
-                                            </button> */}
+                                            </button>
 
                                             <button
-                                                onClick={() => navigate(`/placementtraining/trainer-results/${t.test_id}`)}
+                                                onClick={() => navigate(`/placementtraining/results`)}
+                                               // onClick={() => navigate(`/placementtraining/trainer-results/${t.test_id}`)}
                                                 className="btn-action flex-1 lg:flex-none lg:w-full flex items-center justify-center lg:justify-end gap-2 text-sm font-semibold text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-4 py-2 rounded-lg transition-all"
                                             >
                                                 View Results <FaEye />

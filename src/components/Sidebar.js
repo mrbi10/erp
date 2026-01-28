@@ -75,12 +75,12 @@ export default function Sidebar({ role, open, onClose }) {
     //   icon: <CalendarRangeIcon />,
     //   roles: ['student'],
     // },
-    // {
-    //   key: '/marks',
-    //   label: 'Marks',
-    //   icon: <FileDoneOutlined />,
-    //   roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
-    // },
+    {
+      key: '/marks',
+      label: 'Marks',
+      icon: <FileDoneOutlined />,
+      roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
+    },
     // {
     //   key: '/fees',
     //   label: 'Fees',

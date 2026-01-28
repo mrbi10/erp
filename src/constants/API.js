@@ -3,8 +3,9 @@ let resolvingPromise = null;
 
 const BASE_URLS = [
   // "https://erp-mnmjec-backend.onrender.com/api",
-  "https://erp-backend-gaow.onrender.com/api",
-  // "http://localhost:5000/api",
+  // "https://erp-backend-gaow.onrender.com/api",
+  "http://localhost:5000/api",
+  // "http://192.168.0.17:5000/api",
 ];
 
 const detectBaseUrl = async () => {

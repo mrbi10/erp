@@ -17,7 +17,9 @@ export default function TrainerResults() {
   const fetchResults = async () => {
     try {
       const res = await fetch(
-        `${BASE_URL}/placement-training/tests/${testId}/results`,
+        // `${BASE_URL}/placement-training/tests/${testId}/results`,
+        `${BASE_URL}/placement-training/results`,
+
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

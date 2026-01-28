@@ -52,9 +52,9 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 mt-10 py-14">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
           {[
-            { label: "Students", value: "4500+" },
-            { label: "Faculty Members", value: "300+" },
-            { label: "Courses & Programs", value: "15+" },
+            { label: "Students", value: "1000+" },
+            { label: "Faculty Members", value: "100+" },
+            { label: "Courses & Programs", value: "8+" },
             { label: "Years of Legacy", value: "30+" }
           ].map((s, i) => (
             <motion.div
