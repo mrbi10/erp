@@ -14,51 +14,49 @@ const EnterMarks = () => {
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  useEffect(() => {
+    setStudents([]);
+    setMarks({});
+  }, [selectedSubject]);
+
 
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/subjects/staff`, {
+        let url = "";
+
+        // Staff / CA → fixed dept + class
+        if (["Staff", "CA"].includes(user.role)) {
+          if (!user.dept_id || !user.assigned_class_id) {
+            setSubjects([]);
+            return;
+          }
+
+          url = `${BASE_URL}/subjects?dept_id=${user.dept_id}&class_id=${user.assigned_class_id}`;
+        }
+
+        // (Optional) HOD / Principal support if ever enabled here
+        else {
+          return;
+        }
+
+        const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         const data = await res.json();
-        console.log("Subjects response:", data);
-
-        let finalSubjects = [];
-
-        if (data.success) {
-          if (Array.isArray(data.handled_subjects))
-            finalSubjects.push(...data.handled_subjects);
-          if (Array.isArray(data.ca_subjects))
-            finalSubjects.push(...data.ca_subjects);
-        } else if (Array.isArray(data)) {
-          finalSubjects = data;
-        }
-
-        if (finalSubjects.length > 0) {
-          const unique = [
-            ...new Map(finalSubjects.map((s) => [s.subject_id, s])).values(),
-          ];
-          setSubjects(unique);
-        } else {
-          Swal.fire({
-            title: "No Access",
-            text: "No subjects found for your account.",
-            icon: "warning",
-            confirmButtonColor: "#2563eb",
-          });
-        }
+        setSubjects(Array.isArray(data) ? data : []);
       } catch (err) {
-        Swal.fire({
-          title: "Error",
-          text: "Failed to load your subjects.",
-          icon: "error",
-          confirmButtonColor: "#2563eb",
-        });
+        Swal.fire("Error", "Failed to load subjects", "error");
       }
     };
+
     fetchSubjects();
-  }, [token]);
+  }, [user.role, user.dept_id, user.assigned_class_id, token]);
+  ;
+
 
   // Fetch students when subject is selected
   useEffect(() => {
@@ -181,31 +179,29 @@ const EnterMarks = () => {
           <Select
             options={subjects.map((s) => ({
               value: s.subject_id,
-              label: `${s.subject_name}`,
+              label: s.subject_code
+                ? `${s.subject_code.toUpperCase()} - ${s.subject_name}`
+                : s.subject_name,
             }))}
             value={
               selectedSubject
                 ? {
-                    value: selectedSubject,
-                    label:
-                      subjects.find(
-                        (s) => s.subject_id === Number(selectedSubject)
-                      )?.subject_name || "",
-                  }
+                  value: selectedSubject,
+                  label: (() => {
+                    const subj = subjects.find(
+                      (s) => s.subject_id === Number(selectedSubject)
+                    );
+                    return subj?.subject_code
+                      ? `${subj.subject_code.toUpperCase()} - ${subj.subject_name}`
+                      : subj?.subject_name || "";
+                  })(),
+                }
                 : null
             }
-            onChange={(option) => setSelectedSubject(option?.value || "")}
+            onChange={(opt) => setSelectedSubject(opt?.value || "")}
             placeholder="Select Subject..."
-            styles={{
-              control: (base) => ({
-                ...base,
-                borderRadius: "8px",
-                borderColor: "#93c5fd",
-                boxShadow: "none",
-                "&:hover": { borderColor: "#2563eb" },
-              }),
-            }}
           />
+
         </div>
 
         {/* Exam Type Select */}
@@ -215,6 +211,7 @@ const EnterMarks = () => {
               { value: "IAT1", label: "IAT 1" },
               { value: "IAT2", label: "IAT 2" },
               { value: "MODEL", label: "Model Exam" },
+              { value: "FINAL", label: "Final Semester" },
             ]}
             value={{
               value: examType,
@@ -239,11 +236,10 @@ const EnterMarks = () => {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className={`flex items-center gap-2 px-6 py-2 rounded-md text-white font-medium transition ${
-            loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
+          className={`flex items-center gap-2 px-6 py-2 rounded-md text-white font-medium transition ${loading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
+            }`}
         >
           <FaSave /> {loading ? "Saving..." : "Save Marks"}
         </button>
@@ -266,9 +262,8 @@ const EnterMarks = () => {
               {students.map((s, i) => (
                 <tr
                   key={s.student_id}
-                  className={`${
-                    i % 2 === 0 ? "bg-white" : "bg-blue-50"
-                  } hover:bg-blue-100 transition`}
+                  className={`${i % 2 === 0 ? "bg-white" : "bg-blue-50"
+                    } hover:bg-blue-100 transition`}
                 >
                   <td className="px-4 py-2 border text-center">{i + 1}</td>
                   <td className="px-4 py-2 border font-medium text-gray-700 flex items-center gap-2">

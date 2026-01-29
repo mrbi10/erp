@@ -41,7 +41,7 @@ const ClassSummaryCard = ({ classSummary }) => (
       <div>
         <h3 className={HEADER_TEXT_CLASSES}>Class Overview</h3>
         <p className={SUBHEADER_TEXT_CLASSES}>
-          {getYearLabel(classSummary?.class_id)}
+          {getYearLabel(classSummary[0]?.class_id)}
         </p>
       </div>
     </div>
@@ -51,25 +51,26 @@ const ClassSummaryCard = ({ classSummary }) => (
       <div className="p-4 bg-sky-50 rounded-xl border border-sky-200">
         <div className="text-sm text-gray-600 font-medium">Total Students</div>
         <div className="text-3xl font-extrabold text-sky-700 mt-1">
-          {classSummary?.total_students ?? "-"}
+          {classSummary[0]?.total_students ?? "-"}
+          {console.log("Class Summary Data 22222222:", classSummary?.total_students)}
         </div>
       </div>
 
       <div className="p-4 bg-sky-50 rounded-xl border border-sky-200">
         <div className="text-sm text-gray-600 font-medium">Avg. Attendance</div>
         <div className="text-3xl font-extrabold text-sky-700 mt-1">
-          {classSummary?.overall_attendance_percentage ?? "-"}%
+          {classSummary[0]?.overall_attendance_percentage ?? "-"}%
         </div>
       </div>
     </div>
 
-    {classSummary?.subjectsHandled?.length > 0 && (
+    {classSummary[0]?.subjectsHandled?.length > 0 && (
       <div className="mt-auto border-t pt-4">
         <h4 className="font-semibold text-gray-700 mb-2 flex items-center">
           <FaBookReader className="mr-2 text-purple-500" /> Subjects Handled
         </h4>
         <div className="flex flex-wrap gap-2">
-          {classSummary.subjectsHandled.map((subject, index) => (
+          {classSummary[0].subjectsHandled.map((subject, index) => (
             <span
               key={index}
               className="px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-full font-medium border border-purple-200"

@@ -44,6 +44,11 @@ const yearOptions = [
   { value: 4, label: "IV Year" },
 ];
 
+const GENDER_OPTIONS = [
+  { value: "M", label: "Male" },
+  { value: "F", label: "Female" },
+];
+
 const YEAR_MAP = {
   1: "I",
   2: "II",
@@ -180,6 +185,7 @@ export default function Students({ user }) {
   const [filters, setFilters] = useState({
     dept: "",
     class: "",
+    gender: "",
     multiFilters: []
   });
   const [loading, setLoading] = useState(true);
@@ -190,7 +196,7 @@ export default function Students({ user }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState({
-    name: "", roll_no: "", email: "", mobile: "", class_id: "", dept_id: "",
+    name: "", roll_no: "", email: "", mobile: "", gender: "", class_id: "", dept_id: "",
     jain: false, hostel: false, bus: false,
   });
   const [isProcessing, setIsProcessing] = useState(false);
@@ -215,7 +221,7 @@ export default function Students({ user }) {
 
         // Fetch Students based on Role
         let studentUrl = `${BASE_URL}/students`;
-        if (user.role === "HOD") studentUrl = `${BASE_URL}/departments/${user.dept_id}/students`;
+        if (user.role === "HOD") studentUrl = `${BASE_URL}/students/departments/${user.dept_id}/students`;
         else if (user.role === "CA") studentUrl = `${BASE_URL}/classes/${user.assigned_class_id}/students`;
 
         const studentRes = await fetch(studentUrl, { headers: { Authorization: `Bearer ${token}` } });
@@ -247,6 +253,10 @@ export default function Students({ user }) {
 
     if (classId) {
       res = res.filter(s => s.class_id === Number(classId));
+    }
+
+    if (filters.gender) {
+      res = res.filter(s => s.gender === filters.gender);
     }
 
     if (multiFilters.length > 0) {
@@ -293,7 +303,11 @@ export default function Students({ user }) {
 
       if (user.role === "HOD") finalDept = user.dept_id;
       if (user.role === "CA") { finalDept = user.dept_id; finalClass = user.assigned_class_id; }
-
+      if (!formData.gender) {
+        Swal.fire("Missing Field", "Please select gender", "warning");
+        setIsProcessing(false);
+        return;
+      }
       const payload = {
         ...formData,
         name: formData.name.trim().toUpperCase(),
@@ -402,7 +416,7 @@ export default function Students({ user }) {
 
   // Open/Close Handlers
   const handleOpenAdd = () => {
-    setFormData({ name: "", roll_no: "", email: "", mobile: "", class_id: "", dept_id: "", jain: false, hostel: false, bus: false });
+    setFormData({ name: "", roll_no: "", email: "", mobile: "", gender: "", class_id: "", dept_id: "", jain: false, hostel: false, bus: false });
     setEditingStudent(null);
     setShowAddModal(true);
   };
@@ -542,6 +556,31 @@ export default function Students({ user }) {
               </div>
             )}
 
+            <div className="min-w-[150px]">
+              <Select
+                styles={selectStyles}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+                menuShouldBlockScroll={false}
+                placeholder="Gender"
+                options={[
+                  { value: "", label: "All Genders" },
+                  ...GENDER_OPTIONS
+                ]}
+                value={
+                  filters.gender
+                    ? GENDER_OPTIONS.find(g => g.value === filters.gender)
+                    : null
+                }
+                onChange={(o) =>
+                  setFilters(f => ({
+                    ...f,
+                    gender: o?.value || ""
+                  }))
+                }
+              />
+            </div>
+
             <div className="min-w-[220px]">
               <Select
                 styles={selectStyles}
@@ -581,7 +620,7 @@ export default function Students({ user }) {
                   <tr>
                     {["Student", "Reg No", "Class",
                       // "Mobile", 
-                      "Email", "Category", "Actions"].map(h => (
+                      "Gender", "Email", "Category", "Actions"].map(h => (
                         <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
                       ))}
                   </tr>
@@ -645,6 +684,11 @@ export default function Students({ user }) {
                             <span className="text-xs text-gray-400">-</span>
                           )}
                         </td> */}
+
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-600">
+                          {s.gender === "M" ? "Male" : s.gender === "F" ? "Female" : "-"}
+                        </td>
+
 
                         {/* EMAIL COLUMN */}
                         <td className="px-6 py-4">
@@ -814,6 +858,20 @@ export default function Students({ user }) {
                      focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
               />
             </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Gender
+              </label>
+              <Select
+                styles={selectStyles}
+                options={GENDER_OPTIONS}
+                onChange={(o) => handleInputChange("gender", o.value)}
+                value={GENDER_OPTIONS.find(g => g.value === formData.gender) || null}
+                placeholder="Select gender"
+              />
+            </div>
+
           </div>
         )}
 
@@ -869,6 +927,8 @@ export default function Students({ user }) {
                 />
               )}
             </div>
+
+
 
           </div>
         )}

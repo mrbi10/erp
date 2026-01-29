@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { FaEye, FaSearch } from "react-icons/fa";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
 
 
 const getOrdinalSuffix = (n) => {
@@ -42,32 +42,62 @@ export default function ViewMarks() {
         return res.json();
     };
 
-    // 🔹 Load initial data based on role
     useEffect(() => {
-        if (["Staff", "CA"].includes(user.role)) {
-            fetchData(`${BASE_URL}/subjects/staff`).then((data) => {
-                setSubjects(data.success ? data.subjects : []);
-            });
-        } else if (user.role === "HOD") {
-            fetchData(`${BASE_URL}/classes`).then((data) => {
-                const deptClasses = data.filter((c) => c.dept_id === user.dept_id);
-                setClasses(deptClasses);
-            });
-        } else if (user.role === "Principal") {
-            fetchData(`${BASE_URL}/classes`).then(setClasses);
-        } else if (user.role === "student") {
-            fetchStudentMarks();
-        }
-    }, []);
+        setSelectedSubject(null);
+    }, [selectedDept, subjects, selectedClass]);
 
-    // 🔹 Fetch subjects when class changes (for HOD/Principal)
+     // 🔹 Fetch subjects when class changes (for HOD/Principal)
     useEffect(() => {
-        if (selectedClass) {
-            fetchData(`${BASE_URL}/subjects?class_id=${selectedClass.value}`).then((data) => {
-                setSubjects(Array.isArray(data) ? data : data.subjects || []);
-            });
-        }
-    }, [selectedClass]);
+        const fetchSubjects = async () => {
+            try {
+                let url = "";
+
+                if (user.role === "Principal") {
+                    if (!selectedDept || !selectedClass) {
+                        setSubjects([]);
+                        return;
+                    }
+                    url = `${BASE_URL}/subjects?dept_id=${selectedDept.value}&class_id=${selectedClass.value}`;
+                }
+
+                else if (user.role === "HOD") {
+                    if (!selectedClass) {
+                        setSubjects([]);
+                        return;
+                    }
+                    url = `${BASE_URL}/subjects?dept_id=${user.dept_id}&class_id=${selectedClass.value}`;
+                }
+
+                else if (["Staff", "CA"].includes(user.role)) {
+                    if (!user.dept_id || !user.assigned_class_id) {
+                        setSubjects([]);
+                        return;
+                    }
+                    url = `${BASE_URL}/subjects?dept_id=${user.dept_id}&class_id=${user.assigned_class_id}`;
+                }
+
+                else {
+                    setSubjects([]);
+                    return;
+                }
+
+                const data = await fetchData(url);
+                setSubjects(Array.isArray(data) ? data : []);
+            } catch (err) {
+                console.error(err);
+                Swal.fire("Error", "Failed to load subjects", "error");
+            }
+        };
+
+        fetchSubjects();
+    }, [
+        user.role,
+        user.dept_id,
+        user.assigned_class_id,
+        selectedDept,
+        selectedClass
+    ]);
+
 
     // 🔹 Fetch students when class changes (for HOD/Principal)
     useEffect(() => {
@@ -78,37 +108,7 @@ export default function ViewMarks() {
         }
     }, [selectedClass]);
 
-    // 🔹 Fetch subjects dynamically based on selected class or department
-    useEffect(() => {
-        const fetchSubjects = async () => {
-            try {
-                let url = "";
 
-                // Principal can filter by dept + class
-                if (user.role === "Principal" && selectedDept && selectedClass) {
-                    url = `${BASE_URL}/subjects?dept_id=${selectedDept.value}&class_id=${selectedClass.value}`;
-                }
-                // HOD can filter by class only (since dept is already known)
-                else if (user.role === "HOD" && selectedClass) {
-                    url = `${BASE_URL}/subjects?dept_id=${user.dept_id}&class_id=${selectedClass.value}`;
-                }
-                // Staff or CA can load only their handled subjects
-                else if (["Staff", "CA"].includes(user.role)) {
-                    url = `${BASE_URL}/subjects/staff`;
-                }
-
-                if (url) {
-                    const data = await fetchData(url);
-                    setSubjects(Array.isArray(data) ? data : data.subjects || []);
-                }
-            } catch (err) {
-                console.error("Error fetching subjects:", err);
-                Swal.fire("Error", "Failed to load subjects", "error");
-            }
-        };
-
-        fetchSubjects();
-    }, [selectedDept, selectedClass]);
 
 
     // 🔹 Fetch marks
@@ -274,14 +274,16 @@ export default function ViewMarks() {
                         {user.role === "Principal" && (
                             <Select
                                 placeholder="Select Department..."
-                                options={[
-                                    { value: 1, label: "CSE" },
-                                    { value: 2, label: "ECE" },
-                                    { value: 3, label: "EEE" },
-                                    { value: 4, label: "MECH" },
-                                ]}
+                                options={Object.entries(DEPT_MAP).map(([id, name]) => ({
+                                    value: Number(id),
+                                    label: name,
+                                }))}
                                 value={selectedDept}
-                                onChange={setSelectedDept}
+                                onChange={(opt) => {
+                                    setSelectedDept(opt);
+                                    setSelectedClass(null);
+                                    setSelectedSubject(null);
+                                }}
                                 className="min-w-[180px]"
                             />
                         )}
@@ -289,28 +291,34 @@ export default function ViewMarks() {
                         {(user.role === "HOD" || user.role === "Principal") && (
                             <Select
                                 placeholder="Select Class..."
-                                options={classes
-                                    .filter(c =>
-                                        !selectedDept ? true : c.dept_id === selectedDept.value // filters by dept
-                                    )
-                                    .map(c => ({
-                                        value: c.class_id,
-                                        label: c.year
-                                            ? `${c.year}${getOrdinalSuffix(c.year)} Year`
-                                            : `Class ${c.class_id}`
+                                options={Object.entries(CLASS_MAP)
+                                    .filter(([id]) => {
+                                        // Principal → filter by selected dept
+                                        if (user.role === "Principal" && selectedDept) return true;
+
+                                        // HOD → all classes (dept already fixed)
+                                        return true;
+                                    })
+                                    .map(([id, label]) => ({
+                                        value: Number(id),
+                                        label,
                                     }))}
                                 value={selectedClass}
-                                onChange={setSelectedClass}
+                                onChange={(opt) => {
+                                    setSelectedClass(opt);
+                                    setSelectedSubject(null);
+                                }}
                                 className="min-w-[200px]"
                             />
                         )}
-
 
                         <Select
                             placeholder="Select Subject..."
                             options={subjects.map((s) => ({
                                 value: s.subject_id,
-                                label: s.subject_name,
+                                label: s.subject_code
+                                    ? `${s.subject_code.toUpperCase()} - ${s.subject_name}`
+                                    : s.subject_name,
                                 class_id: s.class_id,
                             }))}
                             value={selectedSubject}
@@ -323,6 +331,7 @@ export default function ViewMarks() {
                                 { value: "IAT1", label: "IAT 1" },
                                 { value: "IAT2", label: "IAT 2" },
                                 { value: "MODEL", label: "Model Exam" },
+                                { value: "FINAL", label: "Final Semester" },
                             ]}
                             value={{ value: examType, label: examType.replace("IAT", "IAT ") }}
                             onChange={(opt) => setExamType(opt.value)}

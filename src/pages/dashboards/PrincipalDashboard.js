@@ -404,7 +404,7 @@ export default function AdminDashboard({ profileCard, profileData, announcements
           </div>
 
           {/* Class Filter Dropdown */}
-          <div className="flex gap-4 w-full md:w-auto relative z-10">
+          <div className="flex gap-4 w-full md:w-auto relative z-40">
 
             {/* Department Filter */}
             <div className="w-full md:w-60">

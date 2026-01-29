@@ -19,12 +19,16 @@ function ReportsPage({ user }) {
   const [dataFetched, setDataFetched] = useState(false);
 
   const [filters, setFilters] = useState({
-    deptId: "",
-    classId: "",
+    deptId: user.role === "Principal" ? "" : user.dept_id || "",
+    classId:
+      user.role === "CA"
+        ? user.assigned_class_id || ""
+        : "",
     studentId: "",
     fromDate: "",
     toDate: ""
   });
+
 
 
   const selectStyles = {
@@ -337,6 +341,7 @@ function ReportsPage({ user }) {
             <Select
               styles={selectStyles}
               placeholder="Select Department"
+              isDisabled={user.role !== "Principal"}
               value={
                 filters.deptId
                   ? { value: filters.deptId, label: DEPT_MAP[filters.deptId] }
@@ -356,9 +361,12 @@ function ReportsPage({ user }) {
                 });
                 setStudents([]);
               }}
-              isClearable
             />
-
+            {user.role !== "Principal" && (
+              <p className="text-[10px] text-gray-400 mt-1">
+                Locked based on your role
+              </p>
+            )}
           </div>
 
           {/* Class Select */}
@@ -366,7 +374,10 @@ function ReportsPage({ user }) {
             <Select
               styles={selectStyles}
               placeholder="Select Year"
-              isDisabled={!filters.deptId}
+              isDisabled={
+                !filters.deptId ||
+                user.role === "CA"
+              }
               value={
                 filters.classId
                   ? { value: filters.classId, label: CLASS_MAP[filters.classId] }
@@ -384,8 +395,12 @@ function ReportsPage({ user }) {
                 }));
                 setStudents([]);
               }}
-              isClearable
             />
+            {user.role !== "Principal" || user.role === "HOD" && (
+              <p className="text-[10px] text-gray-400 mt-1">
+                Locked based on your role
+              </p>
+            )}
 
           </div>
 

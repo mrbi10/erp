@@ -27,6 +27,7 @@ import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 // import Timetable from './pages/sidebar/Timetable';
 // import StudentTimetable from './pages/sidebar/StudentTimetable';
 import PlacementTraining from './pages/sidebar/PlacementTraining';
+import ManageSubjects from './pages/sidebar/ManageSubjects';
 
 
 import Students from './pages/students/Students';
@@ -186,6 +187,7 @@ export default function App() {
                 {/* <Route path="/timetable" element={<Timetable user={user} />} /> */}
                 {/* <Route path="/StudentTimetable" element={<StudentTimetable user={user} />} /> */}
                 <Route path="/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
+                <Route path="/managesubjects" element={<ManageSubjects user={user} />} />
 
                 {/* Attendance nested routes */}
                 <Route path="/attendance" element={<Attendance user={user} />}>
@@ -207,14 +209,14 @@ export default function App() {
                   />
                   <Route path="*" element={<PageNotFound />} />
                 </Route>
-                
-              <Route path="/marks" element={<Marks user={user} />}>
-                <Route path="enter" element={<EnterMarks />} />
-                <Route path="view" element={<ViewMarks />} />
-                <Route path="overview" element={<PrincipalOverview />} />
-                <Route path="analysis" element={<DepartmentAnalysis />} />
-                <Route path="top" element={<TopPerformers />} />
-              </Route>
+
+                <Route path="/marks" element={<Marks user={user} />}>
+                  <Route path="enter" element={<EnterMarks />} />
+                  <Route path="view" element={<ViewMarks />} />
+                  <Route path="overview" element={<PrincipalOverview />} />
+                  <Route path="analysis" element={<DepartmentAnalysis />} />
+                  <Route path="top" element={<TopPerformers />} />
+                </Route>
 
                 {/* <Route path="/fees" element={<Fees user={user} />}>
                 <Route path="list" element={<FeesList user={user} />} />
@@ -313,7 +315,7 @@ export default function App() {
             >
               Abinanthan&nbsp;V
             </a>{" "}
-            <span className="opacity-70">· IV Year CSE, MNMJEC</span>
+            <span className="opacity-70">· 2022–2026 batch · CSE, MNMJEC</span>
           </p>
         </footer>
 

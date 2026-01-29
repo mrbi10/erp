@@ -5,6 +5,7 @@ import {
   IdcardOutlined,
   CheckCircleOutlined,
   FileDoneOutlined,
+  BookOutlined,
   ClockCircleOutlined,
   BarChartOutlined,
   TeamOutlined,
@@ -13,7 +14,7 @@ import {
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CalculatorIcon, Calendar1Icon, CalendarRangeIcon, CookingPotIcon, Megaphone, Mic, Mic2Icon, Speaker, SpeakerIcon } from "lucide-react";
-import { FaSpeakerDeck, FaBookOpen  } from "react-icons/fa";
+import { FaSpeakerDeck, FaBookOpen } from "react-icons/fa";
 import { SpeakerWaveIcon } from "@heroicons/react/24/solid";
 import { Calendar } from "antd";
 
@@ -81,6 +82,12 @@ export default function Sidebar({ role, open, onClose }) {
       icon: <FileDoneOutlined />,
       roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
     },
+    {
+      key: '/managesubjects',
+      label: 'Manage Subjects',
+      icon: <BookOutlined />,
+      roles: ['Staff', 'Principal', 'CA', 'HOD'],
+    },
     // {
     //   key: '/fees',
     //   label: 'Fees',
@@ -108,8 +115,8 @@ export default function Sidebar({ role, open, onClose }) {
     {
       key: '/placementtraining',
       label: 'Placement Training',
-      icon: <FaBookOpen  />,
-      roles: ['CA', 'student', 'trainer','HOD', 'Principal'],
+      icon: <FaBookOpen />,
+      roles: ['CA', 'student', 'trainer', 'HOD', 'Principal'],
     },
 
     // {
