@@ -72,7 +72,7 @@ export default function Sidebar({ role, open, onClose }) {
       roles: ['Principal', 'F&A', 'HOD'],
     },
     {
-      key: '/late',
+      key: '/lateentries',
       label: 'Late Arrival',
       icon: <ClockCircleOutlined />,
       roles: ['CA', 'HOD', 'Principal'],

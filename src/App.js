@@ -20,7 +20,8 @@ import Attendance from './pages/sidebar/Attendance';
 import Marks from './pages/sidebar/Marks';
 import Mess from './pages/sidebar/Mess';
 // import Reports from './pages/sidebar/Reports';
-import Late from './pages/sidebar/Late';
+import Lateentries from './pages/sidebar/Lateentries';
+import AttendanceLogs from './pages/sidebar/AttendanceLogs';
 import Announcement from './pages/sidebar/Announcement';
 import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 // import Fees from './pages/sidebar/Fees';
@@ -31,7 +32,7 @@ import ManageSubjects from './pages/sidebar/ManageSubjects';
 
 
 import Students from './pages/students/Students';
-import FacultyList from './pages/faculty/FacultyList';
+import Faculty from './pages/faculty/Faculty';
 
 import StudentAttendance from './pages/attendance/ViewAttendance';
 import MarkAttendance from './pages/attendance/MarkAttendance';
@@ -178,10 +179,11 @@ export default function App() {
               <>
                 <Route path="/dashboard" element={<Dashboard user={user} />} />
                 <Route path="/students" element={<Students user={user} />} />
-                <Route path="/faculty" element={<FacultyList user={user} />} />
+                <Route path="/faculty" element={<Faculty user={user} />} />
                 {/* <Route path="/reports" element={<Reports user={user} />} /> */}
                 {/* <Route path="/marks" element={<Marks user={user} />} /> */}
-                <Route path="/late" element={<Late user={user} />} />
+                <Route path="/lateentries" element={<Lateentries user={user} />} />
+                <Route path="/attendancelogs" element={<AttendanceLogs user={user} />} />
                 <Route path="/mess" element={<Mess user={user} />} />
                 <Route path="/announcement" element={<Announcement user={user} />} />
                 {/* <Route path="/timetable" element={<Timetable user={user} />} /> */}

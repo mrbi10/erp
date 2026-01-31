@@ -17,7 +17,7 @@ import Attendance from './pages/sidebar/Attendance';
 import Marks from './pages/sidebar/Marks';
 import Mess from './pages/sidebar/Mess';
 import Reports from './pages/sidebar/Reports';
-import Late from './pages/sidebar/Late';
+import Late from './pages/sidebar/lateentries';
 import Announcement from './pages/sidebar/Announcement';
 import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 import Fees from './pages/sidebar/Fees';
@@ -146,7 +146,7 @@ export default function App() {
               <Route path="/faculty" element={<FacultyList user={user} />} />
               <Route path="/reports" element={<Reports user={user} />} />
               <Route path="/marks" element={<Marks user={user} />} />
-              <Route path="/late" element={<Late user={user} />} />
+              <Route path="/lateentries" element={<Late user={user} />} />
               <Route path="/mess" element={<Mess user={user} />} />
               <Route path="/announcement" element={<Announcement user={user} />} />
               <Route path="/timetable" element={<Timetable user={user} />} />

@@ -14,12 +14,16 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaSpinner,
-  FaRegStar
+  FaRegStar,
+  FaFilePdf,
+  FaFileExcel
 } from "react-icons/fa";
 import Select from "react-select";
 import { BASE_URL } from "../../constants/API";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
+import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
+
 
 // ---------------------------
 // Constants & Utils
@@ -183,8 +187,8 @@ export default function Students({ user }) {
   const [classes, setClasses] = useState([]);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
-    dept: "",
-    class: "",
+    dept_id: "",
+    class_id: "",
     gender: "",
     multiFilters: []
   });
@@ -203,56 +207,61 @@ export default function Students({ user }) {
 
   const token = localStorage.getItem("token");
 
+  const classYearMap = useMemo(() => {
+    const map = {};
+    classes.forEach(c => {
+      map[c.class_id] = c.year;
+    });
+    return map;
+  }, [classes]);
+
+
+
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/classes`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setClasses(Array.isArray(data) ? data : []))
+      .catch(() => setClasses([]));
+  }, [token]);
+
+
   // --- 1. Data Fetching (Matches Original Logic) ---
   useEffect(() => {
-    if (!user) return;
-    const fetchAll = async () => {
-      setLoading(true);
-      try {
-        // Fetch Classes based on Role
-        let classUrl = `${BASE_URL}/classes`;
-        if (user.role === "HOD") classUrl += `?dept_id=${user.dept_id}`;
-        else if (user.role === "CA") classUrl = `${BASE_URL}/classes/${user.assigned_class_id}/students`;
 
-        const classRes = await fetch(classUrl, { headers: { Authorization: `Bearer ${token}` } });
-        const classData = await classRes.json();
-        const classList = Array.isArray(classData) ? classData : [classData];
-        setClasses(classList);
+    const params = new URLSearchParams({
+      dept_id: filters.dept_id,
+      classId: filters.class_id
+    });
 
-        // Fetch Students based on Role
-        let studentUrl = `${BASE_URL}/students`;
-        if (user.role === "HOD") studentUrl = `${BASE_URL}/students/departments/${user.dept_id}/students`;
-        else if (user.role === "CA") studentUrl = `${BASE_URL}/classes/${user.assigned_class_id}/students`;
+    setLoading(true);
 
-        const studentRes = await fetch(studentUrl, { headers: { Authorization: `Bearer ${token}` } });
-        const studentData = await studentRes.json();
-        setStudents(studentData);
-        setFilteredStudents(studentData);
 
-        // Initial Filter Setup
-        if (user.role === "HOD") setFilters(f => ({ ...f, dept: user.dept_id }));
-        if (user.role === "CA") setFilters(f => ({ ...f, dept: user.dept_id, class: user.assigned_class_id }));
+    fetch(`${BASE_URL}/students?${params}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(res => setStudents(res.success ? res.data : []))
+      .catch(() => setStudents([]))
+      .finally(() => setLoading(false));
 
-      } catch (err) {
-        console.error("Fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
-  }, [user, token]);
+  }, [filters.dept_id, filters.class_id, token]);
+
+
 
   // --- 2. Filtering Logic (Matches Original) ---
   useEffect(() => {
     let res = [...students];
-    const { dept, class: classId, multiFilters } = filters;
+    const { dept_id, class_id, multiFilters } = filters;
 
-    if (dept) {
-      res = res.filter(s => s.dept_id === Number(dept));
+    if (dept_id) {
+      res = res.filter(s => s.dept_id === Number(dept_id));
     }
 
-    if (classId) {
-      res = res.filter(s => s.class_id === Number(classId));
+    if (class_id) {
+      res = res.filter(s => s.class_id === Number(class_id));
     }
 
     if (filters.gender) {
@@ -284,7 +293,7 @@ export default function Students({ user }) {
 
     setFilteredStudents(res);
     setCurrentPage(1);
-  }, [filters, search, students, classes]);
+  }, [filters, search, students]);
 
 
   // --- 3. CRUD Handlers ---
@@ -315,7 +324,7 @@ export default function Students({ user }) {
         class_id: finalClass
       };
 
-      const res = await fetch(`${BASE_URL}/student`, {
+      const res = await fetch(`${BASE_URL}/students`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -363,30 +372,145 @@ export default function Students({ user }) {
   const handleEditSave = async () => {
     setIsProcessing(true);
     try {
-      const res = await fetch(`${BASE_URL}/student/${editingStudent.student_id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          jain: formData.jain,
-          hostel: formData.hostel,
-          bus: formData.bus
-        }),
-      });
+      let finalDept = formData.dept_id || editingStudent.dept_id;
+      let finalClass = formData.class_id || editingStudent.class_id;
+
+
+      if (user.role === "HOD") finalDept = user.dept_id;
+      if (user.role === "CA") {
+        finalDept = user.dept_id;
+        finalClass = user.assigned_class_id;
+      }
+
+      const payload = {
+        name: formData.name?.trim().toUpperCase(),
+        roll_no: formData.roll_no,
+        email: formData.email,
+        mobile: formData.mobile,
+        gender: formData.gender,
+        dept_id: finalDept,
+        class_id: finalClass,
+        jain: formData.jain,
+        hostel: formData.hostel,
+        bus: formData.bus
+      };
+
+      const res = await fetch(
+        `${BASE_URL}/students/${editingStudent.student_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
       const data = await res.json();
 
-      if (data.success) {
-        Swal.fire({ title: "Updated!", text: "Student details updated.", icon: "success", timer: 1500, showConfirmButton: false });
-        setStudents(prev => prev.map(s => s.student_id === editingStudent.student_id ? { ...s, ...formData } : s));
-        handleCloseModal();
-      } else {
-        throw new Error(data.message);
-      }
+      if (!data.success) throw new Error(data.message);
+
+      Swal.fire({
+        title: "Updated!",
+        text: "Student details updated successfully",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      // update local list
+      setStudents(prev =>
+        prev.map(s =>
+          s.student_id === editingStudent.student_id
+            ? { ...s, ...payload }
+            : s
+        )
+      );
+
+      handleCloseModal();
     } catch (err) {
-      Swal.fire("Error", "Failed to update student.", "error");
+      Swal.fire("Error", err.message || "Failed to update student", "error");
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const handleExportExcelClick = () => {
+    if (!filteredStudents || filteredStudents.length === 0) {
+      Swal.fire("No Data", "No students to export", "info");
+      return;
+    }
+
+    const dataToExport = filteredStudents.map(s => ({
+      "Register No": s.roll_no || "-",
+      "Student Name": s.name || "-",
+      "Department": DEPT_MAP[s.dept_id] || "-",
+      "Class / Year": classYearMap[s.class_id] || "-",
+      "Gender": s.gender === "M" ? "Male" : s.gender === "F" ? "Female" : "-",
+      "Jain": s.jain ? "Yes" : "No",
+      "Hostel": s.hostel ? "Yes" : "No",
+      "Bus": s.bus ? "Yes" : "No",
+      "Email": s.email || "-",
+      "Mobile": s.mobile || "-"
+    }));
+
+    exportToExcel(dataToExport, "Student_List_Report");
+  };
+
+  const handleExportPDFClick = () => {
+    if (!filteredStudents || filteredStudents.length === 0) {
+      Swal.fire("No Data", "No students to export", "info");
+      return;
+    }
+
+    const tableData = filteredStudents.map(s => ([
+      s.roll_no || "-",
+      s.name || "-",
+      DEPT_MAP[s.dept_id] || "-",
+      classYearMap[s.class_id] || "-",
+      s.gender === "M" ? "Male" : s.gender === "F" ? "Female" : "-",
+      s.jain ? "Yes" : "No",
+      s.hostel ? "Yes" : "No",
+      s.bus ? "Yes" : "No"
+    ]));
+
+    const config = {
+      title: "STUDENT LIST",
+      subTitle: "Misrimal Navajee Munoth Jain Engineering College",
+      generatedBy: user.name,
+      fileName: "Student_List_Report",
+
+      tableHeaders: [
+        "Register No",
+        "Name",
+        "Department",
+        "Class",
+        "Gender",
+        "Jain",
+        "Hostel",
+        "Bus"
+      ],
+      tableData,
+
+      filters: [
+        { label: "Department", value: DEPT_MAP[filters.dept_id] || "ALL" },
+        { label: "Class / Year", value: filters.class_id || "ALL" },
+        { label: "Gender", value: filters.gender || "ALL" },
+        { label: "category", value: filters.multiFilters || "ALL" }
+      ],
+
+      stats: [
+        { label: "Total Students", value: filteredStudents.length, color: [37, 99, 235] },
+        { label: "Hostel", value: stats.hostel, color: [22, 163, 74] },
+        { label: "Bus", value: stats.bus, color: [234, 179, 8] },
+        { label: "Jain", value: stats.jain, color: [16, 185, 129] }
+      ]
+    };
+
+    generatePDFReport(config);
+  };
+
 
   // Delete Student
   const handleDelete = async (student) => {
@@ -403,7 +527,7 @@ export default function Students({ user }) {
     if (!confirm.isConfirmed) return;
 
     try {
-      await fetch(`${BASE_URL}/student/${student.student_id}`, {
+      await fetch(`${BASE_URL}/students/${student.student_id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -447,7 +571,10 @@ export default function Students({ user }) {
   }), [filteredStudents]);
 
   const deptOptions = Object.entries(DEPT_MAP).map(([k, v]) => ({ value: Number(k), label: v }));
-  const classOptions = classes.map(c => ({ value: c.class_id, label: `${ROMAN_MAP[c.year]} - ${DEPT_MAP[c.dept_id]}` }));
+  const classOptions = classes.map(c => ({
+    value: c.class_id,
+    label: `${ROMAN_MAP[c.year]} - ${DEPT_MAP[c.dept_id]}`
+  }));
 
 
 
@@ -477,6 +604,22 @@ export default function Students({ user }) {
             </h1>
             <p className="text-slate-500 mt-1 font-medium ml-1">Manage student details</p>
           </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportPDFClick}
+              disabled={!filteredStudents.length}
+              className="flex items-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <FaFilePdf /> PDF
+            </button>
+            <button
+              onClick={handleExportExcelClick}
+              disabled={!filteredStudents.length}
+              className="flex items-center gap-2 bg-white text-emerald-600 border border-emerald-200 px-4 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-emerald-50 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <FaFileExcel /> Excel
+            </button>
+          </div>
           <button
             onClick={handleOpenAdd}
             className="group flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-slate-200 hover:shadow-xl hover:bg-slate-800 transition-all active:scale-95"
@@ -484,7 +627,9 @@ export default function Students({ user }) {
             <FaPlus className="text-sm group-hover:rotate-90 transition-transform" />
             <span>Add Student</span>
           </button>
+
         </div>
+
 
         {/* --- STATS PILLS --- */}
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
@@ -521,15 +666,15 @@ export default function Students({ user }) {
                   placeholder="All Departments"
                   options={[{ value: "", label: "All Depts" }, ...deptOptions]}
                   value={
-                    filters.dept
-                      ? { value: filters.dept, label: DEPT_MAP[filters.dept] }
+                    filters.dept_id
+                      ? { value: filters.dept_id, label: DEPT_MAP[filters.dept_id] }
                       : null
                   }
                   onChange={(o) =>
                     setFilters(f => ({
                       ...f,
-                      dept: o?.value || "",
-                      class: "",
+                      dept_id: o?.value || "",
+                      class_id: "",
                     }))
                   }
                 />
@@ -545,11 +690,11 @@ export default function Students({ user }) {
                   menuShouldBlockScroll={false}
                   placeholder="All Years"
                   options={yearOptions}
-                  value={yearOptions.find(o => o.value === filters.class) || null}
+                  value={yearOptions.find(o => o.value === filters.class_id) || null}
                   onChange={(o) =>
                     setFilters(f => ({
                       ...f,
-                      class: o?.value || ""
+                      class_id: o?.value || ""
                     }))
                   }
                 />
@@ -643,7 +788,7 @@ export default function Students({ user }) {
                             </div>
                             <div>
                               <p className="font-bold text-gray-800 text-sm">{s.name}</p>
-                              <p className="text-xs text-gray-400">{s.email}</p>
+                              {/* <p className="text-xs text-gray-400">{s.email}</p> */}
                             </div>
                           </div>
                         </td>
@@ -654,7 +799,7 @@ export default function Students({ user }) {
                         <td className="px-6 py-4">
                           {(() => {
                             const dept = DEPT_MAP[s.dept_id];
-                            const year = YEAR_MAP[s.class_id];
+                            const year = classYearMap[s.class_id];
 
                             if (!dept && !year) return null;
 
@@ -804,134 +949,126 @@ export default function Students({ user }) {
         )}
 
         {/* Identity Fields */}
-        {!editingStudent && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Full Name
-              </label>
-              <input
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Enter student full name"
-                className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Full Name
+            </label>
+            <input
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter student full name"
+              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
                      focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Register Number
-              </label>
-              <input
-                value={formData.roll_no}
-                onChange={(e) => handleInputChange("roll_no", e.target.value)}
-                placeholder="Enter register number"
-                className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
-                     focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all font-mono"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Email ID
-              </label>
-              <input
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                placeholder="Enter student email address"
-                className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
-                     focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Mobile Number
-              </label>
-              <input
-                value={formData.mobile}
-                onChange={(e) => handleInputChange("mobile", e.target.value)}
-                placeholder="Enter mobile number"
-                className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
-                     focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Gender
-              </label>
-              <Select
-                styles={selectStyles}
-                options={GENDER_OPTIONS}
-                onChange={(o) => handleInputChange("gender", o.value)}
-                value={GENDER_OPTIONS.find(g => g.value === formData.gender) || null}
-                placeholder="Select gender"
-              />
-            </div>
-
+            />
           </div>
-        )}
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Register Number
+            </label>
+            <input
+              value={formData.roll_no}
+              onChange={(e) => handleInputChange("roll_no", e.target.value)}
+              placeholder="Enter register number"
+              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
+                     focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all font-mono"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Email ID
+            </label>
+            <input
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              placeholder="Enter student email address"
+              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
+                     focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Mobile Number
+            </label>
+            <input
+              value={formData.mobile}
+              onChange={(e) => handleInputChange("mobile", e.target.value)}
+              placeholder="Enter mobile number"
+              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 
+                     focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Gender
+            </label>
+            <Select
+              styles={selectStyles}
+              options={GENDER_OPTIONS}
+              onChange={(o) => handleInputChange("gender", o.value)}
+              value={GENDER_OPTIONS.find(g => g.value === formData.gender) || null}
+              placeholder="Select gender"
+            />
+          </div>
+
+        </div>
 
         {/* Department + Class */}
-        {!editingStudent && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Department</label>
-              {user.role === "Principal" ? (
-                <Select
-                  styles={selectStyles}
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  menuShouldBlockScroll={false}
-                  options={deptOptions}
-                  onChange={(o) => handleInputChange("dept_id", o.value)}
-                  value={deptOptions.find((d) => d.value === formData.dept_id)}
-                  placeholder="Select department"
-                />
-              ) : (
-                <input
-                  disabled
-                  value={DEPT_MAP[user.dept_id]}
-                  className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
-                />
-              )}
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Class</label>
-              {user.role === "CA" ? (
-                <input
-                  disabled
-                  value={classOptions.find((c) => c.value === user.assigned_class_id)?.label || "Assigned Class"}
-                  className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
-                />
-              ) : (
-                <Select
-                  styles={selectStyles}
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  menuShouldBlockScroll={false}
-                  placeholder="All Years"
-                  options={yearOptions}
-                  value={yearOptions.find(o => o.value === filters.class) || null}
-                  onChange={(o) =>
-                    setFilters(f => ({
-                      ...f,
-                      class: o?.value || ""
-                    }))
-                  }
-                />
-              )}
-            </div>
-
-
-
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Department</label>
+            {user.role === "Principal" ? (
+              <Select
+                styles={selectStyles}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+                menuShouldBlockScroll={false}
+                options={deptOptions}
+                onChange={(o) => handleInputChange("dept_id", o.value)}
+                value={deptOptions.find((d) => d.value === formData.dept_id)}
+                placeholder="Select department"
+              />
+            ) : (
+              <input
+                disabled
+                value={DEPT_MAP[user.dept_id]}
+                className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
+              />
+            )}
           </div>
-        )}
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Class</label>
+            {user.role === "CA" ? (
+              <input
+                disabled
+                value={classOptions.find((c) => c.value === user.assigned_class_id)?.label || "Assigned Class"}
+                className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
+              />
+            ) : (
+              <Select
+                styles={selectStyles}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+                menuShouldBlockScroll={false}
+                placeholder="Select Class"
+                options={classOptions}
+                value={classOptions.find(o => o.value === formData.class_id) || null}
+                onChange={(o) =>
+                  handleInputChange("class_id", o?.value || "")
+                }
+              />
+            )}
+          </div>
+
+        </div>
 
         {/* Status Switches */}
         <div className="space-y-2">

@@ -95,9 +95,15 @@ export default function Sidebar({ role, open, onClose }) {
     //   roles: ['Staff', 'Principal', 'F&A', 'student', 'CA', 'HOD'],
     // },
     {
-      key: '/late',
+      key: '/lateentries',
       label: 'Late Arrival',
       icon: <ClockCircleOutlined />,
+      roles: ['CA', 'HOD', 'Principal'],
+    },
+    {
+      key: '/attendancelogs',
+      label: 'Attendance Logs',
+      icon: <BarChartOutlined />,
       roles: ['CA', 'HOD', 'Principal'],
     },
     {
