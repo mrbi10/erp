@@ -137,12 +137,12 @@ export default function Sidebar({ role, open, onClose }) {
       icon: <SafetyCertificateOutlined />,
       roles: ['Security'],
     },
-    // {
-    //   key: '/profilehub',
-    //   label: 'Profile Hub',
-    //   icon: <UserAddOutlined />,
-    //   roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
-    // },
+    {
+      key: '/profilehub',
+      label: 'Profile Hub',
+      icon: <UserAddOutlined />,
+      roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
+    },
   ];
 
 

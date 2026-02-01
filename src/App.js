@@ -50,9 +50,10 @@ import TopPerformers from './pages/marks/TopPerformers';
 // import Feesanalytics from './pages/fees/FeesAnalytics';
 // import FeesAdd from './pages/fees/FeesAdd';
 
-// import ProfileHub from './pages/sidebar/ProfileHub';
-// import ProfileView from './pages/profilehub/ProfileView';
-// import ProfileAdd from './pages/profilehub/ProfileAdd';
+import ProfileHub from './pages/sidebar/ProfileHub';
+import ProfileHubView from './pages/profilehub/ProfileHubView';
+import ProfileHubAdd from './pages/profilehub/ProfileHubAdd';
+import ProfileHubActivities from './pages/profilehub/ProfileHubActivities';
 
 
 
@@ -228,11 +229,12 @@ export default function App() {
               </Route> */}
 
 
-                {/* <Route path="/profilehub" element={<ProfileHub user={user} />}>
-                <Route path="add" element={<ProfileAdd />} />
-                <Route path="view" element={<ProfileView user={user} />} />
-                <Route index element={<ProfileView user={user} />} />
-              </Route> */}
+                <Route path="/profilehub" element={<ProfileHub user={user} />}>
+                <Route path="add" element={<ProfileHubAdd />} />
+                <Route path="view" element={<ProfileHubView user={user} />} />
+                <Route path="activities" element={<ProfileHubActivities user={user} />} />
+                <Route index element={<ProfileHubView user={user} />} />
+              </Route>
 
                 <Route path="/placementtraining" element={<PlacementTraining user={user} />}>
 
