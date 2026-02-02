@@ -3,11 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
+import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
 
 export default function TrainerResults() {
   const { testId } = useParams();
   const navigate = useNavigate();
-
+  const totalStudents = results.length;
+  const passed = results.filter(r => r.pass_status === "pass").length;
+  const failed = totalStudents - passed;
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +49,64 @@ export default function TrainerResults() {
     fetchResults();
   }, [testId]);
 
+
+  const tableHeaders = [
+    "Roll No",
+    "Name",
+    "Attempt",
+    "Score",
+    "Percentage",
+    "Status",
+    "Submitted At"
+  ];
+
+
+  const tableData = results.map(r => ([
+    r.roll_no,
+    r.name,
+    r.attempt_no,
+    r.score,
+    `${r.percentage}%`,
+    r.pass_status.toUpperCase(),
+    new Date(r.submitted_at).toLocaleString("en-GB"),
+  ]));
+
+
+  const handleExcelExport = () => {
+    const excelData = results.map(r => ({
+      "Roll No": r.roll_no,
+      "Name": r.name,
+      "Attempt": r.attempt_no,
+      "Score": r.score,
+      "Percentage": `${r.percentage}%`,
+      "Status": r.pass_status,
+      "Submitted At": new Date(r.submitted_at).toLocaleString("en-GB"),
+    }));
+
+    exportToExcel(excelData, "Test_Results", "Results");
+  };
+
+
+  const handlePDFExport = () => {
+    generatePDFReport({
+      title: "Test Results",
+      subTitle: `Test ID: ${testId}`,
+      generatedBy: "Trainer",
+      filters: [
+        { label: "Test ID", value: testId },
+        { label: "Total Students", value: totalStudents }
+      ],
+      stats: [
+        { label: "Total", value: totalStudents, color: [79, 70, 229] },
+        { label: "Passed", value: passed, color: [22, 163, 74] },
+        { label: "Failed", value: failed, color: [220, 38, 38] },
+      ],
+      tableHeaders,
+      tableData,
+      fileName: "Test_Results"
+    });
+  };
+
   // -----------------------------
   // UI
   // -----------------------------
@@ -63,6 +124,25 @@ export default function TrainerResults() {
         <h1 className="text-2xl font-bold">
           Test Results
         </h1>
+
+        <div className="flex items-center gap-3 ml-auto">
+          <button
+            onClick={handleExcelExport}
+            className="px-4 py-2 text-sm font-semibold rounded-lg
+      bg-emerald-600 text-white hover:bg-emerald-700 transition"
+          >
+            Download Excel
+          </button>
+
+          <button
+            onClick={handlePDFExport}
+            className="px-4 py-2 text-sm font-semibold rounded-lg
+      bg-indigo-600 text-white hover:bg-indigo-700 transition"
+          >
+            Download PDF
+          </button>
+        </div>
+
       </div>
 
       {/* Content */}
