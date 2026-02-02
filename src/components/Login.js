@@ -163,7 +163,7 @@ export default function Login({ onClose, onLoginSuccess }) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value.trim())}
-              placeholder="yourname"
+              placeholder="Enter Register No or Mail id"
               className="
                 w-full px-4 py-2.5 rounded-xl
                 border border-slate-300 dark:border-slate-700
@@ -257,7 +257,7 @@ export default function Login({ onClose, onLoginSuccess }) {
             {!otpMode && (
               <button
                 type="button"
-                //onClick={sendOtp}
+                onClick={sendOtp}
                 className="text-purple-600 dark:text-purple-400 hover:underline"
               >
                 Login with OTP
