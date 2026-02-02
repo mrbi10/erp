@@ -18,19 +18,7 @@ export default function ForgotPassword() {
   // Username Handler (same logic as login)
   // -------------------------------
   const handleUsernameChange = (e) => {
-    let value = e.target.value;
-
-    if (value.includes(DOMAIN)) {
-      value = value.replace(DOMAIN, "");
-      setWarning("Don't type @mnmjec.ac.in — just enter your username.");
-    } else if (value.includes("@")) {
-      value = value.replace("@", "");
-      setWarning("Remove the @ symbol. Only enter your username.");
-    } else {
-      setWarning("");
-    }
-
-    setUsername(value.trim());
+    setUsername(e.target.value.trim());
   };
 
   // -------------------------------
@@ -42,10 +30,9 @@ export default function ForgotPassword() {
     setMessage("");
     setLoading(true);
 
-    // Build final email
     const finalEmail = username.includes("@")
-      ? username.trim()
-      : username.trim() + DOMAIN;
+      ? username
+      : `${username}${DOMAIN}`;
 
     try {
       const res = await fetch(`${BASE_URL}/forgotpassword`, {
@@ -62,12 +49,12 @@ export default function ForgotPassword() {
         setMessage("If this email exists, a reset link has been sent.");
       }
     } catch (err) {
-      console.error(err);
       setError("Server unreachable. Try again later.");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md animate-fadeIn z-50">
