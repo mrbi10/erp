@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { useBlocker  } from "react-router-dom";
 import {
   FaPlus,
   FaSave,
@@ -227,26 +226,7 @@ export default function TrainerAddQuestions() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isNavigatingRef = React.useRef(false);
 
-  useBlocker(({ retry }) => {
-  if (!hasUnsavedChanges) {
-    retry();
-    return;
-  }
 
-  Swal.fire({
-    title: "Unsaved changes",
-    text: "You have unsaved questions. Do you really want to leave?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Leave",
-    cancelButtonText: "Stay",
-  }).then((res) => {
-    if (res.isConfirmed) {
-      setHasUnsavedChanges(false);
-      retry(); // 🔑 allows navigation
-    }
-  });
-}, hasUnsavedChanges);
 
   // --- API: Fetch Test Metadata ---
   useEffect(() => {
