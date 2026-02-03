@@ -52,12 +52,12 @@ export default function Marks({ user }) {
         icon: <FaChartBar className="text-purple-500" />,
         description: "Analyze department-wise averages and top-performing classes.",
       },
-      {
-        label: "Top Performers",
-        page: "top",
-        icon: <FaAward className="text-yellow-500" />,
-        description: "See the best-performing students across the institution.",
-      }
+      // {
+      //   label: "Top Performers",
+      //   page: "top",
+      //   icon: <FaAward className="text-yellow-500" />,
+      //   description: "See the best-performing students across the institution.",
+      // }
     );
   } else if (user?.role === "HOD") {
     options.push(
@@ -67,12 +67,13 @@ export default function Marks({ user }) {
         icon: <FaEye className="text-blue-500" />,
         description: "Review marks for all classes in your department.",
       },
-      {
-        label: "Faculty Performance Reports",
-        page: "faculty",
-        icon: <FaClipboardCheck className="text-teal-500" />,
-        description: "View reports on marks entered and exam performance by staff.",
-      }
+    
+      // {
+      //   label: "Faculty Performance Reports",
+      //   page: "faculty",
+      //   icon: <FaClipboardCheck className="text-teal-500" />,
+      //   description: "View reports on marks entered and exam performance by staff.",
+      // }
     );
   } else if (user?.role === "CA") {
     options.push(
@@ -82,18 +83,19 @@ export default function Marks({ user }) {
         icon: <FaPen className="text-green-500" />,
         description: "Record IAT and Model Exam marks for your advised class.",
       },
+      
       {
         label: "View Class Marks",
         page: "view",
         icon: <FaEye className="text-blue-500" />,
         description: "View summary of your advised class and teaching subjects.",
       },
-      {
-        label: "Top Performers",
-        page: "top",
-        icon: <FaAward className="text-yellow-500" />,
-        description: "See top students in your advised class.",
-      }
+      // {
+      //   label: "Top Performers",
+      //   page: "top",
+      //   icon: <FaAward className="text-yellow-500" />,
+      //   description: "See top students in your advised class.",
+      // }
     );
   } else if (user?.role === "Staff") {
     options.push(
@@ -118,12 +120,12 @@ export default function Marks({ user }) {
         icon: <FaEye className="text-sky-500" />,
         description: "Access your IAT and Model Exam marks with subject-wise breakdown.",
       },
-      {
-        label: "Top Rankers",
-        page: "top",
-        icon: <FaAward className="text-yellow-500" />,
-        description: "See class toppers and your ranking.",
-      }
+      // {
+      //   label: "Top Rankers",
+      //   page: "top",
+      //   icon: <FaAward className="text-yellow-500" />,
+      //   description: "See class toppers and your ranking.",
+      // }
     );
   }
 
