@@ -514,10 +514,12 @@ export default function StudentTestAttempt() {
     setCurrentIndex((prev) => Math.max(prev - 1, 0));
   };
 
-  const jumpToQuestion = (index) => {
-    setCurrentIndex(index);
-    setShowPalette(false);
-  };
+const jumpToQuestion = async (index) => {
+  await flushPendingAnswer();
+  setCurrentIndex(index);
+  setShowPalette(false);
+};
+
 
   const initiateExam = async () => {
     enterFullscreen();
@@ -664,7 +666,7 @@ export default function StudentTestAttempt() {
                     ${data.pass_status === 'pass' ? '<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : '<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'}
                 </div> -->
                 <div class="text-center">
-                    <div class="text-5xl font-black text-slate-800 tracking-tighter">${data.percentage || 0}%</div>
+                    <div class="text-5xl font-black text-slate-800 tracking-tighter">${Number(data.percentage || 0).toFixed(2)}%</div>
                     <div class="text-slate-500 font-medium">Final Score</div>
                 </div>
                 <div class="px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mt-2 ${data.pass_status === 'pass' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200'}">
