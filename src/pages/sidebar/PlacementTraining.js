@@ -74,6 +74,12 @@ export default function PlacementTraining({ user }) {
                 page: 'results',
                 icon: <FaUserGraduate className="text-purple-500" />,
                 description: 'Analyze student performance and scores.'
+            },
+            {
+                label: 'Student Analytics',
+                page: 'analytics',
+                icon: <FaChartBar className="text-green-500" />,
+                description: 'Analyze student performance and scores.'
             }
         );
     }
