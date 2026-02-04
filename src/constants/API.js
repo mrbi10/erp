@@ -6,6 +6,7 @@ const BASE_URLS = [
   // "https://erp-backend-gaow.onrender.com/api",
   // "http://localhost:5000/api",
   "http://192.168.6.50:5000/api",
+  "https://api.mnmjec.in/api",
 ];
 
 const detectBaseUrl = async () => {
