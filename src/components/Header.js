@@ -141,7 +141,7 @@ export default function PremiumHeader({
         >
           {/* Notification */}
 
-          {user && (
+          {/* {user && (
 
             <Badge dot>
               <BellOutlined
@@ -153,7 +153,7 @@ export default function PremiumHeader({
               />
             </Badge>
 
-          )}
+          )} */}
 
           {/* User Dropdown */}
           {user ? (
