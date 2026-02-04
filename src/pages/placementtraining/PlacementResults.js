@@ -53,8 +53,8 @@ const selectStyles = {
     backgroundColor: state.isSelected
       ? "#3b82f6"
       : state.isFocused
-      ? "#eff6ff"
-      : "white",
+        ? "#eff6ff"
+        : "white",
     color: state.isSelected ? "white" : "#1e293b",
     cursor: "pointer",
     fontSize: "0.9rem",
@@ -67,10 +67,9 @@ const StatusBadge = ({ status }) => {
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider
-        ${
-          pass
-            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-            : "bg-rose-50 text-rose-700 border-rose-200"
+        ${pass
+          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+          : "bg-rose-50 text-rose-700 border-rose-200"
         }`}
     >
       {pass ? <FaCheckCircle /> : <FaTimesCircle />}
@@ -125,8 +124,8 @@ export default function PlacementResults() {
   });
 
   const [sortConfig, setSortConfig] = useState({
-    key: "submitted_at",
-    direction: "desc",
+    key: "rollno",
+    direction: "asc",
   });
 
   // --- Fetch Data ---
@@ -227,6 +226,10 @@ export default function PlacementResults() {
         case "student":
           av = a.latest.student_name;
           bv = b.latest.student_name;
+          break;
+        case "rollno":
+          av = Number(a.latest.roll_no);
+          bv = Number(b.latest.roll_no);
           break;
         case "test_title":
           av = a.latest.test_title;
@@ -351,7 +354,7 @@ export default function PlacementResults() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-6 lg:p-10 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -451,8 +454,8 @@ export default function PlacementResults() {
                 value={
                   filters.course_id
                     ? courseOptions.find(
-                        (o) => o.value === Number(filters.course_id)
-                      )
+                      (o) => o.value === Number(filters.course_id)
+                    )
                     : null
                 }
                 onChange={(o) =>
@@ -537,6 +540,20 @@ export default function PlacementResults() {
                       <div className="flex items-center gap-2">
                         Student
                         {sortConfig.key === "student" &&
+                          (sortConfig.direction === "asc" ? (
+                            <FaSortAmountUp className="text-indigo-500" />
+                          ) : (
+                            <FaSortAmountDown className="text-indigo-500" />
+                          ))}
+                      </div>
+                    </th>
+                    <th
+                      className="p-4 cursor-pointer hover:bg-gray-100 transition-colors select-none group"
+                      onClick={() => handleSort("rollno")}
+                    >
+                      <div className="flex items-center gap-2">
+                        Reg no
+                        {sortConfig.key === "rollno" &&
                           (sortConfig.direction === "asc" ? (
                             <FaSortAmountUp className="text-indigo-500" />
                           ) : (
@@ -636,7 +653,13 @@ export default function PlacementResults() {
                                 <div className="font-bold text-gray-800 text-sm">
                                   {r.student_name}
                                 </div>
-                                <div className="text-xs text-gray-500 font-mono mt-0.5">
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <div className="text-gray-800 text-sm">
                                   {r.roll_no}
                                 </div>
                               </div>
@@ -656,9 +679,9 @@ export default function PlacementResults() {
                           <td className="p-4">
                             <StatusBadge status={r.pass_status} />
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 ">
                             <span className="text-sm font-medium text-gray-700">
-                              #{r.attempt_no}
+                              {r.attempt_no}
                             </span>
                             {item.attempts.length > 1 && (
                               <span className="ml-2 text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">
@@ -709,7 +732,7 @@ export default function PlacementResults() {
                                               className="hover:bg-gray-50 transition-colors"
                                             >
                                               <td className="p-3 pl-4 font-bold text-gray-700">
-                                                Attempt #{a.attempt_no}
+                                                Attempt {a.attempt_no}
                                               </td>
                                               <td className="p-3 text-gray-600 font-mono">
                                                 {formatSubmittedAt(a.submitted_at)}
