@@ -34,7 +34,7 @@ import { DEPT_MAP } from "../../constants/deptClass";
    COLORS & CONSTANTS
 -------------------------------------------------------- */
 const COLORS = ["#4F46E5", "#10B981", "#F59E0B", "#EF4444"];
-const PIE_COLORS = ["#10B981", "#EF4444"]; // Green for Pass, Red for Fail
+const PIE_COLORS = ["#10B981", "#EF4444"]; // manual, auto
 
 const selectStyles = {
     control: (base, state) => ({
@@ -61,6 +61,8 @@ export default function PlacementAnalytics({ user }) {
     const [summary, setSummary] = useState(null);
     const [testWise, setTestWise] = useState([]);
     const [deptWise, setDeptWise] = useState([]);
+    const [submissionStats, setSubmissionStats] = useState(null);
+
 
     // Filters (Using objects for react-select)
     const [selectedTest, setSelectedTest] = useState(null);
@@ -81,6 +83,8 @@ export default function PlacementAnalytics({ user }) {
             setSummary(data.summary);
             setTestWise(data.test_wise || []);
             setDeptWise(data.dept_wise || []);
+            setSubmissionStats(data.submission_breakdown || null);
+
 
         } catch (err) {
             console.error(err);
@@ -98,22 +102,36 @@ export default function PlacementAnalytics({ user }) {
 
     // 1. Transform Data for Charts
     const deptChartData = useMemo(() => {
-        return deptWise.map(d => ({
-            name: DEPT_MAP[d.dept_id] || `Dept ${d.dept_id}`,
-            passPercentage: d.pass_percentage,
-            attempts: d.attempts
-        }));
+        return deptWise.map(d => {
+            const attempts = Number(d.attempts) || 0;
+            const passed = Number(d.passed) || 0;
+
+            return {
+                name: DEPT_MAP[d.dept_id] || `Dept ${d.dept_id}`,
+                passPercentage: Number(d.pass_percentage) || 0,
+                attempts,
+                passed,
+                failed: attempts - passed
+            };
+        });
     }, [deptWise]);
 
     const pieChartData = useMemo(() => {
-        if (!summary) return [];
-        const pass = summary.pass_percentage || 0;
-        const fail = 100 - pass;
+        if (!submissionStats) return [];
+
         return [
-            { name: "Pass", value: parseFloat() },
-            { name: "Fail", value: parseFloat() }
+            {
+                name: "Manual Submit",
+                value: Number(submissionStats.manual_submissions) || 0
+            },
+            {
+                name: "Auto Submit",
+                value: Number(submissionStats.auto_submissions) || 0
+            }
         ];
-    }, [summary]);
+    }, [submissionStats]);
+
+
 
     // 2. Filter Logic
     const filteredTests = useMemo(() => {
@@ -122,9 +140,10 @@ export default function PlacementAnalytics({ user }) {
             data = data.filter(t => t.test_id === selectedTest.value);
         }
         if (passFilter) {
-            data = data.filter(t =>
-                passFilter.value === "PASS" ? t.pass_percentage >= 50 : t.pass_percentage < 50
-            );
+            data = data.filter(t => {
+                const pct = Number(t.pass_percentage) || 0;
+                return passFilter.value === "PASS" ? pct >= 50 : pct < 50;
+            });
         }
         return data;
     }, [testWise, selectedTest, passFilter]);
@@ -227,15 +246,54 @@ export default function PlacementAnalytics({ user }) {
                                 </h3>
                                 <div className="h-[300px]">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={deptChartData}>
+                                        <BarChart
+                                            data={deptChartData}
+                                            key={deptChartData.length}
+                                            barCategoryGap="40%"
+                                            barGap={6}
+                                        >
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} unit="%" />
-                                            <ChartTooltip
-                                                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                                cursor={{ fill: '#f8fafc' }}
+                                            <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                            <YAxis
+                                                axisLine={false}
+                                                tickLine={false}
+                                                allowDecimals={false}
+                                                domain={[0, 'dataMax']}
                                             />
-                                            <Bar dataKey="passPercentage" fill="#6366f1" radius={[6, 6, 0, 0]} barSize={40} name="Pass Rate" />
+                                            <ChartTooltip
+                                                content={({ active, payload }) => {
+                                                    if (!active || !payload?.length) return null;
+                                                    const d = payload[0].payload;
+
+                                                    return (
+                                                        <div className="bg-slate-900 text-white text-xs p-3 rounded-lg">
+                                                            <p className="font-bold">{d.name}</p>
+                                                            <p>Passed: {d.passed}</p>
+                                                            <p>Failed: {d.failed}</p>
+                                                            <p className="text-emerald-400 font-bold mt-1">
+                                                                Pass Rate: {d.passPercentage}%
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }}
+                                            />
+
+                                            <Legend />
+
+                                            <Bar
+                                                dataKey="passed"
+                                                stackId="a"
+                                                fill="#2dc937"
+                                                name="Passed"
+                                                barSize={40}
+                                            />
+                                            <Bar
+                                                dataKey="failed"
+                                                stackId="a"
+                                                fill="#E60000"
+                                                name="Failed"
+                                                barSize={40}
+                                            />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -243,32 +301,43 @@ export default function PlacementAnalytics({ user }) {
 
                             {/* Overall Pass/Fail Pie Chart */}
                             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                <h3 className="text-lg font-bold text-slate-800 mb-6">Overall Success Rate</h3>
+                                <h3 className="text-lg font-bold text-slate-800 mb-6">
+                                    Submission Type Breakdown
+                                </h3>
                                 <div className="h-[300px] relative">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={pieChartData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={100}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {pieChartData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <ChartTooltip />
-                                            <Legend verticalAlign="bottom" height={36} />
-                                        </PieChart>
+                                        {pieChartData.length > 0 && (
+                                            <PieChart>
+                                                <Pie
+                                                    data={pieChartData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={100}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                                                >
+                                                    {pieChartData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <ChartTooltip
+                                                    formatter={(value, name) => [`${value} submissions`, name]}
+                                                />
+                                                <Legend verticalAlign="bottom" height={36} />
+                                            </PieChart>
+                                        )}
+
                                     </ResponsiveContainer>
                                     {/* Center Text */}
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
                                         <div className="text-center">
-                                            <span className="text-2xl font-bold text-slate-800">{summary?.pass_percentage}%</span>
-                                            <p className="text-xs text-slate-400 font-bold uppercase">Pass</p>
+                                            <span className="text-2xl font-bold text-slate-800">
+                                                {(Number(submissionStats?.manual_submissions) || 0) +
+                                                    (Number(submissionStats?.auto_submissions) || 0)}
+                                            </span>
+                                            <p className="text-xs text-slate-400 font-bold">Total Submissions</p>
                                         </div>
                                     </div>
                                 </div>
@@ -277,13 +346,13 @@ export default function PlacementAnalytics({ user }) {
 
                         {/* 3. FILTERS & TABLES */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            
+
                             {/* Filter Toolbar */}
                             <div className="flex flex-col md:flex-row gap-4 mb-8 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
                                 <div className="flex items-center gap-2 text-slate-500 font-bold text-sm uppercase tracking-wide min-w-fit">
                                     <FaFilter /> Filters:
                                 </div>
-                                
+
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
                                     <Select
                                         styles={selectStyles}
@@ -339,19 +408,27 @@ export default function PlacementAnalytics({ user }) {
                                                     <th className="px-6 py-4">Test Name</th>
                                                     <th className="px-6 py-4 text-center">Attempts</th>
                                                     <th className="px-6 py-4 w-32">Pass Rate</th>
+                                                    <th className="px-6 py-4 text-center">Submissions</th>
+
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {filteredTests.length === 0 ? (
-                                                    <tr><td colSpan="3" className="p-8 text-center text-slate-400">No tests found</td></tr>
+                                                    <tr><td colSpan="4" className="p-8 text-center text-slate-400">No tests found</td></tr>
                                                 ) : (
                                                     filteredTests.map(t => (
                                                         <tr key={t.test_id} className="hover:bg-slate-50/50 transition-colors">
                                                             <td className="px-6 py-4 font-medium text-slate-700">{t.title}</td>
                                                             <td className="px-6 py-4 text-center text-slate-500">{t.attempts}</td>
                                                             <td className="px-6 py-4">
-                                                                <ProgressBar percentage={t.pass_percentage} />
+                                                                <ProgressBar percentage={Number(t.pass_percentage) || 0} />
                                                             </td>
+                                                            <td className="px-6 py-4 text-center">
+                                                                <span className="text-emerald-600 font-bold">{t.passed}</span>
+                                                                /
+                                                                <span className="text-red-500 font-bold">{t.attempts - t.passed}</span>
+                                                            </td>
+
                                                         </tr>
                                                     ))
                                                 )}
@@ -384,7 +461,7 @@ export default function PlacementAnalytics({ user }) {
                                                                 </td>
                                                                 <td className="px-6 py-4 text-center text-slate-500">{d.attempts}</td>
                                                                 <td className="px-6 py-4">
-                                                                    <ProgressBar percentage={d.pass_percentage} />
+                                                                    <ProgressBar percentage={Number(d.pass_percentage) || 0} />
                                                                 </td>
                                                             </tr>
                                                         ))
