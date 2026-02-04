@@ -1,124 +1,75 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FaArrowLeft, FaHome, FaRedo, FaExclamationTriangle } from 'react-icons/fa';
 
 export default function PageNotFound() {
   const navigate = useNavigate();
 
-  const container = {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '48px 20px',
-    color: '#e6eef8',
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
-    scrollbarWidth: 'none',
-    msOverflowStyle: 'none',
-    overflow: 'hidden',
-
-  };
-
-  const card = {
-    width: '100vw',
-    height: '100%',
-    overflow: 'hidden',
-    scrollbarWidth: 'none',
-    msOverflowStyle: 'none',
-    borderRadius: 18,
-    color: '#006ff7ff',
-    padding: '36px',
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))',
-    display: 'flex',
-    gap: 30,
-    alignItems: 'center',
-  };
-
-
-  const right = {
-    flex: 1,
-    minWidth: 320,
-  };
-
-  const title = {
-    fontSize: 28,
-    lineHeight: '1.05',
-    marginBottom: 10,
-    color: '#006ff7ff',
-    fontWeight: 700,
-  };
-
-
-
-  const hint = {
-    fontSize: 13,
-    color: '#9fb0d6',
-    marginBottom: 22,
-  };
-
-  const actions = {
-    display: 'flex',
-    gap: 12,
-    alignItems: 'center',
-  };
-
-  const btn = {
-    padding: '10px 18px',
-    borderRadius: 10,
-    border: 'none',
-    fontWeight: 600,
-    cursor: 'pointer',
-    background: '#584cffff',
-    color: 'white',
-    transition: 'transform 160ms ease, box-shadow 160ms ease',
-  };
-
-
   return (
-    <div style={container}>
+    <div className="h-screen overflow-y-hidden bg-[#F8FAFC] flex items-center justify-center p-6 font-sans text-slate-800">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="max-w-lg w-full bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden relative"
+      >
+        {/* Background Decor */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
+        <div className="p-10 text-center">
 
-      <div style={card}>
-
-        <div style={right}>
-          <div style={title}>Page not found — nothing to see here</div>
-          <div style={hint}>
-            Tip: double-check the URL or use the controls below. Your current path will be
-            preserved if you choose to reload.
+          {/* Icon / visual */}
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-indigo-50 text-indigo-600 mb-6 shadow-sm">
+            <FaExclamationTriangle className="text-3xl" />
           </div>
 
-          <div style={actions}>
+          {/* Typography */}
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
+            Page Not Found
+          </h1>
+          <p className="text-slate-500 text-base leading-relaxed mb-8">
+            The page you are looking for doesn't exist or has been moved.
+            Please double-check the URL or navigate back.
+          </p>
+
+          {/* Action Grid */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+
             <button
-              className="pnf-btn"
-              style={btn}
               onClick={() => navigate(-1)}
-              title="Go back"
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm active:scale-95"
             >
-              Go back
+              <FaArrowLeft className="text-sm" />
+              Go Back
             </button>
 
             <button
-              className="pnf-btn"
-              style={btn}
               onClick={() => navigate('/dashboard')}
-              title="Go to dashboard/home"
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95"
             >
+              <FaHome className="text-sm" />
               Home
             </button>
 
             <button
-              className="pnf-btn"
-              style={{ ...btn, marginLeft: 6 }}
               onClick={() => window.location.reload()}
-              title="Reload this page"
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition-all active:scale-95"
             >
+              <FaRedo className="text-sm" />
               Reload
             </button>
+
           </div>
-
-
         </div>
-      </div>
+
+        {/* Footer Hint */}
+        <div className="bg-slate-50 py-4 px-10 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">
+            Error Code: 404
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 }
