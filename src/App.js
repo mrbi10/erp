@@ -230,11 +230,11 @@ export default function App() {
 
 
                 <Route path="/profilehub" element={<ProfileHub user={user} />}>
-                <Route path="add" element={<ProfileHubAdd />} />
-                <Route path="view" element={<ProfileHubView user={user} />} />
-                <Route path="activities" element={<ProfileHubActivities user={user} />} />
-                <Route index element={<ProfileHubView user={user} />} />
-              </Route>
+                  <Route path="add" element={<ProfileHubAdd />} />
+                  <Route path="view" element={<ProfileHubView user={user} />} />
+                  <Route path="activities" element={<ProfileHubActivities user={user} />} />
+                  <Route index element={<ProfileHubView user={user} />} />
+                </Route>
 
                 <Route path="/placementtraining" element={<PlacementTraining user={user} />}>
 
@@ -312,7 +312,7 @@ export default function App() {
           <p className="mt-1 tracking-wide">
             Designed by{" "}
             <a
-              href="https://portfolio.mrbi.live"
+              href="https://abinanthan.in"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 font-medium hover:text-black transition-colors"
