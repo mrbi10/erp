@@ -7,6 +7,7 @@ export const DEPT_MAP = {
   6: "EEE",
   7: "MECH",
   8: "CIVIL",
+  9: "EXTERNAL",
 };
 
 export const CLASS_MAP = {
