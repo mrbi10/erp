@@ -64,10 +64,10 @@ export default function PlacementTraining({ user }) {
                 description: 'Manage placement training courses assigned to you.'
             },
             // {
-            //     label: 'Manage Tests',
-            //     page: 'tests/manage',
+            //     label: 'Students Answer review',
+            //     page: 'review',
             //     icon: <FaClipboardCheck className="text-green-600" />,
-            //     description: 'Create, publish and manage training tests.'
+            //     description: "Review student's training tests."
             // },
             {
                 label: 'Student Results',
@@ -87,21 +87,24 @@ export default function PlacementTraining({ user }) {
     else if (user.role === 'CA') {
         options.push(
             { label: "Class Results", page: "results", icon: <FaUsers /> },
-            { label: "Class Analytics", page: "analytics", icon: <FaChartBar /> }
+            { label: "Class Analytics", page: "analytics", icon: <FaChartBar /> },
+            { label: "Class Review", page: "review", icon: <FaChartBar /> }
         );
     }
 
     else if (user.role === 'HOD') {
         options.push(
-            { label: "Class Results", page: "results", icon: <FaUsers /> },
-            { label: "Class Analytics", page: "analytics", icon: <FaChartBar /> }
+            { label: "Department Results", page: "results", icon: <FaUsers /> },
+            { label: "Department Analytics", page: "analytics", icon: <FaChartBar /> },
+            { label: "Department Review", page: "review", icon: <FaChartBar /> }
         );
     }
 
     else if (user.role === 'Principal') {
         options.push(
             { label: "Institution Results", page: "results", icon: <FaUsers /> },
-            { label: "Institution Analytics", page: "analytics", icon: <FaChartBar /> }
+            { label: "Institution Analytics", page: "analytics", icon: <FaChartBar /> },
+            { label: "Institution review", page: "review", icon: <FaChartBar /> },
         );
     }
 
