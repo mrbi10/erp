@@ -29,6 +29,7 @@ import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 // import StudentTimetable from './pages/sidebar/StudentTimetable';
 import PlacementTraining from './pages/sidebar/PlacementTraining';
 import ManageSubjects from './pages/sidebar/ManageSubjects';
+import Feedback from './pages/sidebar/Feedback';
 
 
 import Students from './pages/students/Students';
@@ -54,6 +55,12 @@ import ProfileHub from './pages/sidebar/ProfileHub';
 import ProfileHubView from './pages/profilehub/ProfileHubView';
 import ProfileHubAdd from './pages/profilehub/ProfileHubAdd';
 import ProfileHubActivities from './pages/profilehub/ProfileHubActivities';
+
+
+import GiveFeedback from './pages/feedback/GiveFeedback'
+import ViewFeedback from './pages/feedback/ViewFeedback'
+import FeedbackAnalysis from './pages/feedback/FeedbackAnalysis'
+import ManageFeedback from './pages/feedback/ManageFeedback'
 
 
 
@@ -229,6 +236,12 @@ export default function App() {
                 <Route path="add" element={<FeesAdd user={user} />} />
               </Route> */}
 
+                <Route path="/feedback" element={<Feedback user={user} />}>
+                  <Route path="give" element={<GiveFeedback user={user} />} />
+                  <Route path="view" element={<ViewFeedback user={user} />} />
+                  <Route path="analysis" element={<FeedbackAnalysis user={user} />} />
+                  <Route path="manage" element={<ManageFeedback user={user} />} />
+                </Route>
 
                 <Route path="/profilehub" element={<ProfileHub user={user} />}>
                   <Route path="add" element={<ProfileHubAdd />} />

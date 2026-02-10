@@ -14,7 +14,8 @@ import {
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CalculatorIcon, Calendar1Icon, CalendarRangeIcon, CookingPotIcon, Megaphone, Mic, Mic2Icon, Speaker, SpeakerIcon } from "lucide-react";
-import { FaSpeakerDeck, FaBookOpen } from "react-icons/fa";
+import { FaSpeakerDeck, FaBookOpen , FaComment} from "react-icons/fa";
+import { MdInsertComment } from "react-icons/md";
 import { SpeakerWaveIcon } from "@heroicons/react/24/solid";
 import { Calendar } from "antd";
 
@@ -122,6 +123,11 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/placementtraining',
       label: 'Placement Training',
       icon: <FaBookOpen />,
+      roles: ['CA', 'student', 'trainer', 'HOD', 'Principal'],
+    },{
+      key: '/feedback',
+      label: 'Feedback',
+      icon: <MdInsertComment />,
       roles: ['CA', 'student', 'trainer', 'HOD', 'Principal'],
     },
 
