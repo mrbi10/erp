@@ -448,6 +448,7 @@ export default function TrainerAddQuestions() {
 
   const handleExcelUpload = (e) => {
     setHasUnsavedChanges(true);
+
     const file = e.target.files[0];
     if (!file) return;
 
@@ -457,51 +458,85 @@ export default function TrainerAddQuestions() {
     }
 
     const reader = new FileReader();
+
     reader.onload = (evt) => {
-      const workbook = XLSX.read(evt.target.result, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-      const headers = rows[0]?.map((h) => String(h).trim().toLowerCase());
-      if (!headers || headers.join() !== REQUIRED_HEADERS.join()) {
-        Swal.fire(
-          "Invalid format",
-          "Excel header format mismatch",
-          "error"
-        );
-        return;
-      }
-
       try {
-        const imported = rows.slice(1).map((row, idx) => {
-          const correct = String(row[5]).trim().toUpperCase();
-          const marks = Number(row[6]);
+        const workbook = XLSX.read(evt.target.result, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-          if (!["A", "B", "C", "D"].includes(correct)) {
-            throw new Error(`Row ${idx + 2}: Invalid correct option`);
-          }
+        // ----- Header validation -----
+        const headers = rows[0]?.map((h) =>
+          String(h).trim().toLowerCase()
+        );
 
-          if (isNaN(marks) || marks <= 0) {
-            throw new Error(`Row ${idx + 2}: Marks must be positive`);
-          }
+        if (!headers || headers.join() !== REQUIRED_HEADERS.join()) {
+          Swal.fire(
+            "Invalid format",
+            "Excel header format mismatch",
+            "error"
+          );
+          return;
+        }
 
-          return {
-            __tempId: uuid(),
-            question: row[0],
-            option_a: row[1],
-            option_b: row[2],
-            option_c: row[3],
-            option_d: row[4],
-            correct_option: correct,
-            marks,
-            note: row[7] || "",
-            isNew: true,
-            isDeleted: false,
-          };
-        });
+        // ----- Row parsing -----
+        const imported = rows
+          .slice(1)
+          .map((row, idx) => {
+            // skip empty / broken rows
+            if (!row[0] || !row[1]) return null;
+
+            const rawCorrect = row[5];
+
+            let correct = String(rawCorrect || "")
+              .trim()
+              .toUpperCase();
+
+            // allow numeric answers (1–4)
+            if (["1", "2", "3", "4"].includes(correct)) {
+              correct = ["A", "B", "C", "D"][Number(correct) - 1];
+            }
+
+            if (!["A", "B", "C", "D"].includes(correct)) {
+              throw new Error(
+                `Row ${idx + 2}: Invalid correct option (${rawCorrect})`
+              );
+            }
+
+            const marks = Number(row[6]);
+            if (isNaN(marks) || marks <= 0) {
+              throw new Error(
+                `Row ${idx + 2}: Marks must be a positive number`
+              );
+            }
+
+            return {
+              __tempId: uuid(),
+              question: String(row[0]).trim(),
+              option_a: String(row[1]).trim(),
+              option_b: String(row[2]).trim(),
+              option_c: String(row[3]).trim(),
+              option_d: String(row[4]).trim(),
+              correct_option: correct,
+              marks,
+              note: row[7] ? String(row[7]).trim() : "",
+              isNew: true,
+              isDeleted: false,
+            };
+          })
+          .filter(Boolean);
+
+        if (!imported.length) {
+          Swal.fire("No data", "No valid questions found", "warning");
+          return;
+        }
 
         setQuestions((prev) => [...prev, ...imported]);
-        Swal.fire("Success", `${imported.length} questions added`, "success");
+        Swal.fire(
+          "Success",
+          `${imported.length} questions added`,
+          "success"
+        );
       } catch (err) {
         Swal.fire("Excel error", err.message, "error");
       }
@@ -509,6 +544,7 @@ export default function TrainerAddQuestions() {
 
     reader.readAsArrayBuffer(file);
   };
+
 
   // --- Logic: Submit Changes ---
   const submitAllChanges = async () => {
@@ -542,9 +578,10 @@ export default function TrainerAddQuestions() {
           body: JSON.stringify({ questions: toAdd }),
         });
       }
+      setHasUnsavedChanges(false);
 
       Swal.fire("Saved", "All changes applied successfully", "success");
-      setHasUnsavedChanges(false);
+
       window.location.reload();
     } catch (error) {
       console.error(error);
