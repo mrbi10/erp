@@ -63,12 +63,12 @@ export default function PlacementTraining({ user }) {
                 icon: <FaChalkboardTeacher className="text-orange-500" />,
                 description: 'Manage placement training courses assigned to you.'
             },
-            // {
-            //     label: 'Students Answer review',
-            //     page: 'review',
-            //     icon: <FaClipboardCheck className="text-green-600" />,
-            //     description: "Review student's training tests."
-            // },
+            {
+                label: 'Students Answer review',
+                page: 'review',
+                icon: <FaClipboardCheck className="text-green-600" />,
+                description: "Review student's training tests."
+            },
             {
                 label: 'Student Results',
                 page: 'results',
