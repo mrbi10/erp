@@ -61,6 +61,7 @@ import GiveFeedback from './pages/feedback/GiveFeedback'
 import ViewFeedback from './pages/feedback/ViewFeedback'
 import FeedbackAnalysis from './pages/feedback/FeedbackAnalysis'
 import ManageFeedback from './pages/feedback/ManageFeedback'
+import ManageFeedbackQuestions from './pages/feedback/ManageFeedbackQuestions'
 
 
 
@@ -241,6 +242,7 @@ export default function App() {
                   <Route path="view" element={<ViewFeedback user={user} />} />
                   <Route path="analysis" element={<FeedbackAnalysis user={user} />} />
                   <Route path="manage" element={<ManageFeedback user={user} />} />
+                  <Route path="questions" element={<ManageFeedbackQuestions user={user} />} />
                 </Route>
 
                 <Route path="/profilehub" element={<ProfileHub user={user} />}>

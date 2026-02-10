@@ -7,7 +7,7 @@ import {
     FaEye,
     FaUsers
 } from "react-icons/fa";
-import { MdManageHistory } from "react-icons/md";
+import { MdManageHistory, MdOutlineManageAccounts } from "react-icons/md";
 
 
 export default function Feedback({ user }) {
@@ -61,6 +61,14 @@ export default function Feedback({ user }) {
                 page: "manage",
                 icon: <MdManageHistory className="text-indigo-500" />,
                 description: "Manage feedback sessions."
+            }
+        );
+        options.push(
+            {
+                label: "Manage Feedback Question set",
+                page: "questions",
+                icon: <MdOutlineManageAccounts className="text-indigo-500" />,
+                description: "Manage feedback question set."
             }
         );
 
