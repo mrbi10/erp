@@ -302,6 +302,8 @@ export default function StudentTestAttempt() {
   const warningRef = useRef(0);
   const submittingRef = useRef(false);
   const examEndedRef = useRef(false);
+  const optionLockRef = useRef(false);
+
 
   const MAX_WARNINGS = 2;
 
@@ -323,9 +325,9 @@ export default function StudentTestAttempt() {
     if (!examStarted) return;
 
     const beforeUnload = (e) => {
+      if (examEndedRef.current) return;
       e.preventDefault();
       e.returnValue = "";
-      forceSubmit("PAGE_UNLOAD");
     };
 
     window.addEventListener("beforeunload", beforeUnload);
@@ -458,8 +460,7 @@ export default function StudentTestAttempt() {
     if (examEndedRef.current) return;
 
     examEndedRef.current = true;
-
-    // await logViolation("UNKNOWN", "auto_submit");
+    submittingRef.current = true;
 
     handleSubmit(true);
   };
@@ -514,11 +515,11 @@ export default function StudentTestAttempt() {
     setCurrentIndex((prev) => Math.max(prev - 1, 0));
   };
 
-const jumpToQuestion = async (index) => {
-  await flushPendingAnswer();
-  setCurrentIndex(index);
-  setShowPalette(false);
-};
+  const jumpToQuestion = async (index) => {
+    await flushPendingAnswer();
+    setCurrentIndex(index);
+    setShowPalette(false);
+  };
 
 
   const initiateExam = async () => {
@@ -580,38 +581,51 @@ const jumpToQuestion = async (index) => {
   const flushPendingAnswer = async () => {
     if (!pendingAnswerRef.current || !attemptId) return;
 
-    const { qid, option } = pendingAnswerRef.current;
+    const payload = pendingAnswerRef.current;
     pendingAnswerRef.current = null;
 
-    await fetch(`${BASE_URL}/placement-training/student/tests/${testId}/answer`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify({
-        attempt_id: attemptId,
-        question_id: qid,
-        selected_option: option
-      })
-    });
+    try {
+      await fetch(`${BASE_URL}/placement-training/student/tests/${testId}/answer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+          attempt_id: attemptId,
+          question_id: payload.qid,
+          selected_option: payload.option
+        })
+      });
+    } catch {
+      pendingAnswerRef.current = payload;
+    }
   };
 
   const pendingAnswerRef = useRef(null);
 
   const selectOption = (qid, option) => {
-    if (examEndedRef.current) return;
+    if (examEndedRef.current || optionLockRef.current) return;
+
+    optionLockRef.current = true;
 
     setAnswers(prev => ({ ...prev, [qid]: option }));
     pendingAnswerRef.current = { qid, option };
+
+    setTimeout(() => {
+      optionLockRef.current = false;
+    }, 150);
   };
+
 
   const handleSubmit = async (auto = false) => {
     await flushPendingAnswer();
 
 
     if (!auto) {
-      const answeredCount = Object.keys(answers).length;
+      const answeredCount = questions.filter(
+        q => answers[q.question_id] !== undefined
+      ).length;
       const totalCount = questions.length;
 
       const result = await Swal.fire({
@@ -658,7 +672,7 @@ const jumpToQuestion = async (index) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-       Swal.fire({
+      Swal.fire({
         title: "Assessment Complete!",
         html: `
             <div class="flex flex-col items-center gap-3 mt-4">
@@ -703,7 +717,10 @@ const jumpToQuestion = async (index) => {
     }
   };
 
-  const progressPercentage = questions.length > 0 ? (Object.keys(answers).length / questions.length) * 100 : 0;
+  const progressPercentage =
+    questions.length > 0
+      ? (questions.filter(q => answers[q.question_id] !== undefined).length / questions.length) * 100
+      : 0;
   const isLowTime = timeLeft < 300;
   const q = questions[currentIndex];
   const isAnswered = q && answers[q.question_id] !== undefined;
