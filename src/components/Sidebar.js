@@ -128,7 +128,7 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/feedback',
       label: 'Feedback',
       icon: <MdInsertComment />,
-      roles: ['CA', 'student', 'trainer', 'HOD', 'Principal'],
+      roles: ['CA', 'student', 'HOD', 'Principal'],
     },
 
     // {
