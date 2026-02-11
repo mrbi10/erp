@@ -30,6 +30,7 @@ import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 import PlacementTraining from './pages/sidebar/PlacementTraining';
 import ManageSubjects from './pages/sidebar/ManageSubjects';
 import Feedback from './pages/sidebar/Feedback';
+import StaffAccess from './pages/sidebar/StaffAccess';
 
 
 import Students from './pages/students/Students';
@@ -63,6 +64,8 @@ import FeedbackAnalysis from './pages/feedback/FeedbackAnalysis'
 import ManageFeedback from './pages/feedback/ManageFeedback'
 import ManageFeedbackQuestions from './pages/feedback/ManageFeedbackQuestions'
 
+import ViewStaffAccess from "./pages/StaffAccess/ViewStaffAccess";
+import ManageStaffClassAccess from "./pages/StaffAccess/ManageStaffClassAccess";
 
 
 import StudentMyCourses from './pages/placementtraining/StudentMyCourses';
@@ -244,6 +247,33 @@ export default function App() {
                   <Route path="manage" element={<ManageFeedback user={user} />} />
                   <Route path="questions" element={<ManageFeedbackQuestions user={user} />} />
                 </Route>
+
+                <Route
+                  path="/staffaccess"
+                  element={
+                    ['HOD', 'Principal'].includes(user.role)
+                      ? <StaffAccess user={user} />
+                      : <PageNotFound />
+                  }
+                >
+                  <Route
+                    path="view"
+                    element={
+                      ['HOD', 'Principal'].includes(user.role)
+                        ? <ViewStaffAccess user={user} />
+                        : <PageNotFound />
+                    }
+                  />
+                  <Route
+                    path="manage"
+                    element={
+                      ['HOD', 'Principal'].includes(user.role)
+                        ? <ManageStaffClassAccess user={user} />
+                        : <PageNotFound />
+                    }
+                  />
+                </Route>
+
 
                 <Route path="/profilehub" element={<ProfileHub user={user} />}>
                   <Route path="add" element={<ProfileHubAdd />} />

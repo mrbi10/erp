@@ -4,6 +4,7 @@ import {
   AppstoreOutlined,
   IdcardOutlined,
   CheckCircleOutlined,
+  SettingFilledus,
   FileDoneOutlined,
   BookOutlined,
   ClockCircleOutlined,
@@ -64,6 +65,12 @@ export default function Sidebar({ role, open, onClose }) {
       label: 'Attendance',
       icon: <CheckCircleOutlined />,
       roles: ['Staff', 'student', 'CA', 'Principal', 'HOD'],
+    },
+    {
+      key: '/staffaccess',
+      label: 'Staff Access',
+      icon: <CheckCircleOutlined />,
+      roles: ['Principal', 'HOD'],
     },
     // {
     //   key: '/timetable',
