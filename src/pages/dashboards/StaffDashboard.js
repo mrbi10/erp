@@ -153,7 +153,7 @@ export default function StaffDashboard({
             <AssignmentsCard assignments={assignments} />
           </div> */}
 
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <AnnouncementsCard announcements={announcements} />
           </div>
         </div>
