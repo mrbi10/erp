@@ -82,7 +82,9 @@ function MarkAttendance({ user }) {
                 prev.map(s => ({
                   ...s,
                   status: map[s.student_id]
-                    ? map[s.student_id].status.toLowerCase()
+                    ? map[s.student_id].status === "On Duty"
+                      ? "on_duty"
+                      : map[s.student_id].status.toLowerCase()
                     : "unmarked"
                 }))
               );
@@ -102,14 +104,19 @@ function MarkAttendance({ user }) {
   }, []);
 
 
-
+  const formatStatus = (status) => {
+    if (status === "on_duty") return "On Duty";
+    if (status === "present") return "Present";
+    if (status === "absent") return "Absent";
+    return status;
+  };
 
   const markStudent = (studentId, status) => {
     setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, status } : s));
   };
 
   const handleMarkPresent = (studentId) => markStudent(studentId, "present");
-  const handleMarkOD = (studentId) => markStudent(studentId, "present");
+  const handleMarkOD = (studentId) => markStudent(studentId, "on_duty");
   const handleMarkAbsent = (studentId) => markStudent(studentId, "absent");
 
   const handleSubmit = () => {
@@ -165,7 +172,7 @@ function MarkAttendance({ user }) {
           date: todayISO,
           subjectId: selectedSubjectId || 1,
           period: selectedPeriod,
-          status: s.status.charAt(0).toUpperCase() + s.status.slice(1)
+          status: formatStatus(s.status)
         }));
 
         if (!attendanceMarked) {
@@ -225,7 +232,7 @@ function MarkAttendance({ user }) {
 
     const payload = changed.map(s => ({
       attendance_id: attendanceMap[s.student_id].attendance_id,
-      status: s.status.charAt(0).toUpperCase() + s.status.slice(1)
+      status: formatStatus(s.status)
     }));
 
     fetch(`${BASE_URL}/attendance`, {
@@ -244,8 +251,7 @@ function MarkAttendance({ user }) {
         const newMap = { ...attendanceMap };
         students.forEach(s => {
           if (newMap[s.student_id]) {
-            newMap[s.student_id].status =
-              s.status.charAt(0).toUpperCase() + s.status.slice(1);
+            newMap[s.student_id].status = formatStatus(s.status);
           }
         });
         setAttendanceMap(newMap);
@@ -267,6 +273,8 @@ function MarkAttendance({ user }) {
 
   const presentList = students.filter(s => s.status === "present");
   const absentList = students.filter(s => s.status === "absent");
+  const onDutyList = students.filter(s => s.status === "on_duty");
+
 
   if (loading) {
     return (
@@ -319,20 +327,32 @@ function MarkAttendance({ user }) {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className={`grid grid-cols-1 sm:grid-cols-${onDutyList.length > 0 ? "4" : "3"} gap-6 mb-8`}>
+
           <div className="p-5 rounded-xl shadow-lg bg-indigo-50 border-l-4 border-indigo-500 text-center">
             <h3 className="font-semibold text-indigo-700 mb-1">Total Students</h3>
             <p className="text-3xl font-extrabold text-indigo-900">{students.length}</p>
           </div>
+
           <div className="p-5 rounded-xl shadow-lg bg-green-50 border-l-4 border-green-500 text-center">
             <h3 className="font-semibold text-green-700 mb-1">Present (Marked)</h3>
             <p className="text-3xl font-extrabold text-green-900">{presentList.length}</p>
           </div>
+
           <div className="p-5 rounded-xl shadow-lg bg-red-50 border-l-4 border-red-500 text-center">
             <h3 className="font-semibold text-red-700 mb-1">Absent (Marked)</h3>
             <p className="text-3xl font-extrabold text-red-900">{absentList.length}</p>
           </div>
+
+          {onDutyList.length > 0 && (
+            <div className="p-5 rounded-xl shadow-lg bg-blue-50 border-l-4 border-blue-500 text-center">
+              <h3 className="font-semibold text-blue-700 mb-1">On Duty (Marked)</h3>
+              <p className="text-3xl font-extrabold text-blue-900">{onDutyList.length}</p>
+            </div>
+          )}
+
         </div>
+
 
         {/* Search Bar */}
         <div className="relative mb-6">
@@ -372,8 +392,9 @@ function MarkAttendance({ user }) {
                     <tr
                       key={student.regNo}
                       className={`border-b transition duration-150 ${student.status === 'present' ? 'bg-green-50 hover:bg-green-100' :
-                        student.status === 'absent' ? 'bg-red-50 hover:bg-red-100' :
-                          'hover:bg-gray-100'
+                        student.status === 'on_duty' ? 'bg-blue-50 hover:bg-blue-100' :
+                          student.status === 'absent' ? 'bg-red-50 hover:bg-red-100' :
+                            'hover:bg-gray-100'
                         }`}
                     >
                       <td className="p-3 text-sm font-medium text-gray-700">{student.regNo}</td>
@@ -382,10 +403,11 @@ function MarkAttendance({ user }) {
                       {/* Status Tag */}
                       <td className="p-3 text-center">
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm capitalize ${student.status === 'present' ? 'bg-green-200 text-green-800' :
-                          student.status === 'absent' ? 'bg-red-200 text-red-800' :
-                            'bg-gray-200 text-gray-800'
+                          student.status === 'on_duty' ? 'bg-blue-200 text-blue-800' :
+                            student.status === 'absent' ? 'bg-red-200 text-red-800' :
+                              'bg-gray-200 text-gray-800'
                           }`}>
-                          {student.status}
+                          {formatStatus(student.status)}
                         </span>
                       </td>
 
@@ -398,13 +420,17 @@ function MarkAttendance({ user }) {
                         >
                           <FaUserCheck />
                         </button>
-                        {/* <button
-                          className={`p-2 rounded-full transition duration-150 shadow-md ${student.status === 'OD' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
+                        <button
+                          className={`p-2 rounded-full transition duration-150 shadow-md 
+                           ${student.status === 'on_duty'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
                           onClick={() => handleMarkOD(student.student_id)}
-                          title="Mark OD"
+                          title="Mark On Duty"
                         >
-                          <FaUserCircle  />
-                        </button> */}
+                          <FaUserCircle />
+                        </button>
+
                         <button
                           className={`p-2 rounded-full transition duration-150 shadow-md ${student.status === 'absent' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
                           onClick={() => handleMarkAbsent(student.student_id)}
