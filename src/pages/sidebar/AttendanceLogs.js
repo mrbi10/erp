@@ -77,11 +77,20 @@ const selectStyles = {
     }),
 };
 
-export default function AttendanceLogs() {
+export default function AttendanceLogs({ user }) {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const [personType, setPersonType] = useState(PERSON_OPTIONS[0]);
+    const [personType, setPersonType] = useState(() =>
+        user?.role === "CA"
+            ? PERSON_OPTIONS.find(p => p.value === "STUDENT")
+            : PERSON_OPTIONS[0]
+    );
+
+    const [deptFilter, setDeptFilter] = useState(() =>
+        user?.role === "CA" ? String(user.dept_id) : "ALL"
+    );
+
     const [status, setStatus] = useState(STATUS_OPTIONS[0]);
 
     const token = localStorage.getItem("token");
@@ -92,8 +101,9 @@ export default function AttendanceLogs() {
         new Date().toISOString().slice(0, 10)
     );
 
-    const [deptFilter, setDeptFilter] = useState("ALL");
-    const [classFilter, setClassFilter] = useState("ALL");
+    const [classFilter, setClassFilter] = useState(() =>
+        user?.role === "CA" ? String(user.assigned_class_id) : "ALL"
+    );
 
     const [peopleOptions, setPeopleOptions] = useState([]);
     const [selectedPerson, setSelectedPerson] = useState(null);
@@ -160,6 +170,15 @@ export default function AttendanceLogs() {
     }, [deptFilter, personType, classFilter]);
 
 
+    useEffect(() => {
+        if (!user) return;
+
+        if (user.role === "CA") {
+            setPersonType(PERSON_OPTIONS.find(p => p.value === "STUDENT"));
+            setDeptFilter(String(user.dept_id));
+            setClassFilter(String(user.assigned_class_id));
+        }
+    }, [user]);
 
     // Stabilize fetch function reference
     const fetchLogs = useCallback(async () => {
@@ -202,6 +221,7 @@ export default function AttendanceLogs() {
         status,
         deptFilter,
         classFilter,
+        selectedPerson,
         token
     ]);
 
@@ -261,6 +281,7 @@ export default function AttendanceLogs() {
                         onChange={setPersonType}
                         styles={selectStyles}
                         className="min-w-[180px]"
+                        isDisabled={user?.role === "CA"}
                     />
 
                     <Select
@@ -277,6 +298,7 @@ export default function AttendanceLogs() {
                         onChange={(o) => setDeptFilter(o.value)}
                         styles={selectStyles}
                         className="min-w-[200px]"
+                        isDisabled={user?.role === "CA"}
                     />
 
                     {personType.value === "STUDENT" && (
@@ -286,6 +308,7 @@ export default function AttendanceLogs() {
                             onChange={(o) => setClassFilter(o.value)}
                             styles={selectStyles}
                             className="min-w-[180px]"
+                            isDisabled={user?.role === "CA"}
                         />
                     )}
 

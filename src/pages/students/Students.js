@@ -243,7 +243,7 @@ export default function Students({ user }) {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
-      .then(res => setStudents(res.success ? res.data : []))
+      .then(res => setStudents(Array.isArray(res) ? res : []))
       .catch(() => setStudents([]))
       .finally(() => setLoading(false));
 
@@ -575,7 +575,8 @@ export default function Students({ user }) {
     value: c.class_id,
     label: `${ROMAN_MAP[c.year]} - ${DEPT_MAP[c.dept_id]}`
   }));
-
+  console.log("Classes:", classes);
+  console.log("Assigned:", user.assigned_class_id);
 
 
   const pageCount = Math.ceil(filteredStudents.length / studentsPerPage);
@@ -1045,13 +1046,28 @@ export default function Students({ user }) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Class</label>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Class
+            </label>
+
             {user.role === "CA" ? (
-              <input
-                disabled
-                value={classOptions.find((c) => c.value === user.assigned_class_id)?.label || "Assigned Class"}
-                className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
-              />
+              (() => {
+                const assignedClass = classes.find(
+                  c => Number(c.class_id) === Number(user.assigned_class_id)
+                );
+
+                const label = assignedClass
+                  ? `${ROMAN_MAP[assignedClass.year]} - ${DEPT_MAP[assignedClass.dept_id]}`
+                  : "Loading...";
+
+                return (
+                  <input
+                    disabled
+                    value={label}
+                    className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
+                  />
+                );
+              })()
             ) : (
               <Select
                 styles={selectStyles}
@@ -1067,7 +1083,6 @@ export default function Students({ user }) {
               />
             )}
           </div>
-
         </div>
 
         {/* Status Switches */}
