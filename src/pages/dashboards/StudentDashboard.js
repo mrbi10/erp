@@ -4,6 +4,8 @@ import { Bar, Line } from "react-chartjs-2";
 import { BASE_URL } from "../../constants/API";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import {  FaUsers, FaBuilding, FaUserGraduate } from "react-icons/fa";
+import { DEPT_MAP } from "../../constants/deptClass";
 
 
 const CARD_CLASSES = "p-6 bg-white rounded-2xl border border-gray-100 shadow-xl transition duration-500 hover:shadow-2xl hover:border-sky-200 h-full flex flex-col";
@@ -21,6 +23,37 @@ const formatTime = (time) => {
     return `${formattedHour}:${m}`;
 };
 
+const ROMAN_MAP = { 1: "I", 2: "II", 3: "III", 4: "IV" };
+
+const getTargetLabel = (a, classes) => {
+    if (a.target_type === "all") {
+        return { text: "College Wide", color: "bg-red-100 text-red-600", icon: <FaUsers /> };
+    }
+
+    if (a.target_type === "department") {
+        return {
+            text: `${DEPT_MAP[a.dept_id] || "Dept"} Only`,
+            color: "bg-blue-100 text-blue-600",
+            icon: <FaBuilding />
+        };
+    }
+
+    if (a.target_type === "class") {
+        const cls = classes?.find(
+            c => c.dept_id === a.dept_id && c.class_id === a.class_id
+        );
+
+        return {
+            text: cls
+                ? `${DEPT_MAP[a.dept_id]} - ${ROMAN_MAP[cls.year]} Year`
+                : "Class",
+            color: "bg-emerald-100 text-emerald-600",
+            icon: <FaUserGraduate />
+        };
+    }
+
+    return { text: "General", color: "bg-gray-100 text-gray-600", icon: <FaUsers /> };
+};
 
 
 const formatdatetime = (dateString) => {
@@ -426,6 +459,7 @@ const TimetableCard = ({ timetableToday }) => {
 
 export const AnnouncementsCard = ({
     announcements,
+    classes = [],
     onRefresh,
     refreshing = false,
 }) => (
@@ -451,7 +485,6 @@ export const AnnouncementsCard = ({
                 <button
                     onClick={onRefresh}
                     disabled={refreshing}
-                    title="Refresh"
                     className="p-2 rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
                 >
                     <FaSyncAlt
@@ -472,24 +505,39 @@ export const AnnouncementsCard = ({
         <div className="px-6 py-5">
             {(announcements || []).length > 0 ? (
                 <ul className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
-                    {announcements.slice(0, 6).map((a, i) => (
-                        <motion.li
-                            key={a.id || i}
-                            whileHover={{ y: -2 }}
-                            transition={{ duration: 0.2 }}
-                            className="p-5 rounded-2xl bg-gradient-to-br from-red-50 to-white border border-red-100 hover:border-red-200 shadow-sm"
-                        >
-                            <p className="font-semibold text-gray-900 text-sm">
-                                {a.title}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-2 leading-relaxed line-clamp-3">
-                                {a.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-3">
-                                {formatdatetime(a.created_at)}
-                            </p>
-                        </motion.li>
-                    ))}
+                    {announcements.slice(0, 6).map((a, i) => {
+                        const target = getTargetLabel(a, classes);
+
+                        return (
+                            <motion.li
+                                key={a.id || i}
+                                whileHover={{ y: -2 }}
+                                transition={{ duration: 0.2 }}
+                                className="p-5 rounded-2xl bg-gradient-to-br from-red-50 to-white border border-red-100 hover:border-red-200 shadow-sm"
+                            >
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="font-semibold text-gray-900 text-sm">
+                                        {a.title}
+                                    </p>
+
+                                    <span
+                                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${target.color}`}
+                                    >
+                                        {target.icon}
+                                        {target.text}
+                                    </span>
+                                </div>
+
+                                <p className="text-sm text-gray-600 mt-2 leading-relaxed line-clamp-3">
+                                    {a.message}
+                                </p>
+
+                                <p className="text-xs text-gray-400 mt-3">
+                                    {formatdatetime(a.created_at)}
+                                </p>
+                            </motion.li>
+                        );
+                    })}
                 </ul>
             ) : (
                 <div className="text-center text-sm text-gray-500 bg-gray-50 rounded-xl py-10">
@@ -499,6 +547,7 @@ export const AnnouncementsCard = ({
         </div>
     </div>
 );
+
 
 
 export const AssignmentsCard = ({ assignments }) => (
