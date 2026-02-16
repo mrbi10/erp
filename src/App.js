@@ -31,6 +31,8 @@ import PlacementTraining from './pages/sidebar/PlacementTraining';
 import ManageSubjects from './pages/sidebar/ManageSubjects';
 import Feedback from './pages/sidebar/Feedback';
 import StaffAccess from './pages/sidebar/StaffAccess';
+import SupportTicket from './pages/sidebar/SupportTicket';
+
 
 
 import Students from './pages/students/Students';
@@ -63,6 +65,10 @@ import ViewFeedback from './pages/feedback/ViewFeedback'
 import FeedbackAnalysis from './pages/feedback/FeedbackAnalysis'
 import ManageFeedback from './pages/feedback/ManageFeedback'
 import ManageFeedbackQuestions from './pages/feedback/ManageFeedbackQuestions'
+
+import RaiseSupportTicket from './pages/support/RaiseSupportTicket';
+import ViewSupportTicket from './pages/support/ViewSupportTicket';
+import ManageTicket from './pages/support/ManageTicket';
 
 import ViewStaffAccess from "./pages/StaffAccess/ViewStaffAccess";
 import ManageStaffClassAccess from "./pages/StaffAccess/ManageStaffClassAccess";
@@ -273,6 +279,12 @@ export default function App() {
                     }
                   />
                 </Route>
+                <Route path="/support" element={<SupportTicket user={user} />}>
+                  <Route path="raise" element={<RaiseSupportTicket />} />
+                  <Route path="view" element={<ViewSupportTicket user={user} />} />
+                  <Route path="manage" element={<ManageTicket />} />
+                </Route>
+
 
 
                 <Route path="/profilehub" element={<ProfileHub user={user} />}>
