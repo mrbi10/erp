@@ -32,6 +32,7 @@ import ManageSubjects from './pages/sidebar/ManageSubjects';
 import Feedback from './pages/sidebar/Feedback';
 import StaffAccess from './pages/sidebar/StaffAccess';
 import SupportTicket from './pages/sidebar/SupportTicket';
+import SystemMonitor from './pages/sidebar/SystemMonitor';
 
 
 
@@ -209,6 +210,8 @@ export default function App() {
                 {/* <Route path="/StudentTimetable" element={<StudentTimetable user={user} />} /> */}
                 <Route path="/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
                 <Route path="/managesubjects" element={<ManageSubjects user={user} />} />
+                <Route path="/system-monitor" element={<SystemMonitor />} />
+
 
                 {/* Attendance nested routes */}
                 <Route path="/attendance" element={<Attendance user={user} />}>

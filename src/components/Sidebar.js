@@ -19,7 +19,7 @@ import {
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CalculatorIcon, Calendar1Icon, CalendarRangeIcon, CookingPotIcon, Megaphone, Mic, Mic2Icon, Speaker, SpeakerIcon } from "lucide-react";
-import { FaSpeakerDeck, FaBookOpen, FaComment,FaUserGraduate } from "react-icons/fa";
+import { FaSpeakerDeck, FaBookOpen, FaComment, FaUserGraduate } from "react-icons/fa";
 import { MdInsertComment } from "react-icons/md";
 import { SpeakerWaveIcon } from "@heroicons/react/24/solid";
 import { Calendar } from "antd";
@@ -53,42 +53,17 @@ export default function Sidebar({ role, open, onClose }) {
       roles: ['Staff', 'student', 'CA', 'HOD', 'Principal'],
     },
     {
-      key: '/students',
-      label: 'Students',
-      icon: <TeamOutlined />,
-      roles: ['CA', 'HOD', 'Principal'],
-    },
-    {
-      key: '/faculty',
-      label: 'Faculty',
-      icon: <IdcardOutlined />,
-      roles: ['HOD', 'Principal'],
-    },
-    {
       key: '/attendance',
       label: 'Attendance',
       icon: <CalendarRangeIcon />,
       roles: ['Staff', 'student', 'CA', 'Principal', 'HOD'],
     },
     {
-      key: '/staffaccess',
-      label: 'Staff Access',
-      icon: <SafetyCertificateOutlined />,
-      roles: ['Principal', 'HOD'],
+      key: '/mess',
+      label: 'Mess',
+      icon: <CoffeeOutlined />,
+      roles: ['Principal'],
     },
-
-    // {
-    //   key: '/timetable',
-    //   label: 'Time Table',
-    //   icon: <CalendarRangeIcon />,
-    //   roles: ['CA','HOD', 'Principal'],
-    // },
-    //  {
-    //   key: '/StudentTimetable',
-    //   label: 'Time Table',
-    //   icon: <CalendarRangeIcon />,
-    //   roles: ['student'],
-    // },
     {
       key: '/marks',
       label: 'Marks',
@@ -101,12 +76,31 @@ export default function Sidebar({ role, open, onClose }) {
       icon: <BookOutlined />,
       roles: ['Staff', 'Principal', 'CA', 'HOD'],
     },
-    // {
-    //   key: '/fees',
-    //   label: 'Fees',
-    //   icon: <WalletOutlined />,
-    //   roles: ['Staff', 'Principal', 'F&A', 'student', 'CA', 'HOD'],
-    // },
+    {
+      key: '/placementtraining',
+      label: 'Placement Training',
+      icon: <FaUserGraduate />,
+      roles: ['CA', 'student', 'trainer', 'HOD', 'Principal'],
+    },
+
+    {
+      key: '/announcement',
+      label: 'Announcement',
+      icon: <NotificationOutlined />,
+      roles: ['CA', 'student', 'HOD', 'Principal'],
+    },
+    {
+      key: '/students',
+      label: 'Students',
+      icon: <TeamOutlined />,
+      roles: ['CA', 'HOD', 'Principal'],
+    },
+    {
+      key: '/faculty',
+      label: 'Faculty',
+      icon: <IdcardOutlined />,
+      roles: ['HOD', 'Principal'],
+    },
     {
       key: '/lateentries',
       label: 'Late Arrival',
@@ -120,23 +114,18 @@ export default function Sidebar({ role, open, onClose }) {
       roles: ['CA', 'HOD', 'Principal'],
     },
     {
-      key: '/mess',
-      label: 'Mess',
-      icon: <CoffeeOutlined />,
-      roles: ['Principal'],
+      key: '/staffaccess',
+      label: 'Staff Access',
+      icon: <SafetyCertificateOutlined />,
+      roles: ['Principal', 'HOD'],
     },
     {
-      key: '/announcement',
-      label: 'Announcement',
-      icon: <NotificationOutlined />,
-      roles: ['CA', 'student', 'HOD', 'Principal'],
+      key: '/SecurityLateEntry',
+      label: 'Security Entry',
+      icon: <SafetyCertificateOutlined />,
+      roles: ['Security'],
     },
     {
-      key: '/placementtraining',
-      label: 'Placement Training',
-      icon: <FaUserGraduate />,
-      roles: ['CA', 'student', 'trainer', 'HOD', 'Principal'],
-    }, {
       key: '/feedback',
       label: 'Feedback',
       icon: <FaComment />,
@@ -148,6 +137,38 @@ export default function Sidebar({ role, open, onClose }) {
       icon: <CustomerServiceOutlined />,
       roles: ['Staff', 'student', 'CA', 'HOD', 'Principal', 'Admin'],
     },
+    {
+      key: '/profilehub',
+      label: 'Profile Hub',
+      icon: <UserOutlined />,
+      roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
+    },
+    {
+      key: '/system-monitor',
+      label: 'System Monitor',
+      icon: <BarChartOutlined />,
+      roles: ['Admin']
+    }
+    // {
+    //   key: '/timetable',
+    //   label: 'Time Table',
+    //   icon: <CalendarRangeIcon />,
+    //   roles: ['CA','HOD', 'Principal'],
+    // },
+    //  {
+    //   key: '/StudentTimetable',
+    //   label: 'Time Table',
+    //   icon: <CalendarRangeIcon />,
+    //   roles: ['student'],
+    // },
+
+    // {
+    //   key: '/fees',
+    //   label: 'Fees',
+    //   icon: <WalletOutlined />,
+    //   roles: ['Staff', 'Principal', 'F&A', 'student', 'CA', 'HOD'],
+    // },
+
 
     // {
     //   key: '/reports',
@@ -155,18 +176,7 @@ export default function Sidebar({ role, open, onClose }) {
     //   icon: <BarChartOutlined />,
     //   roles: ['CA', 'HOD', 'Principal'],
     // },
-    {
-      key: '/SecurityLateEntry',
-      label: 'Security Entry',
-      icon: <SafetyCertificateOutlined />,
-      roles: ['Security'],
-    },
-    {
-      key: '/profilehub',
-      label: 'Profile Hub',
-      icon: <UserOutlined />,
-      roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
-    },
+
   ];
 
 
