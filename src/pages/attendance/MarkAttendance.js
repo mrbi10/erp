@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BASE_URL } from '../../constants/API';
 import { FaUserCheck, FaUserTimes, FaUserCircle, FaUndo, FaCheck, FaCalendarDay, FaSearch, FaUsers, FaClipboardCheck, FaTimesCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
+import {DEPT_MAP} from "../../constants/deptClass";
 
 
 
@@ -19,16 +20,7 @@ function MarkAttendance({ user }) {
 
 
   // Map of department ids to names
-  const DEPT_MAP = {
-    1: "CSE",
-    2: "IT",
-    3: "ADS",
-    4: "CSBS",
-    5: "ECE",
-    6: "EEE",
-    7: "MECH",
-    8: "CIVIL",
-  };
+
 
   const fetchTodayAttendance = async (classId) => {
     const token = localStorage.getItem("token");

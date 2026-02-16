@@ -23,21 +23,13 @@ import { BASE_URL } from "../../constants/API";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
+import { DEPT_MAP } from "../../constants/deptClass";
 
 
 // ---------------------------
 // Constants & Utils
 // ---------------------------
-const DEPT_MAP = {
-  1: "CSE",
-  2: "IT",
-  3: "ADS",
-  4: "CSBS",
-  5: "ECE",
-  6: "EEE",
-  7: "MECH",
-  8: "CIVIL",
-};
+
 const ROMAN_MAP = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 
 const yearOptions = [
