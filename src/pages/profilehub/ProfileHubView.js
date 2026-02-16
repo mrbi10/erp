@@ -218,7 +218,8 @@ export default function ProfileHubView() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role") || "Faculty";
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const role = user.role || " ";
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -354,7 +355,7 @@ export default function ProfileHubView() {
                 {role} View
               </span>
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-3xl font-extrabold text-left text-slate-900 tracking-tight">
               Activity Review
             </h1>
             <p className="text-slate-500 mt-1 text-lg">
