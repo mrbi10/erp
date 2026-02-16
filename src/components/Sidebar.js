@@ -11,11 +11,15 @@ import {
   BarChartOutlined,
   TeamOutlined,
   SafetyCertificateOutlined,
+  CustomerServiceOutlined,
   UserAddOutlined,
+  NotificationOutlined,
+  CoffeeOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CalculatorIcon, Calendar1Icon, CalendarRangeIcon, CookingPotIcon, Megaphone, Mic, Mic2Icon, Speaker, SpeakerIcon } from "lucide-react";
-import { FaSpeakerDeck, FaBookOpen , FaComment} from "react-icons/fa";
+import { FaSpeakerDeck, FaBookOpen, FaComment,FaUserGraduate } from "react-icons/fa";
 import { MdInsertComment } from "react-icons/md";
 import { SpeakerWaveIcon } from "@heroicons/react/24/solid";
 import { Calendar } from "antd";
@@ -63,15 +67,16 @@ export default function Sidebar({ role, open, onClose }) {
     {
       key: '/attendance',
       label: 'Attendance',
-      icon: <CheckCircleOutlined />,
+      icon: <CalendarRangeIcon />,
       roles: ['Staff', 'student', 'CA', 'Principal', 'HOD'],
     },
     {
       key: '/staffaccess',
       label: 'Staff Access',
-      icon: <CheckCircleOutlined />,
+      icon: <SafetyCertificateOutlined />,
       roles: ['Principal', 'HOD'],
     },
+
     // {
     //   key: '/timetable',
     //   label: 'Time Table',
@@ -87,7 +92,7 @@ export default function Sidebar({ role, open, onClose }) {
     {
       key: '/marks',
       label: 'Marks',
-      icon: <FileDoneOutlined />,
+      icon: <BarChartOutlined />,
       roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
     },
     {
@@ -117,25 +122,31 @@ export default function Sidebar({ role, open, onClose }) {
     {
       key: '/mess',
       label: 'Mess',
-      icon: <CookingPotIcon />,
+      icon: <CoffeeOutlined />,
       roles: ['Principal'],
     },
     {
       key: '/announcement',
       label: 'Announcement',
-      icon: <Megaphone />,
+      icon: <NotificationOutlined />,
       roles: ['CA', 'student', 'HOD', 'Principal'],
     },
     {
       key: '/placementtraining',
       label: 'Placement Training',
-      icon: <FaBookOpen />,
+      icon: <FaUserGraduate />,
       roles: ['CA', 'student', 'trainer', 'HOD', 'Principal'],
-    },{
+    }, {
       key: '/feedback',
       label: 'Feedback',
-      icon: <MdInsertComment />,
+      icon: <FaComment />,
       roles: ['CA', 'student', 'HOD', 'Principal'],
+    },
+    {
+      key: '/support',
+      label: 'Support',
+      icon: <CustomerServiceOutlined />,
+      roles: ['Staff', 'student', 'CA', 'HOD', 'Principal', 'Admin'],
     },
 
     // {
@@ -153,7 +164,7 @@ export default function Sidebar({ role, open, onClose }) {
     {
       key: '/profilehub',
       label: 'Profile Hub',
-      icon: <UserAddOutlined />,
+      icon: <UserOutlined />,
       roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
     },
   ];
@@ -175,8 +186,8 @@ export default function Sidebar({ role, open, onClose }) {
       <aside
         ref={sidebarRef}
         className={`
-          fixed top-0 left-0 h-full bg-slate-900 text-white z-40
-          transition-all duration-300 overflow-hidden
+  fixed top-0 left-0 h-full bg-slate-900 text-white z-40
+  transition-all duration-300 overflow-y-auto overflow-x-hidden scrollbar-hide
           ${isMobile ? (open ? "w-64" : "w-0") : open ? "w-64" : "w-16"}
         `}
         onMouseLeave={() => {
