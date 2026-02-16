@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
@@ -8,7 +8,10 @@ import {
   FaCheckCircle,
   FaPaperPlane,
   FaStar,
-  FaInfoCircle
+  FaInfoCircle,
+  FaChevronLeft,
+  FaHistory,
+  FaCalendarAlt
 } from "react-icons/fa";
 
 export default function GiveFeedback({ user }) {
@@ -22,80 +25,71 @@ export default function GiveFeedback({ user }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-
   const token = localStorage.getItem("token");
 
-  /* ===================== EFFECT ===================== */
+  /* ===================== DATA FETCHING ===================== */
+  
+  // 1. Fetch Sessions on Mount
   useEffect(() => {
     if (user.role !== "student") return;
 
-    const init = async () => {
+    const fetchSessions = async () => {
       try {
         setLoading(true);
-
-        const sessionRes = await axios.get(
+        const res = await axios.get(
           `${BASE_URL}/feedback/student/session`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
-        const sessionsData = sessionRes.data;
-
-        setSessions(sessionsData || []);
-      } catch {
-        Swal.fire("Error", "Failed to load sessions", "error");
+        setSessions(res.data || []);
+      } catch (error) {
+        console.error(error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Connection Error',
+            text: 'Unable to load feedback sessions.',
+            confirmButtonColor: '#4f46e5'
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    init();
+    fetchSessions();
   }, [user.role, token]);
 
-
+  // 2. Fetch Details when Session Selected
   useEffect(() => {
     if (!selectedSession) return;
 
     const loadDetails = async () => {
       try {
         setLoading(true);
-        setRatings({});
+        setRatings({}); // Reset ratings
 
         const [staffRes, questionRes] = await Promise.all([
-          axios.get(
-            `${BASE_URL}/feedback/student/staff/${selectedSession.session_id}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ),
-          axios.get(
-            `${BASE_URL}/feedback/questions?sessionId=${selectedSession.session_id}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
+          axios.get(`${BASE_URL}/feedback/student/staff/${selectedSession.session_id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(`${BASE_URL}/feedback/questions?sessionId=${selectedSession.session_id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
         ]);
 
         setStaff(staffRes.data || []);
         setQuestions(questionRes.data || []);
-      } catch {
+      } catch (error) {
+        console.error(error);
         Swal.fire("Error", "Failed to load feedback form", "error");
+        setSelectedSession(null); // Go back if error
       } finally {
         setLoading(false);
       }
     };
 
     loadDetails();
-  }, [selectedSession]);
+  }, [selectedSession, token]);
 
-
-  /* ===================== ROLE GUARD ===================== */
-  if (user.role !== "student") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 p-6 text-center">
-        <FaInfoCircle className="text-4xl mb-4 opacity-20" />
-        <p className="font-medium">Access Restricted</p>
-        <p className="text-sm">Only students can access this feedback module.</p>
-      </div>
-    );
-  }
-
-  /* ===================== HANDLERS ===================== */
+  /* ===================== LOGIC & HELPERS ===================== */
 
   const handleRatingChange = (staffId, questionId, value) => {
     setRatings(prev => ({
@@ -107,28 +101,27 @@ export default function GiveFeedback({ user }) {
     }));
   };
 
-  const getProgress = () => {
+  // Calculate completion percentage
+  const progress = useMemo(() => {
     if (!staff.length || !questions.length) return 0;
-    let totalRequired = staff.length * questions.length;
-    let answered = 0;
-
-    staff.forEach(s => {
-      questions.forEach(q => {
-        if (ratings[s.staff_id]?.[q.question_id]) answered++;
-      });
+    const totalRequired = staff.length * questions.length;
+    
+    let answeredCount = 0;
+    Object.values(ratings).forEach(staffRatings => {
+        answeredCount += Object.keys(staffRatings).length;
     });
 
-    return Math.round((answered / totalRequired) * 100);
-  };
+    return Math.min(100, Math.round((answeredCount / totalRequired) * 100));
+  }, [ratings, staff.length, questions.length]);
 
   const handleSubmit = async () => {
-    // Validate
+    // 1. Validation
     for (const s of staff) {
       for (const q of questions) {
         if (!ratings[s.staff_id]?.[q.question_id]) {
           Swal.fire({
             title: "Incomplete Feedback",
-            text: `Please rate ${s.name} for "${q.question_text}"`,
+            html: `Please rate <b>${s.name}</b> for <br/>"<i>${q.question_text}</i>"`,
             icon: "warning",
             confirmButtonColor: "#4f46e5"
           });
@@ -137,18 +130,20 @@ export default function GiveFeedback({ user }) {
       }
     }
 
+    // 2. Confirmation
     const confirm = await Swal.fire({
       title: "Submit Feedback?",
-      text: "You cannot edit your response after submission.",
+      text: "This action cannot be undone.",
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Yes, Submit",
       confirmButtonColor: "#4f46e5",
-      cancelButtonColor: "#ef4444"
+      cancelButtonColor: "#94a3b8"
     });
 
     if (!confirm.isConfirmed) return;
 
+    // 3. Submission
     try {
       setSubmitting(true);
 
@@ -173,230 +168,268 @@ export default function GiveFeedback({ user }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // 4. Success State
       Swal.fire({
-        title: "Success!",
-        text: "Your feedback has been submitted successfully.",
+        title: "Submitted!",
+        text: "Thank you for your valuable feedback.",
         icon: "success",
         confirmButtonColor: "#4f46e5"
       });
-      setSelectedSession(prev => ({
-        ...prev,
-        already_submitted: 1
-      }));
 
-      setSessions(prev =>
-        prev.map(s =>
-          s.session_id === selectedSession.session_id
-            ? { ...s, already_submitted: 1 }
-            : s
-        )
+      // Update local state to show "Submitted" without refetching
+      const updatedSessions = sessions.map(s => 
+        s.session_id === selectedSession.session_id 
+          ? { ...s, already_submitted: 1 } 
+          : s
       );
+      setSessions(updatedSessions);
+      setSelectedSession(prev => ({ ...prev, already_submitted: 1 }));
 
     } catch (err) {
-      Swal.fire(
-        "Error",
-        err.response?.data?.message || "Submission failed",
-        "error"
-      );
+      Swal.fire("Error", err.response?.data?.message || "Submission failed", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  /* ===================== RENDER ===================== */
+  /* ===================== RENDER: ACCESS DENIED ===================== */
+  if (user.role !== "student") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-400 p-6">
+        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+            <FaInfoCircle className="text-3xl opacity-50" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-600">Access Restricted</h2>
+        <p className="text-sm">This module is only available for students.</p>
+      </div>
+    );
+  }
 
+  /* ===================== RENDER: LOADING ===================== */
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center space-y-4 bg-slate-50">
         <div className="relative">
           <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-          <FaUserTie className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-indigo-600" />
+          <div className="absolute inset-0 flex items-center justify-center">
+             <FaStar className="text-indigo-200 text-xl" />
+          </div>
         </div>
-        <p className="text-slate-500 text-sm font-bold animate-pulse">Loading Staff List...</p>
-      </div>
-    );
-  }
-  if (sessions.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-8 bg-slate-50">
-        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm mb-6">
-          <FaCheckCircle className="text-slate-300 text-5xl" />
-        </div>
-        <h3 className="text-2xl font-bold text-slate-800">All Caught Up!</h3>
-        <p className="text-slate-500 mt-2 max-w-md">
-          There are no active feedback sessions currently scheduled for your class.
+        <p className="text-slate-500 text-sm font-bold animate-pulse tracking-wide">
+            {selectedSession ? "Loading Feedback Form..." : "Loading Sessions..."}
         </p>
       </div>
     );
   }
 
-
-
-  if (!selectedSession) {
+  /* ===================== RENDER: SESSION LIST (DASHBOARD) ===================== */
+  if (!selectedSession || selectedSession.already_submitted) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-4xl mx-auto space-y-4">
-          <h2 className="text-2xl font-bold text-slate-800">
-            Active Feedback Sessions
-          </h2>
-
-          {sessions.map(s => (
-            <div
-              key={s.session_id}
-              className="bg-white p-6 rounded-xl shadow border border-slate-200 flex justify-between items-center"
-            >
-              <div>
-                <h3 className="font-bold text-slate-800">{s.title}</h3>
-                <p className="text-sm text-slate-500">
-                  {new Date(s.start_date).toLocaleDateString()} -{" "}
-                  {new Date(s.end_date).toLocaleDateString()}
-                </p>
-              </div>
-
-              {s.already_submitted ? (
-                <span className="text-green-600 font-semibold text-sm">
-                  Submitted
-                </span>
-              ) : (
-                <button
-                  onClick={() => setSelectedSession(s)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold"
-                >
-                  Give Feedback
-                </button>
-              )}
+      <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">
+        <div className="max-w-5xl mx-auto space-y-8">
+            
+            {/* Dashboard Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Feedback Sessions</h1>
+                    <p className="text-slate-500 mt-2">Rate your academic experience and help us improve.</p>
+                </div>
+                {selectedSession?.already_submitted && (
+                    <button 
+                        onClick={() => setSelectedSession(null)} 
+                        className="text-indigo-600 font-semibold hover:underline flex items-center gap-2"
+                    >
+                        <FaChevronLeft size={12} /> Back to List
+                    </button>
+                )}
             </div>
-          ))}
+
+            {/* Empty State */}
+            {sessions.length === 0 && (
+                <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 shadow-sm mt-10">
+                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+                        <FaCheckCircle className="text-4xl" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-700">All Caught Up!</h3>
+                    <p className="text-slate-500 mt-2">There are no pending feedback sessions at this moment.</p>
+                </div>
+            )}
+
+            {/* Session Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sessions.map(s => {
+                    const isSubmitted = s.already_submitted === 1;
+                    return (
+                        <div 
+                            key={s.session_id}
+                            className={`
+                                group relative p-6 rounded-2xl border transition-all duration-300 flex flex-col justify-between min-h-[220px]
+                                ${isSubmitted 
+                                    ? "bg-slate-50 border-slate-200 opacity-80 hover:opacity-100" 
+                                    : "bg-white border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-100/50 hover:-translate-y-1 hover:border-indigo-100"
+                                }
+                            `}
+                        >
+                            <div>
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isSubmitted ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                        {isSubmitted ? "Completed" : "Active"}
+                                    </span>
+                                    {isSubmitted && <FaCheckCircle className="text-green-500 text-xl" />}
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800 leading-tight mb-2 group-hover:text-indigo-700 transition-colors">
+                                    {s.title}
+                                </h3>
+                                <div className="flex items-center gap-2 text-sm text-slate-500">
+                                    <FaCalendarAlt className="text-slate-400" />
+                                    <span>Due: {new Date(s.end_date).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => !isSubmitted && setSelectedSession(s)}
+                                disabled={isSubmitted}
+                                className={`
+                                    w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all mt-6
+                                    ${isSubmitted 
+                                        ? "bg-slate-200 text-slate-500 cursor-not-allowed" 
+                                        : "bg-slate-900 text-white hover:bg-indigo-600 shadow-lg"
+                                    }
+                                `}
+                            >
+                                {isSubmitted ? (
+                                    <> <FaHistory /> Viewed </>
+                                ) : (
+                                    <> Start Feedback <FaPaperPlane className="text-xs" /> </>
+                                )}
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
       </div>
     );
   }
 
-  if (selectedSession.already_submitted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center border border-indigo-50">
-          <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <FaCheckCircle className="text-4xl" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Thank You!</h2>
-          <p className="text-slate-500 mb-6">Your feedback has been securely recorded. You cannot modify it after submission.</p>
-          <div className="p-4 bg-slate-50 rounded-xl text-xs font-mono text-slate-400">
-            Session ID: #{selectedSession.session_id}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const progress = getProgress();
-
+  /* ===================== RENDER: FEEDBACK FORM (WIZARD) ===================== */
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative">
 
       {/* --- STICKY HEADER --- */}
-      <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <FaStar className="text-indigo-500" /> Staff Feedback
-            </h1>
-            <p className="text-xs text-slate-500 hidden sm:block">Anonymous Evaluation • {selectedSession.title}</p>
-          </div>
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => setSelectedSession(null)}
+                        className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors"
+                        title="Back to Sessions"
+                    >
+                        <FaChevronLeft />
+                    </button>
+                    <div>
+                        <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide opacity-50">Feedback Session</h2>
+                        <h1 className="text-lg font-bold text-slate-800 leading-none">{selectedSession.title}</h1>
+                    </div>
+                </div>
 
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold text-slate-700">{progress}% Complete</p>
-              <p className="text-[10px] text-slate-400">Keep going!</p>
+                {/* Circular Progress */}
+                <div className="flex items-center gap-3">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-xs font-bold text-slate-700">{progress}% Complete</p>
+                        <p className="text-[10px] text-slate-400">{progress === 100 ? "Ready to submit" : "Keep going"}</p>
+                    </div>
+                    <div className="relative w-10 h-10">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                            <path 
+                                className="text-indigo-600 transition-all duration-500 ease-out" 
+                                strokeDasharray={`${progress}, 100`} 
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth="4" 
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-indigo-800">
+                            {progress}%
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="w-10 h-10 rounded-full border-4 border-slate-100 flex items-center justify-center relative">
-              <svg className="absolute w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  className="text-indigo-600"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  strokeDasharray={`${progress}, 100`}
-                />
-              </svg>
-              <span className="text-[10px] font-bold text-indigo-700">{progress}%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Sub-header */}
-        <div className="sm:hidden px-4 pb-2 text-xs text-slate-500 border-t border-slate-50 pt-2 flex justify-between">
-          <span>{selectedSession.title}</span>
-          <span>{staff.length} Faculty Members</span>
         </div>
       </div>
 
-      {/* --- MAIN CONTENT --- */}
-      <div className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 pb-32 space-y-8">
+      {/* --- SCROLLABLE CONTENT --- */}
+      <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 pb-32 space-y-8">
+        
+        {/* Info Banner */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-blue-800 text-sm">
+            <FaInfoCircle className="mt-0.5 shrink-0" />
+            <p>Your feedback is <strong>anonymous</strong>. Please rate each faculty member honestly to help improve teaching quality.</p>
+        </div>
 
+        {/* Staff Cards Loop */}
         {staff.map((s, index) => (
           <div
             key={s.staff_id}
-            className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-transform active:scale-[0.99] sm:active:scale-100 duration-200"
+            className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
           >
-            {/* Staff Card Header */}
-            <div className="bg-gradient-to-r from-slate-50 to-white p-5 border-b border-slate-100 flex items-center gap-4">
+            {/* Staff Header */}
+            <div className="bg-slate-50 p-5 border-b border-slate-100 flex items-center gap-4">
               <div className="relative">
-                <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm border border-slate-200">
                   <FaUserTie className="text-xl" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
+                <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">
                   {index + 1}
                 </div>
               </div>
-
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-slate-800 text-lg truncate">{s.name}</h3>
-                <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide bg-indigo-50 inline-block px-2 py-0.5 rounded-md mt-1">
-                  {s.designation}
-                </p>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">{s.name}</h3>
+                <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                  {s.subject_name || s.designation || "Faculty"}
+                </span>
               </div>
             </div>
 
-            {/* Questions Grid */}
-            <div className="p-5 md:p-6 space-y-8 md:space-y-6">
+            {/* Questions List */}
+            <div className="p-6 space-y-8">
               {questions.map((q, qIdx) => (
                 <div key={q.question_id} className="group">
-                  <div className="flex items-start gap-3 mb-3">
-                    <span className="text-slate-300 font-bold text-sm mt-0.5">Q{qIdx + 1}.</span>
-                    <p className="text-sm md:text-base font-medium text-slate-700 leading-relaxed group-hover:text-indigo-800 transition-colors">
+                  <div className="flex items-start gap-3 mb-4">
+                    <span className="text-slate-300 font-bold text-sm mt-0.5">Q{qIdx + 1}</span>
+                    <p className="font-medium text-slate-700 group-hover:text-indigo-800 transition-colors">
                       {q.question_text}
                     </p>
                   </div>
 
-                  {/* Rating Buttons - Responsive Layout */}
-                  <div className="pl-7 md:pl-8">
-                    <div className="flex flex-wrap gap-2 md:gap-3">
-                      {Array.from({ length: q.max_rating }).map((_, i) => {
+                  {/* Rating Block Interactive Component */}
+                  <div className="pl-8">
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from({ length: q.max_rating || 5 }).map((_, i) => {
                         const val = i + 1;
                         const isSelected = ratings[s.staff_id]?.[q.question_id] === val;
-
-                        // Color logic based on rating value (Red -> Green)
-                        const getColorClass = () => {
-                          if (!isSelected) return "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100";
-                          if (val <= 3) return "bg-rose-500 text-white border-rose-600 shadow-rose-200";
-                          if (val <= 7) return "bg-amber-500 text-white border-amber-600 shadow-amber-200";
-                          return "bg-emerald-500 text-white border-emerald-600 shadow-emerald-200";
-                        };
+                        
+                        // Dynamic Color Logic (Red -> Yellow -> Green)
+                        let activeColorClass = "bg-indigo-500 border-indigo-600 shadow-indigo-200";
+                        if (q.max_rating >= 5) {
+                             if (val / q.max_rating <= 0.4) activeColorClass = "bg-rose-500 border-rose-600 shadow-rose-200";
+                             else if (val / q.max_rating <= 0.7) activeColorClass = "bg-amber-400 border-amber-500 shadow-amber-200";
+                             else activeColorClass = "bg-emerald-500 border-emerald-600 shadow-emerald-200";
+                        }
 
                         return (
                           <button
                             key={val}
                             onClick={() => handleRatingChange(s.staff_id, q.question_id, val)}
                             className={`
-                              flex-1 sm:flex-none w-10 h-10 md:w-11 md:h-11 rounded-xl
-                              flex items-center justify-center
-                              text-sm md:text-base font-bold
-                              border transition-all duration-200 transform
-                              ${getColorClass()}
-                              ${isSelected ? "shadow-lg scale-110 -translate-y-1 ring-2 ring-offset-2 ring-transparent" : ""}
+                              w-10 h-10 md:w-12 md:h-12 rounded-lg text-sm font-bold border-b-4 transition-all duration-150 active:border-b-0 active:translate-y-1
+                              ${isSelected 
+                                ? `${activeColorClass} text-white translate-y-0.5 border-b-0 shadow-inner scale-105` 
+                                : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300"
+                              }
                             `}
                           >
                             {val}
@@ -404,58 +437,46 @@ export default function GiveFeedback({ user }) {
                         );
                       })}
                     </div>
-
-                    {/* Labels for scale */}
-                    <div className="flex justify-between text-[10px] text-slate-400 mt-2 px-1 font-medium uppercase tracking-wider">
-                      <span>Poor</span>
-                      <span>Excellent</span>
-                    </div>
+                    {/* <div className="flex justify-between w-full max-w-[280px] mt-2 px-1">
+                        <span className="text-[10px] uppercase font-bold text-slate-300">Poor</span>
+                        <span className="text-[10px] uppercase font-bold text-slate-300">Excellent</span>
+                    </div> */}
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ))}
-
       </div>
 
-      {/* --- FLOATING ACTION BAR --- */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-40">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-
-          <div className="hidden sm:block text-xs text-slate-500">
-            <strong className="text-slate-800 block">Almost Done?</strong>
-            Ensure all questions are answered before submitting.
-          </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className={`
-               w-full sm:w-auto flex-1 sm:flex-none
-               flex items-center justify-center gap-3
-               py-3.5 px-8 rounded-xl
-               bg-indigo-600 text-white font-bold text-sm tracking-wide
-               shadow-xl shadow-indigo-200
-               transform transition-all active:scale-95
-               hover:bg-indigo-700
-               disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none
-             `}
-          >
-            {submitting ? (
-              <>
-                <FaSpinner className="animate-spin text-lg" />
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <span>Submit Feedback</span>
-                <FaPaperPlane />
-              </>
-            )}
-          </button>
+      {/* --- FIXED SUBMIT FOOTER --- */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-5px_30px_rgba(0,0,0,0.05)] z-10">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-6">
+            <div className="hidden md:block">
+                <p className="text-sm font-bold text-slate-700">Finished Rating?</p>
+                <p className="text-xs text-slate-400">Review your answers before submitting.</p>
+            </div>
+            
+            <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className={`
+                    flex-1 md:flex-none md:w-64 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-xl transition-all transform
+                    ${submitting 
+                        ? "bg-slate-100 text-slate-400 cursor-wait" 
+                        : "bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] shadow-indigo-200"
+                    }
+                `}
+            >
+                {submitting ? (
+                    <> <FaSpinner className="animate-spin" /> Processing... </>
+                ) : (
+                    <> Submit Feedback <FaPaperPlane /> </>
+                )}
+            </button>
         </div>
       </div>
+
     </div>
   );
 }
