@@ -389,7 +389,7 @@ export default function GiveFeedback({ user }) {
               <div>
                 <h3 className="font-bold text-slate-800 text-lg">{s.name}</h3>
                 <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
-                  {s.subject_name || s.designation || "Faculty"}
+                  {s.subject_name ? `${s.subject_name} - ${s.subject_code}` : "Faculty"}
                 </span>
               </div>
             </div>
