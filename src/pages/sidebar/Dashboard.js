@@ -280,7 +280,7 @@ export default function EnhancedDashboard({ user }) {
         />
       );
 
-    case "staff":
+    case "Staff":
       return (
         <StaffDashboard
           profileCard={profileCard}
