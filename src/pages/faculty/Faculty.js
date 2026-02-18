@@ -32,6 +32,11 @@ const ROLE_OPTIONS = [
   { value: "HOD", label: "HOD" },
 ];
 
+const FORM_ROLE_OPTIONS = [
+  { value: "Staff", label: "Staff" },
+  { value: "HOD", label: "HOD" },
+];
+
 const DEPT_OPTIONS = [
   { value: "All", label: "All Departments" },
   ...Object.entries(DEPT_MAP).map(([id, name]) => ({
@@ -800,8 +805,8 @@ export default function Faculty() {
             <Select
               styles={selectStyles}
               {...modalSelectProps}
-              options={ROLE_OPTIONS.filter(r => r.value !== "All")}
-              value={ROLE_OPTIONS.find(o => o.value === formData.role)}
+              options={FORM_ROLE_OPTIONS.filter(r => r.value !== "All")}
+              value={FORM_ROLE_OPTIONS.find(o => o.value === formData.role)}
               onChange={(o) => handleInputChange("role", o.value)}
               placeholder="Select Role"
             />
