@@ -519,7 +519,22 @@ export default function ManageStaffClassAccess() {
                 </h3>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Select Faculty</label>
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      Select Faculty
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate("/faculty")}
+                      className="px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition"
+                    >
+                      Manage Faculty
+                    </button>
+                  </div>
+
+                  {/* Select Dropdown */}
                   <Select
                     placeholder="Search faculty name..."
                     options={staffList}
@@ -530,6 +545,7 @@ export default function ManageStaffClassAccess() {
                     isClearable
                   />
                 </div>
+
 
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
