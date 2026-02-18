@@ -3,15 +3,15 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import Select from "react-select"; // npm install react-select
 import { motion, AnimatePresence } from "framer-motion"; // npm install framer-motion
-import { 
-  FaUserTie, 
-  FaLayerGroup, 
-  FaSearch, 
-  FaFilePdf, 
-  FaFileExcel, 
-  FaThLarge, 
-  FaList, 
-  FaBuilding, 
+import {
+  FaUserTie,
+  FaLayerGroup,
+  FaSearch,
+  FaFilePdf,
+  FaFileExcel,
+  FaThLarge,
+  FaList,
+  FaBuilding,
   FaChalkboardTeacher,
   FaShieldAlt,
   FaExclamationCircle
@@ -40,9 +40,9 @@ const customSelectStyles = {
   }),
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected 
+    backgroundColor: state.isSelected
       ? '#4f46e5' // indigo-600
-      : state.isFocused 
+      : state.isFocused
         ? '#e0e7ff' // indigo-100
         : 'white',
     color: state.isSelected ? 'white' : '#1e293b',
@@ -67,7 +67,7 @@ const customSelectStyles = {
  * StatCard: Displays a single metric at the top of the dashboard.
  */
 const StatCard = ({ icon: Icon, label, value, colorClass, bgClass }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 transition-all hover:shadow-md"
@@ -115,12 +115,12 @@ export default function ViewStaffAccess() {
   // --- STATE MANAGEMENT ---
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filters State
   const [selectedDept, setSelectedDept] = useState(null);
   const [selectedYear, setSelectedYear] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // UI State
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
 
@@ -135,21 +135,37 @@ export default function ViewStaffAccess() {
     ...Object.entries(CLASS_MAP).map(([id, name]) => ({ value: id, label: name }))
   ], []);
 
-  // --- API CALLS ---
+
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userRole = user.role;
+  const userDeptId = user.dept_id;
+
+
+  useEffect(() => {
+    if (userRole === "DeptAdmin" || userRole === "HOD") {
+      const deptOption = deptOptions.find(
+        option => option.value === String(userDeptId)
+      );
+      setSelectedDept(deptOption);
+    }
+  }, []);
 
   useEffect(() => {
     fetchAccess();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDept, selectedYear]);
 
+
   const fetchAccess = async () => {
     setLoading(true);
-    
+
     // Construct filters based on React Select objects
     const apiFilters = {
       dept_id: selectedDept?.value || "",
-      year: selectedYear?.value || ""
+      class_id: selectedYear?.value || ""
     };
+
 
     try {
       const res = await axios.get(`${BASE_URL}/staffClassAccess`, {
@@ -178,7 +194,7 @@ export default function ViewStaffAccess() {
   const filteredList = useMemo(() => {
     if (!searchQuery) return data;
     const lowerQuery = searchQuery.toLowerCase();
-    return data.filter(item => 
+    return data.filter(item =>
       item.name?.toLowerCase().includes(lowerQuery) ||
       item.subject_name?.toLowerCase().includes(lowerQuery)
     );
@@ -189,7 +205,7 @@ export default function ViewStaffAccess() {
     const grouped = {};
     filteredList.forEach(item => {
       const deptName = DEPT_MAP[item.dept_id] || "Unknown Dept";
-      const yearName = CLASS_MAP[item.year] || "Unknown Year";
+      const yearName = CLASS_MAP[item.class_id] || "Unknown Year";
       const key = `${deptName} - ${yearName}`;
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
@@ -202,8 +218,8 @@ export default function ViewStaffAccess() {
     const totalStaff = filteredList.length;
     const uniqueSubjects = new Set(filteredList.map(i => i.subject_name).filter(Boolean)).size;
     const classAdvisorCount = filteredList.filter(i => i.access_type === 'ca').length;
-    const adminCount = filteredList.filter(i => i.access_type === 'admin').length || 0; 
-    
+    const adminCount = filteredList.filter(i => i.access_type === 'admin').length || 0;
+
     // Check departments involved in current view
     const activeDepts = new Set(filteredList.map(i => i.dept_id)).size;
 
@@ -216,13 +232,13 @@ export default function ViewStaffAccess() {
     const formattedData = filteredList.map(item => ({
       "Staff Name": item.name,
       "Department": DEPT_MAP[item.dept_id] || item.dept_id,
-      "Year/Class": CLASS_MAP[item.year] || item.year,
+      "Year/Class": CLASS_MAP[item.class_id] || item.class_id,
       "Subject": item.subject_name || "N/A",
       "Access Type": item.access_type === 'ca' ? 'Class Advisor' : 'Regular',
       "Staff ID": item.id
     }));
     exportToExcel(formattedData, "Staff_Access_Report", "Staff_Access");
-    
+
     const Toast = Swal.mixin({
       toast: true,
       position: 'top-end',
@@ -238,7 +254,7 @@ export default function ViewStaffAccess() {
     const tableData = filteredList.map(item => [
       item.name,
       DEPT_MAP[item.dept_id] || "-",
-      CLASS_MAP[item.year] || "-",
+      CLASS_MAP[item.class_id] || "-",
       item.subject_name || "-",
       item.access_type === 'ca' ? 'Class Advisor' : 'Staff'
     ]);
@@ -264,13 +280,13 @@ export default function ViewStaffAccess() {
     });
 
     const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true
-      });
-      Toast.fire({ icon: 'success', title: 'PDF generated successfully' });
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
+    Toast.fire({ icon: 'success', title: 'PDF generated successfully' });
   };
 
   // --- RENDER ---
@@ -278,7 +294,7 @@ export default function ViewStaffAccess() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-4">
@@ -292,14 +308,14 @@ export default function ViewStaffAccess() {
           </div>
 
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleExportPDF}
               disabled={loading || data.length === 0}
               className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
             >
               <FaFilePdf /> PDF
             </button>
-            <button 
+            <button
               onClick={handleExportExcel}
               disabled={loading || data.length === 0}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg font-semibold hover:bg-emerald-100 transition-colors disabled:opacity-50"
@@ -312,33 +328,33 @@ export default function ViewStaffAccess() {
         {/* STATISTICS DASHBOARD */}
         {!loading && data.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              icon={FaUserTie} 
-              label="Total Staff" 
-              value={stats.totalStaff} 
-              bgClass="bg-blue-50" 
-              colorClass="text-blue-600" 
+            <StatCard
+              icon={FaUserTie}
+              label="Total Staff"
+              value={stats.totalStaff}
+              bgClass="bg-blue-50"
+              colorClass="text-blue-600"
             />
-            <StatCard 
-              icon={FaChalkboardTeacher} 
-              label="Class Advisors" 
-              value={stats.classAdvisorCount} 
-              bgClass="bg-emerald-50" 
-              colorClass="text-emerald-600" 
+            <StatCard
+              icon={FaChalkboardTeacher}
+              label="Class Advisors"
+              value={stats.classAdvisorCount}
+              bgClass="bg-emerald-50"
+              colorClass="text-emerald-600"
             />
-             <StatCard 
-              icon={FaBuilding} 
-              label="Departments" 
-              value={stats.activeDepts} 
-              bgClass="bg-purple-50" 
-              colorClass="text-purple-600" 
+            <StatCard
+              icon={FaBuilding}
+              label="Departments"
+              value={stats.activeDepts}
+              bgClass="bg-purple-50"
+              colorClass="text-purple-600"
             />
-             <StatCard 
-              icon={FaShieldAlt} 
-              label="Subjects Covered" 
-              value={stats.uniqueSubjects} 
-              bgClass="bg-orange-50" 
-              colorClass="text-orange-600" 
+            <StatCard
+              icon={FaShieldAlt}
+              label="Subjects Covered"
+              value={stats.uniqueSubjects}
+              bgClass="bg-orange-50"
+              colorClass="text-orange-600"
             />
           </div>
         )}
@@ -346,7 +362,7 @@ export default function ViewStaffAccess() {
         {/* FILTERS & CONTROLS */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            
+
             {/* Dept Filter */}
             <div className="md:col-span-3">
               <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Department</label>
@@ -356,8 +372,10 @@ export default function ViewStaffAccess() {
                 onChange={setSelectedDept}
                 placeholder="Select Department..."
                 styles={customSelectStyles}
-                isClearable
+                isClearable={!(userRole === "DeptAdmin" || userRole === "HOD")}
+                isDisabled={userRole === "DeptAdmin" || userRole === "HOD"}
               />
+
             </div>
 
             {/* Year Filter */}
@@ -378,9 +396,9 @@ export default function ViewStaffAccess() {
               <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Search Staff</label>
               <div className="relative">
                 <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search by name or subject..." 
+                <input
+                  type="text"
+                  placeholder="Search by name or subject..."
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -390,20 +408,20 @@ export default function ViewStaffAccess() {
 
             {/* View Toggle */}
             <div className="md:col-span-2 flex justify-end items-end h-full pt-6">
-               <div className="bg-slate-100 p-1 rounded-lg flex">
-                 <button 
+              <div className="bg-slate-100 p-1 rounded-lg flex">
+                <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                   <FaThLarge />
-                 </button>
-                 <button 
+                  <FaThLarge />
+                </button>
+                <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                   <FaList />
-                 </button>
-               </div>
+                  <FaList />
+                </button>
+              </div>
             </div>
 
           </div>
@@ -422,7 +440,7 @@ export default function ViewStaffAccess() {
           ) : (
             <div className="space-y-8">
               {Object.entries(groupedData).map(([groupKey, staffList], index) => (
-                <motion.div 
+                <motion.div
                   key={groupKey}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -441,17 +459,16 @@ export default function ViewStaffAccess() {
                   </div>
 
                   {/* Cards Grid/List */}
-                  <div className={`p-5 ${
-                    viewMode === 'grid' 
-                      ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' 
-                      : 'flex flex-col gap-3'
-                  }`}>
+                  <div className={`p-5 ${viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+                    : 'flex flex-col gap-3'
+                    }`}>
                     <AnimatePresence>
                       {staffList.map((item) => (
-                        <StaffCard 
-                          key={item.id} 
-                          data={item} 
-                          viewMode={viewMode} 
+                        <StaffCard
+                          key={item.id}
+                          data={item}
+                          viewMode={viewMode}
                         />
                       ))}
                     </AnimatePresence>
@@ -475,7 +492,7 @@ export default function ViewStaffAccess() {
  */
 const StaffCard = ({ data, viewMode }) => {
   const isCA = data.access_type === "ca";
-  
+
   return (
     <motion.div
       layout
@@ -495,11 +512,11 @@ const StaffCard = ({ data, viewMode }) => {
         `}>
           <FaUserTie />
         </div>
-        
+
         <div>
           <h4 className="font-bold text-slate-800 leading-tight">{data.name}</h4>
           {data.subject_name ? (
-             <p className="text-xs text-slate-500 mt-0.5 font-medium">{data.subject_name}</p>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">{data.subject_name}</p>
           ) : (
             <p className="text-xs text-slate-400 italic mt-0.5">No Subject Assigned</p>
           )}
@@ -511,16 +528,16 @@ const StaffCard = ({ data, viewMode }) => {
       `}>
         {/* Chips for mobile or extra info */}
         <div className="flex gap-2">
-           <span className={`
+          <span className={`
             px-3 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full
             ${isCA ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}
           `}>
             {isCA ? 'Class Advisor' : 'Staff Access'}
           </span>
         </div>
-        
+
         {viewMode === 'grid' && (
-           <span className="text-[10px] text-slate-400 font-mono">ID: {data.id}</span>
+          <span className="text-[10px] text-slate-400 font-mono">ID: {data.id}</span>
         )}
       </div>
     </motion.div>

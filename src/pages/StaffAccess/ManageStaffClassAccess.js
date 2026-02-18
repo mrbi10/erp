@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -121,27 +121,67 @@ export default function ManageStaffClassAccess() {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [accessList, setAccessList] = useState([]);
+  const [loadingAccess, setLoadingAccess] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userRole = user.role;
+  const userDeptId = user.dept_id;
 
   // Form State
+  const initialDept =
+    userRole === "HOD" || userRole === "DeptAdmin"
+      ? {
+        value: String(userDeptId),
+        label: DEPT_MAP[userDeptId],
+        icon: <FaUniversity />,
+        subLabel: "Department"
+      }
+      : null;
+
   const [form, setForm] = useState({
-    dept: null,
+    dept: initialDept,
     targetClass: null,
     staff: null,
     subject: null,
-    accessType: { value: "teaching", label: "Teaching Staff", icon: <FaChalkboardTeacher /> }
+    accessType: {
+      value: "teaching",
+      label: "Teaching Staff",
+      icon: <FaChalkboardTeacher />
+    }
   });
+
 
   // Local Session History (UX Improvement)
   const [recentActivity, setRecentActivity] = useState([]);
 
   // --- DERIVED OPTIONS ---
 
-  const deptOptions = Object.entries(DEPT_MAP).map(([id, name]) => ({
-    value: id,
-    label: name,
-    icon: <FaUniversity />,
-    subLabel: "Department"
-  }));
+  const deptOptions = useMemo(() =>
+    Object.entries(DEPT_MAP).map(([id, name]) => ({
+      value: id,
+      label: name,
+      icon: <FaUniversity />,
+      subLabel: "Department"
+    })),
+    []);
+
+
+  useEffect(() => {
+    if (userRole === "HOD" || userRole === "DeptAdmin") {
+      const deptOption = deptOptions.find(
+        option => option.value === String(userDeptId)
+      );
+      setForm(prev => ({
+        ...prev,
+        dept: deptOption
+      }));
+    }
+  }, [userRole, userDeptId, deptOptions]);
+
 
   const classOptions = Object.entries(CLASS_MAP).map(([id, name]) => ({
     value: id,
@@ -154,6 +194,30 @@ export default function ManageStaffClassAccess() {
     { value: "teaching", label: "Teaching Staff", icon: <FaChalkboardTeacher />, subLabel: "Assign specific subject" },
     { value: "ca", label: "Class Advisor", icon: <FaUserTie />, subLabel: "Full class responsibility" }
   ];
+
+
+  const fetchAccessList = useCallback(async () => {
+    if (!form.dept || !form.targetClass) return;
+
+    setLoadingAccess(true);
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/staffClassAccess?dept_id=${form.dept.value}&class_id=${form.targetClass.value}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setAccessList(res.data);
+    } catch (err) {
+      console.error("Access fetch error", err);
+    } finally {
+      setLoadingAccess(false);
+    }
+  }, [form.dept, form.targetClass, token]);
+
+  useEffect(() => {
+    fetchAccessList();
+  }, [fetchAccessList]);
+
 
   // --- API CALLS ---
 
@@ -189,11 +253,6 @@ export default function ManageStaffClassAccess() {
 
   // 2. Fetch Subjects when Class or Dept changes
   useEffect(() => {
-    // Reset subject when dependencies change to avoid invalid states
-    if (form.subject) {
-      setForm(prev => ({ ...prev, subject: null }));
-    }
-
     if (!form.targetClass || !form.dept) {
       setSubjectList([]);
       return;
@@ -206,24 +265,33 @@ export default function ManageStaffClassAccess() {
           `${BASE_URL}/subjects?class_id=${form.targetClass.value}&dept_id=${form.dept.value}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+
         const mappedSubjects = (res.data || []).map(sub => ({
           value: sub.subject_id,
           label: sub.subject_name,
           icon: <FaBookOpen />,
           subLabel: sub.subject_code || "Subject"
         }));
+
         setSubjectList(mappedSubjects);
+
+        // Reset subject only if it no longer exists in new list
+        if (
+          form.subject &&
+          !mappedSubjects.find(s => s.value === form.subject.value)
+        ) {
+          setForm(prev => ({ ...prev, subject: null }));
+        }
+
       } catch {
         setSubjectList([]);
-        // Optional: Toast notification that no subjects were found
       } finally {
         setLoadingSubjects(false);
       }
     };
 
     fetchSubjects();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.targetClass, form.dept, token]);
+  }, [form.targetClass?.value, form.dept?.value, token]);
 
 
   // --- HANDLERS ---
@@ -261,12 +329,13 @@ export default function ManageStaffClassAccess() {
     }
 
     setSubmitting(true);
-
     const payload = {
-      staff_id: form.staff.value,
       user_id: form.staff.user_id,
       class_id: form.targetClass.value,
-      subject_id: form.accessType.value === "teaching" ? form.subject.value : null,
+      dept_id: form.dept.value,
+      subject_id: form.accessType.value === "teaching"
+        ? form.subject.value
+        : null,
       access_type: form.accessType.value
     };
 
@@ -284,6 +353,8 @@ export default function ManageStaffClassAccess() {
         subject: form.subject ? form.subject.label : 'N/A',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
+      fetchAccessList();
+
 
       setRecentActivity(prev => [newActivity, ...prev].slice(0, 5));
 
@@ -313,6 +384,57 @@ export default function ManageStaffClassAccess() {
       setSubmitting(false);
     }
   };
+
+  const handleDelete = async (id) => {
+    const confirm = await Swal.fire({
+      icon: "warning",
+      title: "Remove Access?",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Remove"
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await axios.delete(`${BASE_URL}/staffClassAccess/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      fetchAccessList();
+
+      Swal.fire({
+        icon: "success",
+        title: "Removed",
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      Swal.fire("Error", err.response?.data?.message, "error");
+    }
+  };
+
+
+  const handleEdit = async (id, newType) => {
+    try {
+      await axios.patch(
+        `${BASE_URL}/staffClassAccess/${id}`,
+        { access_type: newType },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      fetchAccessList();
+
+      Swal.fire({
+        icon: "success",
+        title: "Updated",
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      Swal.fire("Error", err.response?.data?.message, "error");
+    }
+  };
+
 
   // --- RENDER ---
 
@@ -369,7 +491,8 @@ export default function ManageStaffClassAccess() {
                       onChange={(val) => setForm(prev => ({ ...prev, dept: val }))}
                       components={{ Option: IconOption, SingleValue: IconSingleValue }}
                       styles={customSelectStyles}
-                      isClearable
+                      isClearable={!(userRole === "HOD" || userRole === "DeptAdmin")}
+                      isDisabled={userRole === "HOD" || userRole === "DeptAdmin"}
                     />
                   </div>
                   <div>
@@ -502,9 +625,77 @@ export default function ManageStaffClassAccess() {
           </motion.div>
         </div>
 
+
+
+
         {/* === RIGHT COLUMN: PREVIEW & HISTORY === */}
         <div className="lg:col-span-5 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h3 className="font-bold text-slate-700 mb-4">
+              Assigned Staff
+            </h3>
 
+            {!form.dept || !form.targetClass ? (
+              <p className="text-sm text-slate-400">
+                Select department and class to view assignments.
+              </p>
+            ) : loadingAccess ? (
+              <p className="text-sm text-slate-500">Loading...</p>
+            ) : accessList.length === 0 ? (
+              <p className="text-sm text-slate-400">No assignments found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="p-3 text-left">Staff</th>
+                      <th className="p-3 text-left">Role</th>
+                      <th className="p-3 text-left">Subject</th>
+                      <th className="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accessList.map((item) => (
+                      <tr key={item.id} className="border-t">
+                        <td className="p-3 font-semibold">
+                          {item.name}
+                        </td>
+
+                        <td className="p-3 capitalize">
+                          {item.access_type}
+                        </td>
+
+                        <td className="p-3">
+                          {item.subject_name || "—"}
+                        </td>
+
+                        <td className="p-3 text-right space-x-2">
+                          {/* <button
+                            onClick={() =>
+                              handleEdit(
+                                item.id,
+                                item.access_type === "ca" ? "teaching" : "ca"
+                              )
+                            }
+                            className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded"
+                          >
+                            Toggle Role
+                          </button> */}
+
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="px-3 py-1 text-xs bg-red-100 text-red-600 rounded"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
           {/* Live Summary Card */}
           <div className="bg-indigo-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10">
