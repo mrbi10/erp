@@ -260,7 +260,7 @@ export default function App() {
                 <Route
                   path="/staffaccess"
                   element={
-                    ['HOD', 'Principal'].includes(user.role)
+                    ['HOD', 'DeptAdmin', 'Principal'].includes(user.role)
                       ? <StaffAccess user={user} />
                       : <PageNotFound />
                   }
@@ -268,7 +268,7 @@ export default function App() {
                   <Route
                     path="view"
                     element={
-                      ['HOD', 'Principal'].includes(user.role)
+                      ['HOD', 'DeptAdmin', 'Principal'].includes(user.role)
                         ? <ViewStaffAccess user={user} />
                         : <PageNotFound />
                     }
@@ -276,7 +276,7 @@ export default function App() {
                   <Route
                     path="manage"
                     element={
-                      ['HOD', 'Principal'].includes(user.role)
+                      ['HOD', 'DeptAdmin', 'Principal'].includes(user.role)
                         ? <ManageStaffClassAccess user={user} />
                         : <PageNotFound />
                     }

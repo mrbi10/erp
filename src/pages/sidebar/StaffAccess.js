@@ -10,7 +10,7 @@ export default function StaffAccess({ user }) {
     const basePath = "/staffaccess";
 
     // Restrict access
-    if (!["HOD", "Principal"].includes(user.role)) {
+    if (!["HOD", "DeptAdmin", "Principal"].includes(user.role)) {
         return (
             <div className="p-8 text-center text-red-600 font-semibold">
                 Unauthorized Access
@@ -55,9 +55,9 @@ export default function StaffAccess({ user }) {
                         </h1>
 
                         <div
-                            className={`px-4 py-2 text-white font-bold rounded-full text-sm shadow-md ${roleStyle.color}`}
+                            className={`px-4 py-2 text-white font-bold rounded-full text-sm shadow-md ${roleStyles.color}`}
                         >
-                            {roleStyle.label} Portal
+                            {roleStyles.label} Portal
                         </div>
                     </div>
 

@@ -160,13 +160,21 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => (
 // Main Component
 // ---------------------------
 export default function Faculty() {
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userRole = user.role;
+  const userDeptId = String(user.dept_id);
+  const isDeptScoped = userRole === "HOD" || userRole === "DeptAdmin";
+
   // State
   const [faculty, setFaculty] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
   // Filters
-  const [deptFilter, setDeptFilter] = useState("All");
+  const [deptFilter, setDeptFilter] = useState(
+    isDeptScoped ? userDeptId : "All"
+  );
   const [roleFilter, setRoleFilter] = useState("All");
 
   // Pagination
@@ -181,7 +189,7 @@ export default function Faculty() {
     email: "",
     password: "",
     designation: "",
-    dept_id: "",
+    dept_id: isDeptScoped ? userDeptId : "",
     role: "Staff",
   });
   const [isProcessing, setIsProcessing] = useState(false);
@@ -268,7 +276,7 @@ export default function Faculty() {
       email: "",
       password: "",
       designation: "",
-      dept_id: "",
+      dept_id: isDeptScoped ? userDeptId : "",
       role: "Staff",
     });
     setShowModal(true);
@@ -281,7 +289,7 @@ export default function Faculty() {
       email: f.email || "",
       password: "",
       designation: f.designation || "",
-      dept_id: f.dept_id,
+      dept_id: isDeptScoped ? userDeptId : f.dept_id,
       role: f.role,
     });
     setShowModal(true);
@@ -301,7 +309,10 @@ export default function Faculty() {
       Swal.showValidationMessage("Name, Email and Designation are required");
       return;
     }
-
+    if (!formData.dept_id || !formData.role) {
+      Swal.fire("Error", "Department and Role are required", "warning");
+      return;
+    }
     setIsProcessing(true);
     try {
       const res = await fetch(`${BASE_URL}/faculty`, {
@@ -313,17 +324,14 @@ export default function Faculty() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          password: formData.password || "Test@123",
+          password: formData.password || "Staff@2026",
           designation: formData.designation,
           role: formData.role,
           dept_id: formData.dept_id,
         }),
       });
 
-      if (!formData.dept_id || !formData.role) {
-        Swal.fire("Error", "Department and Role are required", "warning");
-        return;
-      }
+
 
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
@@ -512,10 +520,11 @@ export default function Faculty() {
                 styles={selectStyles}
                 menuPortalTarget={document.body}
                 menuPosition="fixed"
-                placeholder="Department"
                 options={DEPT_OPTIONS}
                 value={DEPT_OPTIONS.find((o) => o.value === deptFilter)}
                 onChange={(o) => setDeptFilter(o.value)}
+                isDisabled={isDeptScoped}
+                isClearable={!isDeptScoped}
               />
             </div>
 
@@ -742,7 +751,7 @@ export default function Faculty() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => handleInputChange("password", e.target.value)}
-                placeholder="Optional - Default is 'Test@123'"
+                placeholder="Optional - Default is 'Staff@2026'"
                 className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
               />
             </div>
@@ -766,14 +775,21 @@ export default function Faculty() {
             <label className="text-xs font-semibold text-gray-600 uppercase">
               Department
             </label>
-            <Select
-              styles={selectStyles}
-              {...modalSelectProps}
-              options={DEPT_OPTIONS.filter(d => d.value !== "All")}
-              value={DEPT_OPTIONS.find(o => o.value === formData.dept_id)}
-              onChange={(o) => handleInputChange("dept_id", o.value)}
-              placeholder="Select Department"
-            />
+
+            {isDeptScoped ? (
+              <div className="w-full p-3 bg-gray-100 rounded-xl border border-gray-200 text-sm font-medium text-gray-700">
+                {DEPT_MAP[userDeptId]}
+              </div>
+            ) : (
+              <Select
+                styles={selectStyles}
+                {...modalSelectProps}
+                options={DEPT_OPTIONS.filter(d => d.value !== "All")}
+                value={DEPT_OPTIONS.find(o => o.value === formData.dept_id)}
+                onChange={(o) => handleInputChange("dept_id", o.value)}
+                placeholder="Select Department"
+              />
+            )}
           </div>
 
           {/* Role */}

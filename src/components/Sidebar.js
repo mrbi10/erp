@@ -74,7 +74,7 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/managesubjects',
       label: 'Manage Subjects',
       icon: <BookOutlined />,
-      roles: ['Staff', 'Principal', 'CA', 'HOD'],
+      roles: ['Staff', 'Principal', 'DeptAdmin', 'CA', 'HOD'],
     },
     {
       key: '/placementtraining',
@@ -99,7 +99,7 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/faculty',
       label: 'Faculty',
       icon: <IdcardOutlined />,
-      roles: ['HOD', 'Principal'],
+      roles: ['HOD', 'DeptAdmin', 'Principal'],
     },
     {
       key: '/lateentries',
@@ -117,7 +117,7 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/staffaccess',
       label: 'Staff Access',
       icon: <SafetyCertificateOutlined />,
-      roles: ['Principal', 'HOD'],
+      roles: ['Principal', 'DeptAdmin', 'HOD'],
     },
     {
       key: '/SecurityLateEntry',
@@ -129,13 +129,13 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/feedback',
       label: 'Feedback',
       icon: <FaComment />,
-      roles: ['CA', 'student', 'HOD', 'Principal'],
+      roles: ['CA', 'student', 'DeptAdmin', 'HOD', 'Principal'],
     },
     {
       key: '/support',
       label: 'Support',
       icon: <CustomerServiceOutlined />,
-      roles: ['Staff', 'student', 'CA', 'HOD', 'Principal', 'Admin'],
+      roles: ['Staff', 'student', 'DeptAdmin', 'CA', 'HOD', 'Principal', 'Admin'],
     },
     {
       key: '/profilehub',
