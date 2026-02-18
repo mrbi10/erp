@@ -20,7 +20,8 @@ export default function StaffAccess({ user }) {
 
     const roleStyles = {
         HOD: { label: "HOD", color: "bg-indigo-600" },
-        Principal: { label: "Principal", color: "bg-purple-600" }
+        Principal: { label: "Principal", color: "bg-purple-600" },
+        DeptAdmin: { label: "Dept Admin", color: "bg-pink-600" }
     };
 
     const roleStyle = roleStyles[user.role];
@@ -55,9 +56,9 @@ export default function StaffAccess({ user }) {
                         </h1>
 
                         <div
-                            className={`px-4 py-2 text-white font-bold rounded-full text-sm shadow-md ${roleStyles.color}`}
+                            className={`px-4 py-2 text-white font-bold rounded-full text-sm shadow-md ${roleStyle.color}`}
                         >
-                            {roleStyles.label} Portal
+                            {roleStyle.label} Portal
                         </div>
                     </div>
 
