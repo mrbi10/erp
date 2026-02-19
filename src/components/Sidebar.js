@@ -15,7 +15,7 @@ import {
   UserAddOutlined,
   NotificationOutlined,
   CoffeeOutlined,
-  UserOutlined,
+  UserOutlined,CreditCardOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CalculatorIcon, Calendar1Icon, CalendarRangeIcon, CookingPotIcon, Megaphone, Mic, Mic2Icon, Speaker, SpeakerIcon } from "lucide-react";
@@ -77,6 +77,12 @@ export default function Sidebar({ role, open, onClose }) {
       roles: ['Staff', 'Principal', 'DeptAdmin', 'CA', 'HOD'],
     },
     {
+      key: '/passes',
+      label: 'Pass Management',
+      icon: <CreditCardOutlined />,
+      roles: ['student', 'Principal', 'DeptAdmin', 'CA', 'HOD']
+    },
+    {
       key: '/placementtraining',
       label: 'Placement Training',
       icon: <FaUserGraduate />,
@@ -93,7 +99,7 @@ export default function Sidebar({ role, open, onClose }) {
       key: '/students',
       label: 'Students',
       icon: <TeamOutlined />,
-      roles: ['CA', 'HOD', 'Principal'],
+      roles: ['CA', 'HOD', 'DeptAdmin', 'Principal'],
     },
     {
       key: '/faculty',

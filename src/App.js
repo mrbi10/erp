@@ -74,6 +74,11 @@ import ManageTicket from './pages/support/ManageTicket';
 import ViewStaffAccess from "./pages/StaffAccess/ViewStaffAccess";
 import ManageStaffClassAccess from "./pages/StaffAccess/ManageStaffClassAccess";
 
+import PassManagement from './pages/sidebar/PassManagement';
+import MyPasses from './pages/passmanagement/MyPasses';
+import ManagePasses from './pages/passmanagement/ManagePasses';
+import PassVerify from './pages/passmanagement/PassVerify';
+
 
 import StudentMyCourses from './pages/placementtraining/StudentMyCourses';
 import StudentTests from './pages/placementtraining/StudentTests';
@@ -193,6 +198,7 @@ export default function App() {
             <Route path="/resetpassword/:token" element={<ResetPassword />} />
             <Route path="/home" element={<Home user={user} />} />
             <Route path="/" element={<Home user={user} />} />
+            <Route path="/passes/verify/:token" element={<PassVerify />} />
 
             {/* Protected routes */}
             {user && (
@@ -296,6 +302,12 @@ export default function App() {
                   <Route path="activities" element={<ProfileHubActivities user={user} />} />
                   <Route index element={<ProfileHubView user={user} />} />
                 </Route>
+
+                <Route path="/passes" element={<PassManagement user={user} />}>
+                  <Route path="my" element={<MyPasses />} />
+                  <Route path="manage" element={<ManagePasses />} />
+                </Route>
+
 
                 <Route path="/placementtraining" element={<PlacementTraining user={user} />}>
 
