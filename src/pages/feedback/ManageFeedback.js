@@ -3,17 +3,18 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import Select from "react-select";
 import { BASE_URL } from "../../constants/API";
-import { 
-  FaPlus, 
-  FaLock, 
-  FaSpinner, 
-  FaUniversity, 
-  FaLayerGroup, 
-  FaCalendarAlt, 
-  FaListAlt, 
-  FaCheckCircle, 
-  FaTimesCircle,
-  FaExclamationTriangle
+import { formatDDMMYYYY } from "../../constants/dateUtils";
+import {
+  FaPlus,
+  FaLock,
+  FaSpinner,
+  FaUniversity,
+  FaLayerGroup,
+  FaCalendarAlt,
+  FaListAlt,
+  FaExclamationTriangle,
+  FaPlay,
+  FaStopCircle
 } from "react-icons/fa";
 import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
 
@@ -39,17 +40,17 @@ const CLASS_OPTIONS = Object.entries(CLASS_MAP).map(
 const customSelectStyles = {
   control: (base, state) => ({
     ...base,
-    minHeight: '46px',
-    borderRadius: '0.75rem',
-    borderColor: state.isFocused ? '#6366f1' : '#e2e8f0',
-    boxShadow: state.isFocused ? '0 0 0 2px rgba(99, 102, 241, 0.2)' : 'none',
-    paddingLeft: '4px',
-    fontSize: '0.9rem',
-    '&:hover': { borderColor: '#cbd5e1' }
+    minHeight: '48px',
+    borderRadius: '0.5rem',
+    borderColor: state.isFocused ? '#4f46e5' : '#cbd5e1',
+    boxShadow: state.isFocused ? '0 0 0 1px #4f46e5' : 'none',
+    backgroundColor: state.isDisabled ? '#f8fafc' : '#fff',
+    cursor: state.isDisabled ? 'not-allowed' : 'pointer',
+    '&:hover': { borderColor: state.isDisabled ? '#cbd5e1' : '#94a3b8' }
   }),
   menu: (base) => ({
     ...base,
-    borderRadius: '0.75rem',
+    borderRadius: '0.5rem',
     overflow: 'hidden',
     zIndex: 50
   }),
@@ -58,11 +59,11 @@ const customSelectStyles = {
     backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#e0e7ff' : 'white',
     color: state.isSelected ? 'white' : '#1e293b',
     cursor: 'pointer',
-    fontSize: '0.9rem',
-    padding: '10px 12px',
+    padding: '12px 14px',
+    fontWeight: '500'
   }),
-  placeholder: (base) => ({ ...base, color: "#94a3b8" }),
-  singleValue: (base) => ({ ...base, color: "#334155", fontWeight: "600" }),
+  placeholder: (base) => ({ ...base, color: "#64748b" }),
+  singleValue: (base) => ({ ...base, color: "#1e293b", fontWeight: "600" }),
 };
 
 /* ===================== COMPONENT ===================== */
@@ -77,10 +78,10 @@ export default function ManageFeedback({ user }) {
 
   // Form State
   const [form, setForm] = useState({
-    dept: null,      // Select object {value, label}
-    targetClass: null, // Select object
-    academicYear: null, // Select object
-    questionSet: null, // Select object
+    dept: null,
+    targetClass: null,
+    academicYear: null,
+    questionSet: null,
     title: "",
     startDate: "",
     endDate: ""
@@ -90,7 +91,7 @@ export default function ManageFeedback({ user }) {
 
   /* ---------- DATA FETCHING ---------- */
   useEffect(() => {
-    if (!["CA", "HOD", "Principal"].includes(user.role)) {
+    if (!["CA", "HOD", "DeptAdmin", "Principal"].includes(user.role)) {
       setLoading(false);
       return;
     }
@@ -99,7 +100,6 @@ export default function ManageFeedback({ user }) {
       try {
         setLoading(true);
 
-        // Fetch Sessions & Question Sets
         const [sessRes, qsRes] = await Promise.all([
           axios.get(`${BASE_URL}/feedback/sessions`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -109,32 +109,22 @@ export default function ManageFeedback({ user }) {
           })
         ]);
 
-        // Sort sessions by newest first
         const sortedSessions = (sessRes.data || []).sort((a, b) => b.session_id - a.session_id);
-        
         setSessions(sortedSessions);
         setQuestionSets(qsRes.data || []);
-        
-        // Auto-fill form for CA if possible
-        if (user.role === "CA" && user.dept_id && user.assigned_class_id) {
-            const deptObj = DEPT_OPTIONS.find(d => d.value === Number(user.dept_id));
-            const classObj = CLASS_OPTIONS.find(c => c.value === Number(user.assigned_class_id));
-            
-            setForm(prev => ({
-                ...prev,
-                dept: deptObj || null,
-                targetClass: classObj || null
-            }));
+
+        if (["CA", "DeptAdmin"].includes(user.role) && user.dept_id) {
+          const deptObj = DEPT_OPTIONS.find(d => d.value === Number(user.dept_id));
+          setForm(prev => ({ ...prev, dept: deptObj || null }));
+        }
+
+        if (user.role === "CA" && user.assigned_class_id) {
+          const classObj = CLASS_OPTIONS.find(c => c.value === Number(user.assigned_class_id));
+          setForm(prev => ({ ...prev, targetClass: classObj || null }));
         }
 
       } catch (error) {
-        console.error(error);
-        Swal.fire({
-            icon: 'error',
-            title: 'System Error',
-            text: 'Failed to load feedback configuration data.',
-            confirmButtonColor: '#4f46e5'
-        });
+        Swal.fire('System Error', 'Failed to load feedback configuration data.', 'error');
       } finally {
         setLoading(false);
       }
@@ -144,74 +134,44 @@ export default function ManageFeedback({ user }) {
   }, [user.role, user.dept_id, user.assigned_class_id, token]);
 
   /* ---------- COMPUTED DATA ---------- */
-  
-  const questionSetOptions = useMemo(() => 
+  const questionSetOptions = useMemo(() =>
     questionSets
       .filter(qs => qs.is_active)
-      .map(qs => ({ value: qs.set_id, label: qs.name })), 
+      .map(qs => ({ value: qs.set_id, label: qs.name })),
     [questionSets]
   );
 
   /* ---------- HANDLERS ---------- */
+  const handleCreateSession = async (e) => {
+    e.preventDefault();
+    const { dept, targetClass, academicYear, title, startDate, endDate, questionSet } = form;
 
-  const handleCreateSession = async () => {
-    const {
-      dept,
-      targetClass,
-      academicYear,
-      title,
-      startDate,
-      endDate,
-      questionSet
-    } = form;
-
-    // 1. Validation
-    if (
-      !academicYear ||
-      !title ||
-      !startDate ||
-      !endDate ||
-      !questionSet ||
-      (user.role !== "CA" && (!dept || !targetClass))
-    ) {
-      Swal.fire({
-        icon: 'warning',
-        title: "Missing Fields", 
-        text: "Please complete all required fields to launch a session.",
-        confirmButtonColor: '#f59e0b'
-      });
+    if (!academicYear || !title || !startDate || !endDate || !questionSet || (user.role !== "CA" && (!dept || !targetClass))) {
+      Swal.fire('Missing Fields', 'Please complete all required fields to launch a session.', 'warning');
       return;
     }
 
     if (new Date(startDate) > new Date(endDate)) {
-      Swal.fire({
-        icon: 'warning',
-        title: "Invalid Dates", 
-        text: "The End Date cannot be before the Start Date.",
-        confirmButtonColor: '#f59e0b'
-      });
+      Swal.fire('Invalid Dates', 'The End Date cannot be before the Start Date.', 'warning');
       return;
     }
 
-    // 2. Confirmation
     const confirm = await Swal.fire({
       title: "Launch Session?",
-      html: `You are about to start <b>"${title}"</b>.<br/>Students will be able to submit feedback immediately.`,
+      html: `You are about to start <b>"${title}"</b>.<br/><br/>Students will be able to submit feedback immediately.`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Yes, Launch",
-      confirmButtonColor: "#4f46e5",
-      cancelButtonColor: "#94a3b8"
+      confirmButtonText: "Yes, Launch Now",
+      confirmButtonColor: "#4f46e5"
     });
 
     if (!confirm.isConfirmed) return;
 
-    // 3. API Call
     try {
       setCreating(true);
 
       const payload = {
-        dept_id: user.role === "CA" ? user.dept_id : dept.value,
+        dept_id: user.role === "CA" || user.role === "DeptAdmin" ? user.dept_id : dept.value,
         class_id: user.role === "CA" ? user.assigned_class_id : targetClass.value,
         academic_year: academicYear.value,
         title,
@@ -220,93 +180,87 @@ export default function ManageFeedback({ user }) {
         question_set_id: questionSet.value
       };
 
-      await axios.post(
-        `${BASE_URL}/feedback/session`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.post(`${BASE_URL}/feedback/session`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
-      Swal.fire({
-          icon: 'success',
-          title: "Session Created", 
-          text: "Feedback collection has started successfully.",
-          timer: 2000,
-          showConfirmButton: false
-      });
+      Swal.fire({ icon: 'success', title: "Session Created", text: "Feedback collection has started.", timer: 2000, showConfirmButton: false });
 
-      // Reset specific fields
-      setForm(prev => ({
-        ...prev,
-        title: "",
-        startDate: "",
-        endDate: "",
-        questionSet: null,
-        // Keep dept/class/year for ease of bulk creation
-      }));
+      setForm(prev => ({ ...prev, title: "", startDate: "", endDate: "", questionSet: null }));
 
-      // Refresh List
-      const res = await axios.get(
-        `${BASE_URL}/feedback/sessions`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.get(`${BASE_URL}/feedback/sessions`, { headers: { Authorization: `Bearer ${token}` } });
       setSessions((res.data || []).sort((a, b) => b.session_id - a.session_id));
 
     } catch (err) {
-      Swal.fire(
-        "Error",
-        err.response?.data?.message || "Failed to create session",
-        "error"
-      );
+      Swal.fire("Error", err.response?.data?.message || "Failed to create session", "error");
     } finally {
       setCreating(false);
     }
   };
 
-  const handleCloseSession = async (sessionId) => {
+  const handleOpenSession = async (sessionId) => {
     const confirm = await Swal.fire({
-      title: "Close Session?",
-      text: "This will permanently stop new feedback submissions.",
-      icon: "warning",
+      title: "Reopen Session?",
+      text: "Students will be able to submit feedback again.",
+      icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Yes, Close Session",
-      confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#94a3b8"
+      confirmButtonText: "Yes, Reopen",
+      confirmButtonColor: "#16a34a"
     });
 
     if (!confirm.isConfirmed) return;
 
     try {
       await axios.patch(
-        `${BASE_URL}/feedback/session/${sessionId}/close`,
+        `${BASE_URL}/feedback/session/${sessionId}/open`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       Swal.fire({
-          icon: 'success',
-          title: "Session Closed", 
-          text: "The feedback session is now archived.",
-          timer: 1500,
-          showConfirmButton: false
+        icon: 'success',
+        title: "Session Reopened",
+        timer: 1500,
+        showConfirmButton: false
       });
 
       setSessions(prev =>
         prev.map(s =>
-          s.session_id === sessionId ? { ...s, is_active: 0 } : s
+          s.session_id === sessionId ? { ...s, is_active: 1 } : s
         )
       );
+
+    } catch {
+      Swal.fire("Error", "Failed to reopen session", "error");
+    }
+  };
+
+  const handleCloseSession = async (sessionId) => {
+    const confirm = await Swal.fire({
+      title: "Close Session?",
+      text: "This will permanently stop new feedback submissions for this session.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Close Session",
+      confirmButtonColor: "#dc2626"
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await axios.patch(`${BASE_URL}/feedback/session/${sessionId}/close`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      Swal.fire({ icon: 'success', title: "Session Closed", timer: 1500, showConfirmButton: false });
+      setSessions(prev => prev.map(s => s.session_id === sessionId ? { ...s, is_active: 0 } : s));
     } catch {
       Swal.fire("Error", "Failed to close session", "error");
     }
   };
 
   /* ---------- RENDER: ACCESS DENIED ---------- */
-  if (!["CA", "HOD", "Principal"].includes(user.role)) {
+  if (!["CA", "HOD", "DeptAdmin", "Principal"].includes(user.role)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
-        <FaLock className="text-4xl mb-4 opacity-20" />
-        <p className="font-medium">Access Restricted</p>
-        <p className="text-sm">Authorized personnel only.</p>
+        <FaLock className="text-5xl mb-4 opacity-30" />
+        <p className="font-bold text-xl text-slate-600">Access Restricted</p>
+        <p className="text-md mt-1">Authorized administrative personnel only.</p>
       </div>
     );
   }
@@ -314,240 +268,256 @@ export default function ManageFeedback({ user }) {
   /* ---------- RENDER: LOADING ---------- */
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4 bg-slate-50">
-        <FaSpinner className="animate-spin text-indigo-600 text-4xl" />
-        <p className="text-slate-500 text-sm font-bold animate-pulse">Loading Dashboard...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-indigo-600">
+        <FaSpinner className="animate-spin text-5xl mb-4" />
+        <p className="font-bold text-slate-700">Loading Dashboard...</p>
       </div>
     );
   }
 
   /* ---------- RENDER: MAIN CONTENT ---------- */
   return (
-    <div className="max-w-7xl mx-auto p-6 md:p-8 space-y-8 animate-fade-in-up font-sans">
+      <div className="max-w-7xl mx-auto space-y-8">
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Feedback Management</h1>
-           <p className="text-slate-500 mt-1">Configure and oversee student evaluation cycles.</p>
-        </div>
-        <div className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 border border-indigo-100 shadow-sm">
-           <FaLayerGroup />
-           {sessions.filter(s => s.is_active).length} Active Sessions
-        </div>
-      </div>
-
-      {/* FORM CARD */}
-      <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-50 to-white p-6 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
-             <FaPlus className="text-xs" />
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-800">Feedback Management</h1>
+            <p className="text-slate-600 font-medium mt-1">Configure and oversee student evaluation cycles.</p>
           </div>
-          <h2 className="text-lg font-bold text-slate-800">New Feedback Session</h2>
+          <div className="bg-indigo-100 text-indigo-800 px-5 py-3 rounded-lg text-sm font-bold flex items-center gap-3 border border-indigo-200">
+            <FaLayerGroup className="text-lg" />
+            {sessions.filter(s => s.is_active).length} Active Sessions
+          </div>
         </div>
 
-        <div className="p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                {/* --- Row 1: Context --- */}
-                
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide ml-1">Department</label>
-                    <Select
-                        isDisabled={user.role === "CA"}
-                        options={DEPT_OPTIONS}
-                        placeholder="Select Department"
-                        value={form.dept}
-                        onChange={val => setForm({ ...form, dept: val })}
-                        styles={customSelectStyles}
-                    />
-                    {user.role === "CA" && <p className="text-[10px] text-indigo-500 font-medium pl-1">*Auto-locked to your Dept</p>}
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide ml-1">Class</label>
-                    <Select
-                        isDisabled={user.role === "CA"}
-                        options={CLASS_OPTIONS}
-                        placeholder="Select Class/Year"
-                        value={form.targetClass}
-                        onChange={val => setForm({ ...form, targetClass: val })}
-                        styles={customSelectStyles}
-                    />
-                     {user.role === "CA" && <p className="text-[10px] text-indigo-500 font-medium pl-1">*Auto-locked to your Class</p>}
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide ml-1">Academic Year</label>
-                    <Select
-                        options={ACADEMIC_YEAR_OPTIONS}
-                        placeholder="Select Year..."
-                        value={form.academicYear}
-                        onChange={val => setForm({ ...form, academicYear: val })}
-                        styles={customSelectStyles}
-                    />
-                </div>
-
-                {/* --- Row 2: Configuration --- */}
-
-                 <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide ml-1">Questionnaire</label>
-                    <Select
-                        options={questionSetOptions}
-                        placeholder="Select Template..."
-                        value={form.questionSet}
-                        onChange={val => setForm({ ...form, questionSet: val })}
-                        styles={customSelectStyles}
-                    />
-                </div>
-
-                <div className="space-y-1.5 lg:col-span-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide ml-1">Session Title</label>
-                    <div className="relative">
-                        <FaListAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="e.g. Mid-Semester Feedback 2024"
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-medium text-slate-700"
-                            value={form.title}
-                            onChange={e => setForm({ ...form, title: e.target.value })}
-                        />
-                    </div>
-                </div>
-
-                 {/* --- Row 3: Timing --- */}
-
-                 <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide ml-1">Start Date</label>
-                    <input
-                        type="date"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-600 text-sm font-medium"
-                        value={form.startDate}
-                        onChange={e => setForm({ ...form, startDate: e.target.value })}
-                    />
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide ml-1">End Date</label>
-                    <input
-                        type="date"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-600 text-sm font-medium"
-                        value={form.endDate}
-                        onChange={e => setForm({ ...form, endDate: e.target.value })}
-                    />
-                </div>
-
-                {/* Action Button */}
-                <div className="flex items-end lg:col-span-1">
-                    <button
-                        onClick={handleCreateSession}
-                        disabled={creating}
-                        className={`
-                            w-full py-3 rounded-xl font-bold text-sm text-white shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]
-                            ${creating ? 'bg-indigo-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:shadow-indigo-200 hover:-translate-y-0.5'}
-                        `}
-                    >
-                        {creating ? (
-                            <> <FaSpinner className="animate-spin" /> Processing... </>
-                        ) : (
-                            <> <FaPlus /> Launch Session </>
-                        )}
-                    </button>
-                </div>
-
+        {/* FORM CARD */}
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+          <div className="bg-slate-800 p-5 flex items-center gap-3">
+            <div className="bg-indigo-500 text-white p-2 rounded-lg">
+              <FaPlus className="text-sm" />
             </div>
-        </div>
-      </div>
+            <h2 className="text-xl font-bold text-white">Create New Feedback Session</h2>
+          </div>
 
-      {/* SESSION LIST */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <FaListAlt className="text-slate-400" /> Session History
-        </h3>
+          <form onSubmit={handleCreateSession} className="p-6 md:p-8 space-y-8">
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        <tr>
-                            <th className="p-5">Session</th>
-                            <th className="p-5">Target Audience</th>
-                            <th className="p-5">Duration</th>
-                            <th className="p-5 text-center">Status</th>
-                            <th className="p-5 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {sessions.map(s => (
-                            <tr key={s.session_id} className="hover:bg-slate-50/80 transition-colors group">
-                                <td className="p-5">
-                                    <p className="font-bold text-slate-800 text-base">{s.title}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-1.5 rounded">#{s.session_id}</span>
-                                        <span className="text-xs text-slate-500">{s.academic_year}</span>
-                                    </div>
-                                </td>
-                                <td className="p-5">
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2 text-slate-600 text-xs font-semibold">
-                                            <FaUniversity className="text-indigo-400" />
-                                            {DEPT_MAP[s.dept_id] || "Unknown Dept"}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-slate-600 text-xs font-semibold">
-                                            <FaLayerGroup className="text-indigo-400" />
-                                            {CLASS_MAP[s.class_id] || "Unknown Class"}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="p-5">
-                                    <div className="text-xs text-slate-600 space-y-1">
-                                        <p>Start: <span className="font-medium">{new Date(s.start_date).toLocaleDateString()}</span></p>
-                                        <p>End: <span className="font-medium">{new Date(s.end_date).toLocaleDateString()}</span></p>
-                                    </div>
-                                </td>
-                                <td className="p-5 text-center">
-                                    {s.is_active ? (
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                            Active
-                                        </span>
-                                    ) : (
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500 border border-slate-200">
-                                            <FaLock className="text-[9px]" />
-                                            Closed
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="p-5 text-right">
-                                    {s.is_active ? (
-                                        <button
-                                            onClick={() => handleCloseSession(s.session_id)}
-                                            className="text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-red-200"
-                                        >
-                                            Close Session
-                                        </button>
-                                    ) : (
-                                        <span className="text-xs text-slate-400 italic font-medium px-3">Archived</span>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                        {sessions.length === 0 && (
-                             <tr>
-                                <td colSpan="5" className="p-10 text-center">
-                                    <div className="flex flex-col items-center justify-center text-slate-300">
-                                        <FaExclamationTriangle className="text-3xl mb-2 opacity-50" />
-                                        <p className="font-medium text-sm">No feedback sessions created yet.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+            {/* Row 1: Target Audience */}
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">1. Target Audience</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+                    Department {(user.role === "CA" || user.role === "DeptAdmin") && <FaLock className="text-slate-400" title="Locked to your department" />}
+                  </label>
+                  <Select
+                    isDisabled={user.role === "CA" || user.role === "DeptAdmin"}
+                    options={DEPT_OPTIONS}
+                    placeholder="Select Department"
+                    value={form.dept}
+                    onChange={val => setForm({ ...form, dept: val })}
+                    styles={customSelectStyles}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+                    Class / Year {user.role === "CA" && <FaLock className="text-slate-400" title="Locked to your assigned class" />}
+                  </label>
+                  <Select
+                    isDisabled={user.role === "CA"}
+                    options={CLASS_OPTIONS}
+                    placeholder="Select Class/Year"
+                    value={form.targetClass}
+                    onChange={val => setForm({ ...form, targetClass: val })}
+                    styles={customSelectStyles}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Academic Year</label>
+                  <Select
+                    options={ACADEMIC_YEAR_OPTIONS}
+                    placeholder="Select Year..."
+                    value={form.academicYear}
+                    onChange={val => setForm({ ...form, academicYear: val })}
+                    styles={customSelectStyles}
+                  />
+                </div>
+              </div>
             </div>
-        </div>
-      </div>
 
-    </div>
+            {/* Row 2: Configuration */}
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">2. Session Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Questionnaire Template</label>
+                  <Select
+                    options={questionSetOptions}
+                    placeholder="Select Template..."
+                    value={form.questionSet}
+                    onChange={val => setForm({ ...form, questionSet: val })}
+                    styles={customSelectStyles}
+                  />
+                </div>
+                <div className="md:col-span-2 relative">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Session Title</label>
+                  <div className="relative">
+                    <FaListAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Mid-Semester Feedback 2026"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
+                      value={form.title}
+                      onChange={e => setForm({ ...form, title: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Timeline & Launch */}
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">3. Timeline & Launch</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Start Date</label>
+                  <div className="relative">
+                    <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="date"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
+                      value={form.startDate}
+                      onChange={e => setForm({ ...form, startDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">End Date</label>
+                  <div className="relative">
+                    <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="date"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
+                      value={form.endDate}
+                      onChange={e => setForm({ ...form, endDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className={`
+                      w-full py-3 rounded-lg font-bold text-white shadow-md flex items-center justify-center gap-2 transition-colors border-2
+                      ${creating ? 'bg-indigo-400 border-indigo-400 cursor-not-allowed' : 'bg-indigo-600 border-indigo-700 hover:bg-indigo-700'}
+                    `}
+                  >
+                    {creating ? (
+                      <> <FaSpinner className="animate-spin text-xl" /> Processing... </>
+                    ) : (
+                      <> <FaPlay /> Launch Session Now </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        {/* SESSION LIST */}
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+          <div className="bg-slate-50 p-6 border-b border-slate-200 flex items-center gap-3">
+            <FaListAlt className="text-slate-500 text-xl" />
+            <h3 className="text-xl font-bold text-slate-800">Session History</h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-slate-100 border-b-2 border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <tr>
+                  <th className="p-4 w-1/3">Session Title</th>
+                  <th className="p-4">Target Audience</th>
+                  <th className="p-4">Duration</th>
+                  <th className="p-4 text-center">Status</th>
+                  <th className="p-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {sessions.map(s => (
+                  <tr key={s.session_id} className="hover:bg-indigo-50/50 transition-colors">
+                    <td className="p-4">
+                      <p className="font-bold text-slate-900 text-base">{s.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-mono font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">ID: {s.session_id}</span>
+                        <span className="text-sm font-semibold text-slate-600">{s.academic_year}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1.5 text-sm font-semibold text-slate-700">
+                        <span className="flex items-center gap-2">
+                          <FaUniversity className="text-slate-400" />
+                          {DEPT_MAP[s.dept_id] || "Unknown Dept"}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <FaLayerGroup className="text-slate-400" />
+                          {CLASS_MAP[s.class_id] || "Unknown Class"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4 font-medium text-slate-700">
+                      <p>Start: {formatDDMMYYYY(s.start_date)}</p>
+                      <p>End: {formatDDMMYYYY(s.end_date)}</p>
+                    </td>
+                    <td className="p-4 text-center">
+                      {s.is_active ? (
+                        <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide bg-slate-200 text-slate-600 border border-slate-300">
+                          <FaLock className="mr-2 text-slate-400" />
+                          Closed
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {s.is_active ? (
+                        <button
+                          onClick={() => handleCloseSession(s.session_id)}
+                          className="text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors border-2 border-red-700 flex items-center justify-center gap-2 mx-auto shadow-sm"
+                        >
+                          <FaStopCircle /> Close
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenSession(s.session_id)}
+                          className="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg transition-colors border-2 border-emerald-700 flex items-center justify-center gap-2 mx-auto shadow-sm"
+                        >
+                          <FaPlay /> Reopen
+                        </button>
+                      )}
+
+                    </td>
+                  </tr>
+                ))}
+                {sessions.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="p-16 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <FaExclamationTriangle className="text-5xl mb-3 opacity-30" />
+                        <p className="font-bold text-lg text-slate-600">No Sessions Found</p>
+                        <p className="text-md mt-1 text-slate-500">Create your first feedback session above.</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
   );
 }

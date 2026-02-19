@@ -19,6 +19,7 @@ export default function Feedback({ user }) {
 
     const roleStyles = {
         HOD: { label: "HOD", color: "bg-indigo-600" },
+        DeptAdmin: { label: "Department Admin", color: "bg-blue-600" },
         CA: { label: "Course Advisor", color: "bg-green-600" },
         Staff: { label: "Staff", color: "bg-orange-600" },
         Principal: { label: "Principal", color: "bg-purple-600" },
@@ -46,7 +47,7 @@ export default function Feedback({ user }) {
         );
     }
 
-    else if (["CA", "HOD", "Principal"].includes(user.role)) {
+    else if (["CA", "HOD", "DeptAdmin","Principal"].includes(user.role)) {
         options.push(
             {
                 label: "View Feedback",

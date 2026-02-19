@@ -282,7 +282,7 @@ export default function GiveFeedback({ user }) {
                                 </h3>
                                 <div className="flex items-center gap-2 text-sm text-slate-500">
                                     <FaCalendarAlt className="text-slate-400" />
-                                    <span>Due: {new Date(s.end_date).toLocaleDateString()}</span>
+                                    <span>Due: {new Date(s.end_date).toLocaleDateString("en-IN")}</span>
                                 </div>
                             </div>
 
