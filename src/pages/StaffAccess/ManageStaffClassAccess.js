@@ -3,7 +3,6 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import Select, { components } from "react-select";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   FaLayerGroup,
   FaPaperPlane,
@@ -12,104 +11,60 @@ import {
   FaBookOpen,
   FaChalkboardTeacher,
   FaBuilding,
-  FaHistory,
-  FaCheckCircle,
-  FaInfoCircle,
   FaUniversity,
   FaUserGraduate,
-  FaShieldAlt,
-  FaEraser
+  FaEraser,
+  FaTrash
 } from "react-icons/fa";
 
 // --- IMPORT CONSTANTS ---
 import { BASE_URL } from "../../constants/API";
 import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
 
-// --- STYLING & ANIMATION CONFIG ---
-
-const fadeIn = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
-};
-
+// --- STYLING CONFIG (Simplified & Faster) ---
 const customSelectStyles = {
   control: (base, state) => ({
     ...base,
-    minHeight: '50px',
-    borderRadius: '0.75rem',
-    borderColor: state.isFocused ? '#6366f1' : '#e2e8f0',
-    boxShadow: state.isFocused ? '0 0 0 2px rgba(99, 102, 241, 0.2)' : 'none',
-    paddingLeft: '4px',
+    minHeight: '48px',
+    borderRadius: '0.5rem',
+    borderColor: state.isFocused ? '#4f46e5' : '#cbd5e1',
+    boxShadow: state.isFocused ? '0 0 0 1px #4f46e5' : 'none',
     backgroundColor: '#fff',
-    transition: 'all 0.2s',
-    '&:hover': { borderColor: '#a5b4fc' }
-  }),
-  menu: (base) => ({
-    ...base,
-    borderRadius: '0.75rem',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    zIndex: 50,
-    marginTop: '8px'
+    cursor: 'pointer',
+    '&:hover': { borderColor: '#818cf8' }
   }),
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected
-      ? '#4f46e5'
-      : state.isFocused
-        ? '#e0e7ff'
-        : 'white',
+    backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#e0e7ff' : 'white',
     color: state.isSelected ? 'white' : '#1e293b',
     cursor: 'pointer',
-    padding: '12px 16px',
+    padding: '10px 14px',
     display: 'flex',
     alignItems: 'center',
     gap: '10px'
-  }),
-  singleValue: (base) => ({
-    ...base,
-    color: '#334155',
-    fontWeight: '600',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }),
-  placeholder: (base) => ({
-    ...base,
-    color: '#94a3b8',
-    fontSize: '0.95rem'
   })
 };
 
 // --- CUSTOM SELECT COMPONENTS ---
-
-/**
- * Renders an icon next to the option label in the dropdown
- */
 const { Option, SingleValue } = components;
 
 const IconOption = (props) => (
   <Option {...props}>
     <span className="text-lg opacity-70">{props.data.icon}</span>
-    <div className="flex flex-col">
-      <span>{props.data.label}</span>
-      {props.data.subLabel && (
-        <span className={`text-[10px] ${props.isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
-          {props.data.subLabel}
-        </span>
-      )}
-    </div>
+    <span>{props.data.label}</span>
   </Option>
 );
 
 const IconSingleValue = (props) => (
   <SingleValue {...props}>
-    <span className="text-indigo-500 text-lg">{props.data.icon}</span>
-    {props.data.label}
+    <div className="flex items-center gap-2 text-slate-700 font-medium">
+      <span className="text-indigo-600">{props.data.icon}</span>
+      {props.data.label}
+    </div>
   </SingleValue>
 );
 
 // --- MAIN COMPONENT ---
-
 export default function ManageStaffClassAccess() {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
@@ -123,141 +78,97 @@ export default function ManageStaffClassAccess() {
   const [submitting, setSubmitting] = useState(false);
   const [accessList, setAccessList] = useState([]);
   const [loadingAccess, setLoadingAccess] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-
-
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userRole = user.role;
   const userDeptId = user.dept_id;
 
   // Form State
-  const initialDept =
-    userRole === "HOD" || userRole === "DeptAdmin"
-      ? {
-        value: String(userDeptId),
-        label: DEPT_MAP[userDeptId],
-        icon: <FaUniversity />,
-        subLabel: "Department"
-      }
-      : null;
+  const initialDept = userRole === "HOD" || userRole === "DeptAdmin"
+    ? { value: String(userDeptId), label: DEPT_MAP[userDeptId], icon: <FaUniversity /> }
+    : null;
 
   const [form, setForm] = useState({
     dept: initialDept,
     targetClass: null,
     staff: null,
     subject: null,
-    accessType: {
-      value: "teaching",
-      label: "Teaching Staff",
-      icon: <FaChalkboardTeacher />
-    }
+    accessType: { value: "teaching", label: "Teaching Staff", icon: <FaChalkboardTeacher /> }
   });
 
-
-  // Local Session History (UX Improvement)
-  const [recentActivity, setRecentActivity] = useState([]);
-
   // --- DERIVED OPTIONS ---
-
   const deptOptions = useMemo(() =>
-    Object.entries(DEPT_MAP).map(([id, name]) => ({
-      value: id,
-      label: name,
-      icon: <FaUniversity />,
-      subLabel: "Department"
-    })),
+    Object.entries(DEPT_MAP).map(([id, name]) => ({ value: id, label: name, icon: <FaUniversity /> })),
     []);
 
-
-  useEffect(() => {
-    if (userRole === "HOD" || userRole === "DeptAdmin") {
-      const deptOption = deptOptions.find(
-        option => option.value === String(userDeptId)
-      );
-      setForm(prev => ({
-        ...prev,
-        dept: deptOption
-      }));
-    }
-  }, [userRole, userDeptId, deptOptions]);
-
-
-  const classOptions = Object.entries(CLASS_MAP).map(([id, name]) => ({
-    value: id,
-    label: name,
-    icon: <FaUserGraduate />,
-    subLabel: "Year / Class"
-  }));
+  const classOptions = useMemo(() =>
+    Object.entries(CLASS_MAP).map(([id, name]) => ({ value: id, label: name, icon: <FaUserGraduate /> })),
+    []);
 
   const accessOptions = [
-    { value: "teaching", label: "Teaching Staff", icon: <FaChalkboardTeacher />, subLabel: "Assign specific subject" },
-    { value: "ca", label: "Class Advisor", icon: <FaUserTie />, subLabel: "Full class responsibility" }
+    { value: "teaching", label: "Teaching Staff", icon: <FaChalkboardTeacher /> },
+    { value: "ca", label: "Class Advisor", icon: <FaUserTie /> }
   ];
 
-
+  // --- API CALLS ---
   const fetchAccessList = useCallback(async () => {
-    if (!form.dept || !form.targetClass) return;
-
+    if (!form.dept || !form.targetClass) {
+      setAccessList([]);
+      return;
+    }
     setLoadingAccess(true);
     try {
       const res = await axios.get(
         `${BASE_URL}/staffClassAccess?dept_id=${form.dept.value}&class_id=${form.targetClass.value}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setAccessList(res.data);
     } catch (err) {
-      console.error("Access fetch error", err);
+      console.error(err);
     } finally {
       setLoadingAccess(false);
     }
   }, [form.dept, form.targetClass, token]);
 
-  useEffect(() => {
-    fetchAccessList();
-  }, [fetchAccessList]);
+  useEffect(() => { fetchAccessList(); }, [fetchAccessList]);
 
 
-  // --- API CALLS ---
-
-  // 1. Fetch Staff on Mount
   useEffect(() => {
     const fetchStaff = async () => {
       try {
         const res = await axios.get(`${BASE_URL}/faculty`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const mappedStaff = (res.data.data || []).map(s => ({
-          value: s.staff_id,
-          label: s.name,
-          user_id: s.user_id,
-          icon: <FaUserTie />,
-          subLabel: s.staff_id // Showing Staff ID as sub-label
+
+        if (!res.data.success) {
+          throw new Error("Invalid response");
+        }
+
+        const mappedStaff = res.data.data.map(s => ({
+          value: s.user_id,
+          label: `${s.name} - ${DEPT_MAP[s.dept_id] || "Unknown Dept"}`,
+          user_id: s.user_id
         }));
+
         setStaffList(mappedStaff);
+
       } catch (error) {
-        console.error("Staff Fetch Error", error);
-        Swal.fire({
-          icon: 'error',
-          title: 'System Error',
-          text: 'Failed to load faculty list. Please refresh.',
-          confirmButtonColor: '#4f46e5'
-        });
+        console.error(error);
+        Swal.fire("Error", "Failed to load faculty list.", "error");
       } finally {
         setLoadingInitial(false);
       }
     };
+
     fetchStaff();
   }, [token]);
 
-  // 2. Fetch Subjects when Class or Dept changes
+
   useEffect(() => {
     if (!form.targetClass || !form.dept) {
       setSubjectList([]);
       return;
     }
-
     const fetchSubjects = async () => {
       setLoadingSubjects(true);
       try {
@@ -265,67 +176,38 @@ export default function ManageStaffClassAccess() {
           `${BASE_URL}/subjects?class_id=${form.targetClass.value}&dept_id=${form.dept.value}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         const mappedSubjects = (res.data || []).map(sub => ({
           value: sub.subject_id,
-          label: sub.subject_name,
-          icon: <FaBookOpen />,
-          subLabel: sub.subject_code || "Subject"
+          label: `${sub.subject_name} (${sub.subject_code})`,
+          icon: <FaBookOpen />
         }));
-
         setSubjectList(mappedSubjects);
 
-        // Reset subject only if it no longer exists in new list
-        if (
-          form.subject &&
-          !mappedSubjects.find(s => s.value === form.subject.value)
-        ) {
+        if (form.subject && !mappedSubjects.find(s => s.value === form.subject.value)) {
           setForm(prev => ({ ...prev, subject: null }));
         }
-
       } catch {
         setSubjectList([]);
       } finally {
         setLoadingSubjects(false);
       }
     };
-
     fetchSubjects();
   }, [form.targetClass?.value, form.dept?.value, token]);
 
-
   // --- HANDLERS ---
-
   const handleReset = () => {
-    setForm({
-      dept: null,
-      targetClass: null,
-      staff: null,
-      subject: null,
-      accessType: accessOptions[0]
-    });
+    setForm(prev => ({ ...prev, staff: null, subject: null, accessType: accessOptions[0] }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!form.dept || !form.targetClass || !form.staff) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'Missing Fields',
-        text: 'Please ensure Department, Class, and Staff are selected.',
-        confirmButtonColor: '#f59e0b'
-      });
+      return Swal.fire('Missing Fields', 'Please select Department, Class, and Staff.', 'warning');
     }
-
     if (form.accessType.value === "teaching" && !form.subject) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'Subject Required',
-        text: 'Teaching staff must be assigned a specific subject.',
-        confirmButtonColor: '#f59e0b'
-      });
+      return Swal.fire('Subject Required', 'Teaching staff must be assigned a subject.', 'warning');
     }
 
     setSubmitting(true);
@@ -333,53 +215,17 @@ export default function ManageStaffClassAccess() {
       user_id: form.staff.user_id,
       class_id: form.targetClass.value,
       dept_id: form.dept.value,
-      subject_id: form.accessType.value === "teaching"
-        ? form.subject.value
-        : null,
+      subject_id: form.accessType.value === "teaching" ? form.subject.value : null,
       access_type: form.accessType.value
     };
 
     try {
-      await axios.post(`${BASE_URL}/staffClassAccess`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      // Add to local history for UX
-      const newActivity = {
-        id: Date.now(),
-        staff: form.staff.label,
-        role: form.accessType.label,
-        target: `${form.dept.label} - ${form.targetClass.label}`,
-        subject: form.subject ? form.subject.label : 'N/A',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+      await axios.post(`${BASE_URL}/staffClassAccess`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      Swal.fire({ icon: 'success', title: 'Assigned!', timer: 1500, showConfirmButton: false });
       fetchAccessList();
-
-
-      setRecentActivity(prev => [newActivity, ...prev].slice(0, 5));
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Access Granted',
-        text: `${form.staff.label} has been assigned successfully.`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-
-      // Soft reset (Keep dept/class selected as user might be doing batch entry)
-      setForm(prev => ({
-        ...prev,
-        staff: null,
-        subject: null
-      }));
-
+      setForm(prev => ({ ...prev, staff: null, subject: null })); // Keep class/dept selected for fast batch entry
     } catch (err) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Assignment Failed',
-        text: err.response?.data?.message || "Server rejected the request.",
-        confirmButtonColor: '#ef4444'
-      });
+      Swal.fire('Error', err.response?.data?.message || "Failed to assign.", 'error');
     } finally {
       setSubmitting(false);
     }
@@ -387,440 +233,235 @@ export default function ManageStaffClassAccess() {
 
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
-      icon: "warning",
       title: "Remove Access?",
+      text: "Are you sure you want to remove this staff member?",
+      icon: "warning",
       showCancelButton: true,
+      confirmButtonColor: "#dc2626",
       confirmButtonText: "Yes, Remove"
     });
 
     if (!confirm.isConfirmed) return;
 
     try {
-      await axios.delete(`${BASE_URL}/staffClassAccess/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      await axios.delete(`${BASE_URL}/staffClassAccess/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchAccessList();
-
-      Swal.fire({
-        icon: "success",
-        title: "Removed",
-        timer: 1500,
-        showConfirmButton: false
-      });
     } catch (err) {
-      Swal.fire("Error", err.response?.data?.message, "error");
+      Swal.fire("Error", "Failed to remove staff.", "error");
     }
   };
-
-
-  const handleEdit = async (id, newType) => {
-    try {
-      await axios.patch(
-        `${BASE_URL}/staffClassAccess/${id}`,
-        { access_type: newType },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      fetchAccessList();
-
-      Swal.fire({
-        icon: "success",
-        title: "Updated",
-        timer: 1500,
-        showConfirmButton: false
-      });
-    } catch (err) {
-      Swal.fire("Error", err.response?.data?.message, "error");
-    }
-  };
-
 
   // --- RENDER ---
-
   if (loadingInitial) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 space-y-4">
-        <FaSpinner className="animate-spin text-indigo-600 text-4xl" />
-        <p className="text-slate-500 font-medium animate-pulse">Loading Configuration...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-indigo-600">
+        <FaSpinner className="animate-spin text-4xl mb-3" />
+        <p className="font-medium">Loading System...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className=" mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* === LEFT COLUMN: FORM === */}
-        <div className="lg:col-span-7 space-y-6">
+      {/* === LEFT COLUMN: ENTRY FORM === */}
+      <div className="lg:col-span-6 space-y-6">
 
-          {/* Header */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div className="h-12 w-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-2xl">
-              <FaLayerGroup />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800">Assign Staff Access</h1>
-              <p className="text-slate-500 text-sm">Configure permissions for teaching and advisory roles.</p>
-            </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div className="p-3 bg-indigo-100 text-indigo-700 rounded-lg text-2xl">
+            <FaLayerGroup />
           </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Assign Staff Access</h1>
+            <p className="text-slate-500">Assign faculty to classes and subjects.</p>
+          </div>
+        </div>
 
-          {/* Main Form Card */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeIn}
-            className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden"
-          >
-            <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500" />
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+          <div className="h-1 bg-indigo-600 w-full"></div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-8">
+          <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
 
-              {/* SECTION 1: CONTEXT */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <FaBuilding /> Class Context
-                </h3>
-                <div className="grid md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Department</label>
-                    <Select
-                      placeholder="Select Dept..."
-                      options={deptOptions}
-                      value={form.dept}
-                      onChange={(val) => setForm(prev => ({ ...prev, dept: val }))}
-                      components={{ Option: IconOption, SingleValue: IconSingleValue }}
-                      styles={customSelectStyles}
-                      isClearable={!(userRole === "HOD" || userRole === "DeptAdmin")}
-                      isDisabled={userRole === "HOD" || userRole === "DeptAdmin"}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Academic Year</label>
-                    <Select
-                      placeholder="Select Year..."
-                      options={classOptions}
-                      value={form.targetClass}
-                      onChange={(val) => setForm(prev => ({ ...prev, targetClass: val }))}
-                      components={{ Option: IconOption, SingleValue: IconSingleValue }}
-                      styles={customSelectStyles}
-                      isClearable
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <hr className="border-slate-100" />
-
-              {/* SECTION 2: STAFF & ROLE */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <FaUserTie /> Staff Details
-                </h3>
-
+            {/* Context Block */}
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2 border-b pb-2">
+                <FaBuilding className="text-indigo-500" /> 1. Select Class
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-slate-700">
-                      Select Faculty
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() => navigate("/faculty")}
-                      className="px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition"
-                    >
-                      Manage Faculty
-                    </button>
-                  </div>
-
-                  {/* Select Dropdown */}
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Department</label>
                   <Select
-                    placeholder="Search faculty name..."
-                    options={staffList}
-                    value={form.staff}
-                    onChange={(val) => setForm(prev => ({ ...prev, staff: val }))}
+                    options={deptOptions}
+                    value={form.dept}
+                    onChange={(val) => setForm(prev => ({ ...prev, dept: val }))}
                     components={{ Option: IconOption, SingleValue: IconSingleValue }}
                     styles={customSelectStyles}
-                    isClearable
+                    isDisabled={userRole === "HOD" || userRole === "DeptAdmin"}
+                    placeholder="Select Dept..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Year / Class</label>
+                  <Select
+                    options={classOptions}
+                    value={form.targetClass}
+                    onChange={(val) => setForm(prev => ({ ...prev, targetClass: val }))}
+                    components={{ Option: IconOption, SingleValue: IconSingleValue }}
+                    styles={customSelectStyles}
+                    placeholder="Select Class..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Assignment Block */}
+            <div className="space-y-4">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2 border-b pb-2">
+                <FaUserTie className="text-indigo-500" /> 2. Assign Role
+              </h3>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <label className="block text-sm font-bold text-slate-700">Select Faculty</label>
+                  <button type="button" onClick={() => navigate("/faculty")} className="text-xs text-indigo-600 hover:underline font-semibold">Add New Faculty?</button>
+                </div>
+                <Select
+                  options={staffList}
+                  value={form.staff}
+                  onChange={(val) => setForm(prev => ({ ...prev, staff: val }))}
+                  components={{ Option: IconOption, SingleValue: IconSingleValue }}
+                  styles={customSelectStyles}
+                  placeholder="Search by name or ID..."
+                  isClearable
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Role</label>
+                  <Select
+                    options={accessOptions}
+                    value={form.accessType}
+                    onChange={(val) => setForm(prev => ({ ...prev, accessType: val, subject: null }))}
+                    components={{ Option: IconOption, SingleValue: IconSingleValue }}
+                    styles={customSelectStyles}
                   />
                 </div>
 
-
-                <div className="grid md:grid-cols-2 gap-5">
+                {form.accessType.value === "teaching" && (
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Access Role</label>
+                    <div className="flex justify-between mb-1">
+                      <label className="block text-sm font-bold text-slate-700">Subject</label>
+                      <button type="button" onClick={() => navigate("/managesubjects")} className="text-xs text-indigo-600 hover:underline font-semibold">Manage Subjects</button>
+                    </div>
                     <Select
-                      options={accessOptions}
-                      value={form.accessType}
-                      onChange={(val) => setForm(prev => ({ ...prev, accessType: val, subject: null }))}
+                      options={subjectList}
+                      value={form.subject}
+                      onChange={(val) => setForm(prev => ({ ...prev, subject: val }))}
                       components={{ Option: IconOption, SingleValue: IconSingleValue }}
                       styles={customSelectStyles}
+                      isDisabled={!form.dept || !form.targetClass}
+                      placeholder={form.dept && form.targetClass ? "Select Subject..." : "Select Class first"}
                     />
-                    <p className="text-[10px] text-slate-400 mt-1 pl-1">
-                      *Class Advisors have full access to class reports.
-                    </p>
                   </div>
-
-                  {/* Conditional Subject Select */}
-                  <AnimatePresence>
-                    {form.accessType.value === "teaching" && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                      >
-                        <label className="block text-sm font-semibold text-slate-700 mb-2 flex justify-between items-center">
-                          <span>Subject</span>
-
-                          <button
-                            type="button"
-                            onClick={() => navigate("/managesubjects")}
-                            className="px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition"
-                          >
-                            Manage Subjects
-                          </button>
-                        </label>
-
-                        <Select
-                          placeholder={form.dept && form.targetClass ? "Select Subject..." : "Select Class first"}
-                          options={subjectList}
-                          value={form.subject}
-                          onChange={(val) => setForm(prev => ({ ...prev, subject: val }))}
-                          components={{ Option: IconOption, SingleValue: IconSingleValue }}
-                          styles={customSelectStyles}
-                          isDisabled={!form.dept || !form.targetClass}
-                          noOptionsMessage={() => <p className="text-xs text-red-500 mt-2">
-                            No subjects found.
-                            <button
-                              type="button"
-                              onClick={() => navigate("/managesubjects")}
-                              className="ml-2 text-indigo-600 underline"
-                            >
-                              Create one now
-                            </button>
-                          </p>
-                          }
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* ACTIONS */}
-              <div className="flex items-center gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 transition-colors flex items-center gap-2"
-                >
-                  <FaEraser /> Reset
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`
-                    flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95
-                    ${submitting ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-200'}
-                  `}
-                >
-                  {submitting ? (
-                    <>
-                      <FaSpinner className="animate-spin" /> Processing...
-                    </>
-                  ) : (
-                    <>
-                      <FaPaperPlane /> Assign Access
-                    </>
-                  )}
-                </button>
-              </div>
-
-            </form>
-          </motion.div>
-        </div>
-
-
-
-
-        {/* === RIGHT COLUMN: PREVIEW & HISTORY === */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h3 className="font-bold text-slate-700 mb-4">
-              Assigned Staff
-            </h3>
-
-            {!form.dept || !form.targetClass ? (
-              <p className="text-sm text-slate-400">
-                Select department and class to view assignments.
-              </p>
-            ) : loadingAccess ? (
-              <p className="text-sm text-slate-500">Loading...</p>
-            ) : accessList.length === 0 ? (
-              <p className="text-sm text-slate-400">No assignments found.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-slate-600">
-                    <tr>
-                      <th className="p-3 text-left">Staff</th>
-                      <th className="p-3 text-left">Role</th>
-                      <th className="p-3 text-left">Subject</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {accessList.map((item) => (
-                      <tr key={item.id} className="border-t">
-                        <td className="p-3 font-semibold">
-                          {item.name}
-                        </td>
-
-                        <td className="p-3 capitalize">
-                          {item.access_type}
-                        </td>
-
-                        <td className="p-3">
-                          {item.subject_name || "—"}
-                        </td>
-
-                        <td className="p-3 text-right space-x-2">
-                          {/* <button
-                            onClick={() =>
-                              handleEdit(
-                                item.id,
-                                item.access_type === "ca" ? "teaching" : "ca"
-                              )
-                            }
-                            className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded"
-                          >
-                            Toggle Role
-                          </button> */}
-
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="px-3 py-1 text-xs bg-red-100 text-red-600 rounded"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-          {/* Live Summary Card */}
-          <div className="bg-indigo-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10">
-              <FaShieldAlt className="text-9xl transform rotate-12 translate-x-4 -translate-y-4" />
-            </div>
-
-            <h3 className="text-indigo-200 font-bold uppercase tracking-wider text-xs mb-4">Live Preview</h3>
-
-            <div className="space-y-4 relative z-10">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 bg-white/20 p-2 rounded-lg">
-                  <FaUserTie className="text-white" />
-                </div>
-                <div>
-                  <p className="text-indigo-300 text-xs">Staff Member</p>
-                  <p className="font-semibold text-lg">{form.staff?.label || "---"}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="mt-1 bg-white/20 p-2 rounded-lg">
-                  <FaLayerGroup className="text-white" />
-                </div>
-                <div>
-                  <p className="text-indigo-300 text-xs">Assigning To</p>
-                  <p className="font-semibold">
-                    {form.dept?.label || "---"} <span className="text-indigo-400 mx-1">/</span> {form.targetClass?.label || "---"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="mt-1 bg-white/20 p-2 rounded-lg">
-                  <FaCheckCircle className="text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-indigo-300 text-xs">Permission Level</p>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-emerald-300">{form.accessType.label}</span>
-                    {form.accessType.value === "teaching" && (
-                      <span className="text-sm text-indigo-100 mt-1 bg-indigo-800/50 px-2 py-1 rounded">
-                        Sub: {form.subject?.label || "Not Selected"}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Recent Activity Log */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                <FaHistory className="text-indigo-500" /> Recent Assignments
-              </h3>
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">Session only</span>
+            {/* Buttons */}
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-5 py-3 rounded-lg border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition"
+              >
+                <FaEraser className="inline mr-2" /> Clear
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`flex-1 py-3 rounded-lg font-bold text-white text-lg shadow-md transition ${submitting ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              >
+                {submitting ? <FaSpinner className="animate-spin inline mr-2" /> : <FaPaperPlane className="inline mr-2" />}
+                Assign Staff
+              </button>
             </div>
 
-            <div className="space-y-3">
-              {recentActivity.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  No assignments made in this session yet.
-                </div>
-              ) : (
-                <AnimatePresence>
-                  {recentActivity.map((log) => (
-                    <motion.div
-                      key={log.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3 hover:bg-white hover:shadow-md transition-all"
-                    >
-                      <div className={`mt-1 h-2 w-2 rounded-full ${log.role === 'Teaching' ? 'bg-blue-400' : 'bg-emerald-400'}`} />
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <p className="text-sm font-bold text-slate-700">{log.staff}</p>
-                          <span className="text-[10px] text-slate-400">{log.time}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {log.role} • {log.target}
-                        </p>
-                        {log.subject !== 'N/A' && (
-                          <p className="text-[10px] font-mono text-indigo-500 mt-1 bg-indigo-50 inline-block px-1 rounded">
-                            {log.subject}
-                          </p>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              )}
-            </div>
-          </div>
-
-          {/* Help Box */}
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 flex gap-3">
-            <FaInfoCircle className="text-blue-500 mt-1 shrink-0" />
-            <div className="text-sm text-blue-800">
-              <p className="font-bold mb-1">Access Guidelines</p>
-              <ul className="list-disc pl-4 space-y-1 text-xs opacity-80">
-                <li><strong>Class Advisors</strong> have administrative view of the entire class performance.</li>
-                <li><strong>Teaching Staff</strong> can only view/edit marks for their specific subject.</li>
-              </ul>
-            </div>
-          </div>
-
+          </form>
         </div>
       </div>
+
+      {/* === RIGHT COLUMN: DATA TABLE === */}
+      <div className="lg:col-span-6">
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 h-full flex flex-col">
+
+          <div className="p-6 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+            <h3 className="font-bold text-xl text-slate-800">Currently Assigned Staff</h3>
+            <p className="text-slate-500 text-sm mt-1">
+              {form.dept && form.targetClass
+                ? `Showing staff for ${form.dept.label} - ${form.targetClass.label}`
+                : "Select a Department and Class to view assigned staff."}
+            </p>
+          </div>
+
+          <div className="p-0 flex-1 overflow-auto max-h-[600px]">
+            {!form.dept || !form.targetClass ? (
+              <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                <FaBuilding className="text-4xl mb-3 opacity-20" />
+                <p>Awaiting class selection...</p>
+              </div>
+            ) : loadingAccess ? (
+              <div className="flex justify-center items-center h-48 text-indigo-500">
+                <FaSpinner className="animate-spin text-3xl" />
+              </div>
+            ) : accessList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-slate-500">
+                <p className="font-medium">No staff assigned to this class yet.</p>
+                <p className="text-sm">Use the form to add someone.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead className="bg-slate-100 text-slate-600 sticky top-0">
+                  <tr>
+                    <th className="p-4 font-bold border-b">Faculty Name</th>
+                    <th className="p-4 font-bold border-b">Role / Subject</th>
+                    <th className="p-4 font-bold border-b text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {accessList.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50">
+                      <td className="p-4 font-semibold text-slate-800">
+                        {item.name}
+                      </td>
+                      <td className="p-4">
+                        {item.access_type === "ca" ? (
+                          <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-xs font-bold uppercase">Class Advisor</span>
+                        ) : (
+                          <div>
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold uppercase">Teaching</span>
+                            <div className="text-xs text-slate-500 mt-1 font-medium">{item.subject_name || "Unknown Subject"}</div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                          title="Remove Access"
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

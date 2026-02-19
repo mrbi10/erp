@@ -23,7 +23,8 @@ import { BASE_URL } from "../../constants/API";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
-import { DEPT_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+
 
 
 // ---------------------------
@@ -176,7 +177,6 @@ export default function Students({ user }) {
   // State
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
-  const [classes, setClasses] = useState([]);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
     dept_id: "",
@@ -198,27 +198,6 @@ export default function Students({ user }) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const token = localStorage.getItem("token");
-
-  const classYearMap = useMemo(() => {
-    const map = {};
-    classes.forEach(c => {
-      map[c.class_id] = c.year;
-    });
-    return map;
-  }, [classes]);
-
-
-
-
-  useEffect(() => {
-    fetch(`${BASE_URL}/classes`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setClasses(Array.isArray(data) ? data : []))
-      .catch(() => setClasses([]));
-  }, [token]);
-
 
   // --- 1. Data Fetching (Matches Original Logic) ---
   useEffect(() => {
@@ -438,7 +417,7 @@ export default function Students({ user }) {
       "Register No": s.roll_no || "-",
       "Student Name": s.name || "-",
       "Department": DEPT_MAP[s.dept_id] || "-",
-      "Class / Year": classYearMap[s.class_id] || "-",
+      "Class / Year": CLASS_MAP[s.class_id] || "-",
       "Gender": s.gender === "M" ? "Male" : s.gender === "F" ? "Female" : "-",
       "Jain": s.jain ? "Yes" : "No",
       "Hostel": s.hostel ? "Yes" : "No",
@@ -460,7 +439,7 @@ export default function Students({ user }) {
       s.roll_no || "-",
       s.name || "-",
       DEPT_MAP[s.dept_id] || "-",
-      classYearMap[s.class_id] || "-",
+      CLASS_MAP[s.class_id] || "-",
       s.gender === "M" ? "Male" : s.gender === "F" ? "Female" : "-",
       s.jain ? "Yes" : "No",
       s.hostel ? "Yes" : "No",
@@ -563,12 +542,11 @@ export default function Students({ user }) {
   }), [filteredStudents]);
 
   const deptOptions = Object.entries(DEPT_MAP).map(([k, v]) => ({ value: Number(k), label: v }));
-  const classOptions = classes.map(c => ({
-    value: c.class_id,
-    label: `${ROMAN_MAP[c.year]} - ${DEPT_MAP[c.dept_id]}`
+  const classOptions = Object.entries(CLASS_MAP).map(([key, label]) => ({
+    value: Number(key),
+    label
   }));
-  console.log("Classes:", classes);
-  console.log("Assigned:", user.assigned_class_id);
+
 
 
   const pageCount = Math.ceil(filteredStudents.length / studentsPerPage);
@@ -674,7 +652,7 @@ export default function Students({ user }) {
               </div>
             )}
 
-            {(user.role === "Principal" || user.role === "HOD") && (
+            {(user.role === "Principal" || user.role === "DeptAdmin" || user.role === "HOD") && (
               <div className="min-w-[140px]">
                 <Select
                   styles={selectStyles}
@@ -792,7 +770,7 @@ export default function Students({ user }) {
                         <td className="px-6 py-4">
                           {(() => {
                             const dept = DEPT_MAP[s.dept_id];
-                            const year = classYearMap[s.class_id];
+                            const year = CLASS_MAP[s.class_id];
 
                             if (!dept && !year) return null;
 
@@ -1041,26 +1019,14 @@ export default function Students({ user }) {
             <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
               Class
             </label>
-
             {user.role === "CA" ? (
-              (() => {
-                const assignedClass = classes.find(
-                  c => Number(c.class_id) === Number(user.assigned_class_id)
-                );
-
-                const label = assignedClass
-                  ? `${ROMAN_MAP[assignedClass.year]} - ${DEPT_MAP[assignedClass.dept_id]}`
-                  : "Loading...";
-
-                return (
-                  <input
-                    disabled
-                    value={label}
-                    className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
-                  />
-                );
-              })()
+              <input
+                disabled
+                value={`${DEPT_MAP[user.dept_id]} • ${CLASS_MAP[user.assigned_class_id]}`}
+                className="w-full p-3 bg-gray-100 text-gray-500 rounded-xl border-none"
+              />
             ) : (
+
               <Select
                 styles={selectStyles}
                 menuPortalTarget={document.body}

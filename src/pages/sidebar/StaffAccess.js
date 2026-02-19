@@ -21,7 +21,7 @@ export default function StaffAccess({ user }) {
     const roleStyles = {
         HOD: { label: "HOD", color: "bg-indigo-600" },
         Principal: { label: "Principal", color: "bg-purple-600" },
-        DeptAdmin: { label: "Dept Admin", color: "bg-pink-600" }
+        DeptAdmin: { label: "Department Admin", color: "bg-pink-600" }
     };
 
     const roleStyle = roleStyles[user.role];

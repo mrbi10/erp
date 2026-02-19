@@ -17,6 +17,7 @@ export default function SupportTicket({ user }) {
   const roleStyles = {
     Admin: { label: "Admin Portal", color: "bg-red-600" },
     HOD: { label: "HOD Portal", color: "bg-indigo-600" },
+    DeptAdmin: { label: "Department Admin Portal", color: "bg-purple-600" },
     CA: { label: "Course Advisor", color: "bg-green-600" },
     Staff: { label: "Staff", color: "bg-orange-600" },
     student: { label: "Student", color: "bg-sky-600" }
