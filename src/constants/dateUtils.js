@@ -32,6 +32,27 @@ export function toMysqlDatetime(date) {
   );
 }
 
+
+/**
+ * Date or MySQL string → DD/MM/YYYY
+ */
+export function formatDDMMYYYY(value) {
+  if (!value) return "-";
+
+  const date =
+    value instanceof Date
+      ? value
+      : parseUTC(value) || new Date(value);
+
+  if (!(date instanceof Date) || isNaN(date.getTime())) return "-";
+
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1);
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
 /**
  * Parse MySQL UTC datetime → Date
  * Accepts: "YYYY-MM-DD HH:mm:ss"
