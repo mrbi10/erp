@@ -401,7 +401,7 @@ export default function ManageTicket() {
                                                     <StatusBadge status={ticket.status} />
                                                 </td>
                                                 <td className="p-4 text-right text-slate-500">
-                                                    {new Date(ticket.created_at).toLocaleDateString()}
+                                                    {new Date(ticket.created_at).toLocaleDateString("en-IN", { year: '2-digit', month: 'short', day: 'numeric' })}
                                                 </td>
                                             </tr>
                                         ))}
@@ -580,7 +580,7 @@ const KanbanColumn = ({ statusKey, config, tickets, onCardClick }) => (
                     </h4>
                     <div className="flex items-center justify-between mt-3 text-[10px] text-slate-400">
                         <span>{ticket.module}</span>
-                        <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                        <span>{new Date(ticket.created_at).toLocaleDateString("en-IN", { year: '2-digit', month: 'short', day: 'numeric' })}</span>
                     </div>
                 </motion.div>
             ))}

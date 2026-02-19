@@ -108,7 +108,7 @@ const AttendanceCard = ({ profileData, token }) => {
             const pct = (presentCount / totalDays) * 100;
 
             return {
-                date: new Date(record.date).toLocaleDateString(),
+                date: new Date(record.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
                 pct: Number(pct.toFixed(2))
             };
         }).slice(-15);

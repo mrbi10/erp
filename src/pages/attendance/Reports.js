@@ -446,7 +446,7 @@ function ReportsPage({ user }) {
            {dataFetched && attendanceData.length > 0 && (
              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center text-xs font-medium text-gray-500">
                <span>Showing {attendanceData.length} records</span>
-               <span>Generated on {new Date().toLocaleDateString()}</span>
+               <span>Generated on {new Date().toLocaleDateString("en-IN")}</span>
              </div>
            )}
         </div>

@@ -513,7 +513,7 @@ export default function MessDashboard() {
 
             {nextStart && (
               <div className="bg-amber-50 text-amber-800 px-4 py-2 rounded-lg border border-amber-100 text-sm font-medium flex items-center gap-2">
-                <FaHistory className="text-amber-500" /> Next unpaid date: <strong>{new Date(nextStart).toLocaleDateString()}</strong>
+                <FaHistory className="text-amber-500" /> Next unpaid date: <strong>{new Date(nextStart).toLocaleDateString("en-IN")}</strong>
               </div>
             )}
           </div>
