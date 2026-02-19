@@ -69,7 +69,6 @@ export default function PassVerify() {
   const pass = result.pass;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
 
@@ -127,6 +126,5 @@ export default function PassVerify() {
         </div>
       </div>
 
-    </div>
   );
 }
