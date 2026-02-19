@@ -10,8 +10,6 @@ function MarkAttendance({ user }) {
   const todayISO = new Date().toISOString().split("T")[0];
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSubjectId, setSelectedSubjectId] = useState(null); // Used for submission payload
-  const [selectedPeriod, setSelectedPeriod] = useState(1); // Used for submission payload
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); // Richer date format
   const [departmentName, setDepartmentName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -162,8 +160,6 @@ function MarkAttendance({ user }) {
         const payload = finalizedStudents.map(s => ({
           regNo: s.regNo,
           date: todayISO,
-          subjectId: selectedSubjectId || 1,
-          period: selectedPeriod,
           status: formatStatus(s.status)
         }));
 
