@@ -204,7 +204,7 @@ export default function Students({ user }) {
 
     const params = new URLSearchParams({
       dept_id: filters.dept_id,
-      classId: filters.class_id
+      class_id: filters.class_id
     });
 
     setLoading(true);

@@ -91,6 +91,8 @@ import StudentResults from './pages/placementtraining/StudentResults';
 import PlacementAnswerReview from './pages/placementtraining/PlacementAnswerReview';
 
 
+// import { loadDeptClass } from "./constants/deptClass";
+
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -100,6 +102,10 @@ export default function App() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
+
+  // useEffect(() => {
+  //   loadDeptClass();
+  // }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
