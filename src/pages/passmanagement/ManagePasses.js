@@ -22,7 +22,8 @@ const classOptions = Object.entries(CLASS_MAP).map(([val, label]) => ({
 }));
 
 
-
+console.log("deptOptions", deptOptions);
+console.log("classOptions", classOptions);
 const passTypeOptions = [
     { value: "bus", label: "Bus Pass" },
     { value: "jain_mess", label: "Jain Mess Pass" }
