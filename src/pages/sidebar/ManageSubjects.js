@@ -17,17 +17,12 @@ import {
   FaExclamationCircle
 } from "react-icons/fa";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
 
 // --- Constants ---
 const EMPTY_FORM = {
   subject_code: "",
   subject_name: "",
   regulation: "",
-  dept_id: "",
-  class_id: "",
-  staff_id: "",
-  periods_per_week: 5,
 };
 
 const REGULATION_OPTIONS = [
@@ -62,8 +57,8 @@ const selectStyles = {
     backgroundColor: state.isSelected
       ? "#3b82f6"
       : state.isFocused
-      ? "#eff6ff"
-      : "white",
+        ? "#eff6ff"
+        : "white",
     color: state.isSelected ? "white" : "#1f2937",
     cursor: "pointer",
     fontSize: "0.875rem",
@@ -94,19 +89,8 @@ function ManageSubjects({ user }) {
 
   // Filter State
   const [searchText, setSearchText] = useState("");
-  const [filterDept, setFilterDept] = useState(null);
-  const [filterClass, setFilterClass] = useState(null);
 
-  // --- Defaults based on Role ---
-  useEffect(() => {
-    if (user.role !== "Principal") {
-      setForm((f) => ({
-        ...f,
-        dept_id: user.dept_id || "",
-        class_id: user.role === "CA" ? user.assigned_class_id : "",
-      }));
-    }
-  }, [user]);
+
 
   // --- API Actions ---
   const fetchSubjects = async () => {
@@ -125,6 +109,14 @@ function ManageSubjects({ user }) {
     }
   };
 
+  const canModify = () => {
+    return (
+      user.role === "Principal" ||
+      user.role === "DeptAdmin" ||
+      user.role === "HOD"
+    );
+  };
+
   useEffect(() => {
     fetchSubjects();
   }, []);
@@ -134,10 +126,7 @@ function ManageSubjects({ user }) {
     const required = [
       "subject_code",
       "subject_name",
-      "regulation",
-      "dept_id",
-      "class_id",
-      "periods_per_week",
+      "regulation"
     ];
     const missing = required.filter((k) => !form[k]);
 
@@ -164,15 +153,14 @@ function ManageSubjects({ user }) {
         },
         body: JSON.stringify(form),
       });
-
+      console.log("Form Data Sent:", JSON.stringify(form));
       if (!res.ok) throw new Error("API Error");
 
       Swal.fire({
         icon: "success",
         title: editingId ? "Updated!" : "Created!",
-        text: `Subject has been ${
-          editingId ? "updated" : "added"
-        } successfully.`,
+        text: `Subject has been ${editingId ? "updated" : "added"
+          } successfully.`,
         timer: 2000,
         showConfirmButton: false,
       });
@@ -184,44 +172,46 @@ function ManageSubjects({ user }) {
     }
   };
 
-  const handleDelete = async (id) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "This subject will be permanently deleted.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Yes, Delete",
+const handleDelete = async (id) => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This subject will be permanently deleted.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#ef4444",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: "Yes, Delete",
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    const res = await fetch(`${BASE_URL}/subjects/${id}/delete`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!result.isConfirmed) return;
+    const data = await res.json();
 
-    try {
-      await fetch(`${BASE_URL}/subjects/${id}/delete`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchSubjects();
-      Swal.fire("Deleted", "Subject has been removed.", "success");
-    } catch (err) {
-      Swal.fire("Error", "Could not delete subject.", "error");
+    if (!res.ok) {
+      throw new Error(data.message || "Delete failed");
     }
-  };
+
+    fetchSubjects();
+
+    Swal.fire("Deleted", data.message || "Subject removed.", "success");
+
+  } catch (err) {
+    Swal.fire("Error", err.message, "error");
+  }
+};
 
   // --- Helpers ---
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
     setForm(EMPTY_FORM);
-    // Re-apply defaults if not Principal
-    if (user.role !== "Principal") {
-      setForm((f) => ({
-        ...f,
-        dept_id: user.dept_id || "",
-        class_id: user.role === "CA" ? user.assigned_class_id : "",
-      }));
-    }
+
   };
 
   const handleEditClick = (s) => {
@@ -230,55 +220,25 @@ function ManageSubjects({ user }) {
       subject_code: s.subject_code || "",
       subject_name: s.subject_name || "",
       regulation: s.regulation || "",
-      dept_id: s.dept_id || "",
-      class_id: s.class_id || "",
-      staff_id: s.staff_id || "",
-      periods_per_week: s.periods_per_week || 5,
     });
     setShowForm(true);
   };
 
-  // Permission Check: Principal or Same Dept
-  const canModify = (subjectDeptId) => {
-    if (user.role === "Principal") return true;
-    return String(user.dept_id) === String(subjectDeptId);
-  };
+
 
   // --- Filtering Logic ---
   const filteredData = useMemo(() => {
     return subjects.filter((item) => {
-      // 1. Text Search
       const searchQ = searchText.toLowerCase().trim();
-      const deptName = DEPT_MAP[item.dept_id] || "";
-      const className = CLASS_MAP[item.class_id] || "";
 
-      const matchesSearch =
+      return (
         !searchQ ||
         String(item.subject_code).toLowerCase().includes(searchQ) ||
         String(item.subject_name).toLowerCase().includes(searchQ) ||
-        String(item.regulation).toLowerCase().includes(searchQ) ||
-        deptName.toLowerCase().includes(searchQ) ||
-        className.toLowerCase().includes(searchQ);
-
-      // 2. Dropdown Filters
-      const matchesDept =
-        !filterDept || String(item.dept_id) === String(filterDept.value);
-      const matchesClass =
-        !filterClass || String(item.class_id) === String(filterClass.value);
-
-      return matchesSearch && matchesDept && matchesClass;
+        String(item.regulation).toLowerCase().includes(searchQ)
+      );
     });
-  }, [subjects, searchText, filterDept, filterClass]);
-
-  // Options for Selects
-  const deptOptions = useMemo(
-    () => Object.entries(DEPT_MAP).map(([k, v]) => ({ value: k, label: v })),
-    []
-  );
-  const classOptions = useMemo(
-    () => Object.entries(CLASS_MAP).map(([k, v]) => ({ value: k, label: v })),
-    []
-  );
+  }, [subjects, searchText]);
 
   // --- Render ---
   return (
@@ -324,33 +284,12 @@ function ManageSubjects({ user }) {
           </div>
 
           <div className="flex flex-wrap md:flex-nowrap gap-3 w-full md:w-auto items-center">
-            <div className="w-full md:min-w-[200px]">
-              <Select
-                isClearable
-                placeholder="Department"
-                options={deptOptions}
-                value={filterDept}
-                onChange={setFilterDept}
-                styles={selectStyles}
-              />
-            </div>
-            <div className="w-full md:min-w-[200px]">
-              <Select
-                isClearable
-                placeholder="Year / Class"
-                options={classOptions}
-                value={filterClass}
-                onChange={setFilterClass}
-                styles={selectStyles}
-              />
-            </div>
 
-            {(searchText || filterDept || filterClass) && (
+
+            {(searchText) && (
               <button
                 onClick={() => {
                   setSearchText("");
-                  setFilterDept(null);
-                  setFilterClass(null);
                 }}
                 className="px-4 py-2.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors flex items-center gap-2"
               >
@@ -366,7 +305,7 @@ function ManageSubjects({ user }) {
             <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50/50">
                 <tr>
-                  {["Code", "Subject Name", "Details", "Regulation", "Actions"].map(
+                  {["Code", "Subject Name", "Regulation", "Actions"].map(
                     (header) => (
                       <th
                         key={header}
@@ -406,7 +345,6 @@ function ManageSubjects({ user }) {
                   ))
                 ) : filteredData.length > 0 ? (
                   filteredData.map((s) => {
-                    const hasPermission = canModify(s.dept_id);
                     return (
                       <tr
                         key={s.subject_id}
@@ -421,22 +359,9 @@ function ManageSubjects({ user }) {
                           <div className="text-sm font-semibold text-gray-900">
                             {s.subject_name}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1 font-medium">
-                            Periods: {s.periods_per_week} / week
-                          </div>
+
                         </td>
-                        <td className="px-6 py-4 align-top">
-                          <div className="flex flex-col gap-2 items-start">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-                              <FaUniversity className="text-[10px]" />
-                              {DEPT_MAP[s.dept_id] || "N/A"}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                              <FaLayerGroup className="text-[10px]" />
-                              {CLASS_MAP[s.class_id] || "N/A"}
-                            </span>
-                          </div>
-                        </td>
+
                         <td className="px-6 py-4 whitespace-nowrap align-top">
                           <div className="flex items-center gap-2 text-sm text-gray-600 font-medium bg-gray-50 px-3 py-1 rounded-lg w-fit">
                             <FaCalendarAlt className="text-gray-400" />
@@ -444,7 +369,7 @@ function ManageSubjects({ user }) {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right align-top">
-                          {hasPermission ? (
+                          {canModify() && (
                             <div className="flex justify-end gap-2">
                               <button
                                 onClick={() => handleEditClick(s)}
@@ -453,6 +378,7 @@ function ManageSubjects({ user }) {
                               >
                                 <FaEdit />
                               </button>
+
                               <button
                                 onClick={() => handleDelete(s.subject_id)}
                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
@@ -461,10 +387,6 @@ function ManageSubjects({ user }) {
                                 <FaTrash />
                               </button>
                             </div>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-400 text-xs font-medium rounded border border-gray-100 select-none">
-                              <FaBan className="text-[10px]" /> Read Only
-                            </span>
                           )}
                         </td>
                       </tr>
@@ -563,8 +485,8 @@ function ManageSubjects({ user }) {
                     value={
                       form.regulation
                         ? REGULATION_OPTIONS.find(
-                            (r) => r.value === form.regulation
-                          )
+                          (r) => r.value === form.regulation
+                        )
                         : null
                     }
                     onChange={(opt) =>
@@ -589,73 +511,7 @@ function ManageSubjects({ user }) {
                   />
                 </div>
 
-                {/* Department */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Department <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    isDisabled={user.role !== "Principal"}
-                    options={deptOptions}
-                    value={
-                      deptOptions.find(
-                        (o) => String(o.value) === String(form.dept_id)
-                      ) || null
-                    }
-                    onChange={(o) =>
-                      setForm({ ...form, dept_id: o?.value || "" })
-                    }
-                    styles={selectStyles}
-                    placeholder="Select Department"
-                  />
-                  {user.role !== "Principal" && (
-                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
-                      <FaExclamationCircle /> Auto-assigned to your department
-                    </p>
-                  )}
-                </div>
 
-                {/* Class */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Year / Class <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    isDisabled={user.role === "CA"}
-                    options={classOptions}
-                    value={
-                      classOptions.find(
-                        (o) => String(o.value) === String(form.class_id)
-                      ) || null
-                    }
-                    onChange={(o) =>
-                      setForm({ ...form, class_id: o?.value || "" })
-                    }
-                    styles={selectStyles}
-                    placeholder="Select Class"
-                  />
-                  {user.role === "CA" && (
-                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
-                      <FaExclamationCircle /> Locked to your assigned class
-                    </p>
-                  )}
-                </div>
-
-                {/* Periods Per Week */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Periods / Week <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.periods_per_week}
-                    onChange={(e) =>
-                      setForm({ ...form, periods_per_week: e.target.value })
-                    }
-                    className="w-full px-4 py-3 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-medium text-gray-900 placeholder-gray-400"
-                  />
-                </div>
               </div>
             </div>
 
