@@ -114,7 +114,7 @@ function ReportsPage({ user }) {
       try {
         const params = new URLSearchParams({
           dept_id: filters.deptId,
-          classId: filters.classId
+          class_id: filters.classId
         });
         const res = await fetch(`${BASE_URL}/students?${params}`, {
           headers: { Authorization: `Bearer ${token}` }

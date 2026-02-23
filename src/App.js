@@ -99,6 +99,8 @@ import DriveApplications from './pages/placements/DriveApplications';
 import DriveAnalytics from './pages/placements/DriveAnalytics';
 
 
+// import { loadDeptClass } from "./constants/deptClass";
+
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -108,6 +110,10 @@ export default function App() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
+
+  // useEffect(() => {
+  //   loadDeptClass();
+  // }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
