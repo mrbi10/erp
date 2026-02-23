@@ -27,7 +27,7 @@ import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 // import Fees from './pages/sidebar/Fees';
 // import Timetable from './pages/sidebar/Timetable';
 // import StudentTimetable from './pages/sidebar/StudentTimetable';
-import PlacementTraining from './pages/sidebar/PlacementTraining';
+import Placements from './pages/sidebar/Placements';
 import ManageSubjects from './pages/sidebar/ManageSubjects';
 import Feedback from './pages/sidebar/Feedback';
 import StaffAccess from './pages/sidebar/StaffAccess';
@@ -80,15 +80,23 @@ import ManagePasses from './pages/passmanagement/ManagePasses';
 import PassVerify from './pages/passmanagement/PassVerify';
 
 
-import StudentMyCourses from './pages/placementtraining/StudentMyCourses';
-import StudentTests from './pages/placementtraining/StudentTests';
-import PlacementResults from './pages/placementtraining/PlacementResults';
-import TrainerCourses from './pages/placementtraining/TrainerCourses';
-import TrainerManageTests from './pages/placementtraining/TrainerManageTests';
-import PlacementAnalytics from './pages/placementtraining/PlacementAnalytics';
-import TrainerAddQuestions from './pages/placementtraining/TrainerAddQuestions';
-import StudentResults from './pages/placementtraining/StudentResults';
-import PlacementAnswerReview from './pages/placementtraining/PlacementAnswerReview';
+import StudentMyCourses from './pages/placements/StudentMyCourses';
+import StudentTests from './pages/placements/StudentTests';
+import PlacementResults from './pages/placements/PlacementResults';
+import TrainerCourses from './pages/placements/TrainerCourses';
+import TrainerManageTests from './pages/placements/TrainerManageTests';
+import PlacementAnalytics from './pages/placements/PlacementAnalytics';
+import TrainerAddQuestions from './pages/placements/TrainerAddQuestions';
+import StudentResults from './pages/placements/StudentResults';
+import PlacementAnswerReview from './pages/placements/PlacementAnswerReview';
+
+
+import StudentDrives from './pages/placements/StudentDrives';
+import StudentApplications from './pages/placements/StudentApplications';
+import PlacementProfile from './pages/placements/PlacementProfile';
+import ManageDrives from './pages/placements/ManageDrives';
+import DriveApplications from './pages/placements/DriveApplications';
+import DriveAnalytics from './pages/placements/DriveAnalytics';
 
 
 
@@ -131,7 +139,7 @@ export default function App() {
   const location = useLocation();
 
   const isExamRoute =
-    location.pathname.startsWith("/placementtraining/tests/") &&
+    location.pathname.startsWith("/placements/tests/") &&
     location.pathname.split("/").length === 4;
 
 
@@ -309,7 +317,7 @@ export default function App() {
                 </Route>
 
 
-                <Route path="/placementtraining" element={<PlacementTraining user={user} />}>
+                <Route path="/placements" element={<Placements user={user} />}>
 
                   {/* ===== STUDENT ===== */}
                   <Route
@@ -330,6 +338,21 @@ export default function App() {
                   <Route
                     path="tests/:testId"
                     element={user.role === 'student' ? <StudentTests user={user} /> : <PageNotFound />}
+                  />
+
+                  <Route
+                    path="drives"
+                    element={user.role === 'student' ? <StudentDrives user={user} /> : <PageNotFound />}
+                  />
+
+                  <Route
+                    path="applications"
+                    element={user.role === 'student' ? <StudentApplications user={user} /> : <PageNotFound />}
+                  />
+
+                  <Route
+                    path="profile"
+                    element={user.role === 'student' ? <PlacementProfile user={user} /> : <PageNotFound />}
                   />
 
                   {/* ===== COMMON RESULTS (ROLE-BASED DATA) ===== */}
@@ -377,6 +400,28 @@ export default function App() {
                     element={user.role === 'trainer' ? <TrainerAddQuestions /> : <PageNotFound />}
                   />
 
+                  <Route
+                    path="drives-manage"
+                    element={user.role === 'trainer' ? <ManageDrives user={user} /> : <PageNotFound />}
+                  />
+
+                  <Route
+                    path="drive-applications"
+                    element={
+                      ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
+                        ? <DriveApplications user={user} />
+                        : <PageNotFound />
+                    }
+                  />
+
+                  <Route
+                    path="drive-analytics"
+                    element={
+                      ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
+                        ? <DriveAnalytics user={user} />
+                        : <PageNotFound />
+                    }
+                  />
                   <Route path="*" element={<PageNotFound />} />
                 </Route>
 
