@@ -100,6 +100,12 @@ export default function Placements({ user }) {
         page: "drive-applications",
         icon: <FaClipboardCheck className="text-indigo-500" />,
         description: "View drive applicants.",
+      },
+      {
+        label: "Students Placement Profile",
+        page: "studentsprofile",
+        icon: <FaUsers className="text-orange-500" />,
+        description: "Students placement details.",
       }
     );
   }

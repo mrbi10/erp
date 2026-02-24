@@ -97,6 +97,7 @@ import PlacementProfile from './pages/placements/PlacementProfile';
 import ManageDrives from './pages/placements/ManageDrives';
 import DriveApplications from './pages/placements/DriveApplications';
 import DriveAnalytics from './pages/placements/DriveAnalytics';
+import StudentsProfile from './pages/placements/StudentsProfile';
 
 
 // import { loadDeptClass } from "./constants/deptClass";
@@ -409,6 +410,11 @@ export default function App() {
                   <Route
                     path="drives-manage"
                     element={user.role === 'trainer' ? <ManageDrives user={user} /> : <PageNotFound />}
+                  />
+
+                  <Route
+                    path="studentsprofile"
+                    element={user.role === 'trainer' ? <StudentsProfile user={user} /> : <PageNotFound />}
                   />
 
                   <Route
