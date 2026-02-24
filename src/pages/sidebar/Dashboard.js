@@ -310,7 +310,7 @@ export default function EnhancedDashboard({ user }) {
     default:
       return (
         <div className="p-6 text-red-600">
-          <FaExclamationTriangle className="inline mr-2" /> Unknown user role.
+          <FaExclamationTriangle className="inline mr-2" /> This user does not have a dashboard.
         </div>
       );
   }
