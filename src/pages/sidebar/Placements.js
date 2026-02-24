@@ -31,31 +31,31 @@ export default function Placements({ user }) {
   if (user.role === "student") {
     options.push(
       {
-        label: "My Courses",
+        label: "My Placement Training Courses",
         page: "my-courses",
         icon: <FaBookOpen className="text-sky-500" />,
         description: "View all placement training programs.",
       },
       {
-        label: "My Results",
+        label: "My Placement Training Results",
         page: "result",
         icon: <FaChartBar className="text-indigo-500" />,
         description: "View your test performance.",
       },
       {
-        label: "Available Drives",
+        label: "Available Placement Drives",
         page: "drives",
         icon: <FaUserGraduate className="text-green-500" />,
         description: "View and apply for placement drives.",
       },
       {
-        label: "My Applications",
+        label: "My Placement Applications",
         page: "applications",
         icon: <FaClipboardCheck className="text-purple-500" />,
         description: "Track your application status.",
       },
       {
-        label: "Placement Profile",
+        label: "My Placement Profile",
         page: "profile",
         icon: <FaUsers className="text-orange-500" />,
         description: "Update your placement details.",
@@ -66,37 +66,37 @@ export default function Placements({ user }) {
   else if (user.role === "trainer") {
     options.push(
       {
-        label: "My Courses",
+        label: "Placement Training Courses",
         page: "courses",
         icon: <FaChalkboardTeacher className="text-orange-500" />,
         description: "Manage assigned training courses.",
       },
       {
-        label: "Answer Review",
+        label: "Placement Training Answer Review",
         page: "review",
         icon: <FaClipboardCheck className="text-green-600" />,
         description: "Review student test submissions.",
       },
       {
-        label: "Results",
+        label: "Placement Training Results",
         page: "results",
         icon: <FaUserGraduate className="text-purple-500" />,
         description: "Analyze student performance.",
       },
       {
-        label: "Analytics",
+        label: "Placement Training Analytics",
         page: "analytics",
         icon: <FaChartBar className="text-green-500" />,
         description: "View training insights.",
       },
       {
-        label: "Manage Drives",
+        label: "Manage Placement Drives",
         page: "drives-manage",
         icon: <FaUsers className="text-blue-500" />,
         description: "Create and manage placement drives.",
       },
       {
-        label: "Drive Applications",
+        label: "Manage Placement Drive Applications",
         page: "drive-applications",
         icon: <FaClipboardCheck className="text-indigo-500" />,
         description: "View drive applicants.",
@@ -106,11 +106,11 @@ export default function Placements({ user }) {
 
   else if (["CA", "HOD", "Principal"].includes(user.role)) {
     options.push(
-      { label: "Results", page: "results", icon: <FaUsers /> },
-      { label: "Analytics", page: "analytics", icon: <FaChartBar /> },
-      { label: "Review", page: "review", icon: <FaClipboardCheck /> },
-      { label: "Drive Applications", page: "drive-applications", icon: <FaUsers /> },
-      { label: "Drive Analytics", page: "drive-analytics", icon: <FaChartBar /> }
+      { label: "Placement Training Results", page: "results", icon: <FaUsers /> },
+      { label: "Placement Training Analytics", page: "analytics", icon: <FaChartBar /> },
+      { label: "Placement Training Answer Review", page: "review", icon: <FaClipboardCheck /> },
+      { label: "Manage Placement Drive Applications", page: "drive-applications", icon: <FaUsers /> },
+      { label: "Placement Drive Analytics", page: "drive-analytics", icon: <FaChartBar /> }
     );
   }
 

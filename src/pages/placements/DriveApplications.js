@@ -202,7 +202,6 @@ export default function DriveApplications({ user }) {
 
     // --- Render ---
     return (
-        <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
             <div className="max-w-7xl mx-auto space-y-6">
 
                 {/* --- HEADER --- */}
@@ -389,6 +388,5 @@ export default function DriveApplications({ user }) {
                 </div>
 
             </div>
-        </div>
     );
 }

@@ -13,7 +13,8 @@ import {
   FaSpinner,
   FaBuilding,
   FaClock,
-  FaBriefcase
+  FaBriefcase,
+  FaClipboardList
 } from 'react-icons/fa';
 import { BASE_URL } from '../../constants/API';
 import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
@@ -202,10 +203,10 @@ export default function StudentApplications({ user }) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-indigo-100 rounded-xl text-indigo-600">
-              <FaBriefcase className="text-2xl" />
+              <FaClipboardList className="text-2xl" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Application Reports</h1>
+              <h1 className="text-2xl font-extrabold text-slate-900 text-left tracking-tight">Application Reports</h1>
               <p className="text-slate-500 font-medium mt-1">Track, filter, and export placement application statuses.</p>
             </div>
           </div>
