@@ -7,8 +7,8 @@ export default function PageNotFound() {
   const navigate = useNavigate();
 
   return (
-    <div className="h-screen overflow-y-hidden bg-[#F8FAFC] flex items-center justify-center p-6 font-sans text-slate-800">
-      <motion.div
+<div className="fixed inset-0 bg-[#F8FAFC] flex items-center justify-center font-sans text-slate-800 overflow-hidden">
+            <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
