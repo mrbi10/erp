@@ -31,8 +31,6 @@ import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
 // Constants & Utils
 // ---------------------------
 
-const ROMAN_MAP = { 1: "I", 2: "II", 3: "III", 4: "IV" };
-
 const yearOptions = [
   { value: "", label: "All Years" },
   { value: 1, label: "I Year" },
@@ -45,14 +43,6 @@ const GENDER_OPTIONS = [
   { value: "M", label: "Male" },
   { value: "F", label: "Female" },
 ];
-
-const YEAR_MAP = {
-  1: "I",
-  2: "II",
-  3: "III",
-  4: "IV",
-};
-
 
 
 const getInitials = (name) => {
