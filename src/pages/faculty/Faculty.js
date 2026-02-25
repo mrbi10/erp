@@ -194,6 +194,7 @@ export default function Faculty() {
     email: "",
     password: "",
     designation: "",
+
     dept_id: isDeptScoped ? userDeptId : "",
     role: "Staff",
   });
@@ -374,6 +375,7 @@ export default function Faculty() {
         body: JSON.stringify({
           name: formData.name,
           designation: formData.designation,
+          email: formData.email,
           dept_id: formData.dept_id,
           role: formData.role,
         }),
@@ -732,7 +734,6 @@ export default function Faculty() {
           </div>
 
           {/* Email (Create only) */}
-          {!editingFaculty && (
             <div className="space-y-2">
               <label className="text-xs font-semibold text-gray-600 uppercase">
                 Email Address
@@ -744,7 +745,7 @@ export default function Faculty() {
                 className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
               />
             </div>
-          )}
+          
 
           {/* Password (Create only) */}
           {!editingFaculty && (
