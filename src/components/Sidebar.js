@@ -106,12 +106,12 @@ export default function Sidebar({ role, open, onClose }) {
       icon: <IdcardOutlined />,
       roles: ['HOD', 'DeptAdmin', 'Principal'],
     },
-    {
-      key: '/timetable',
-      label: 'Time Table',
-      icon: <CalendarRangeIcon />,
-      roles: ['CA', 'HOD', "DeptAdmin", "student", 'Principal'],
-    },
+    // {
+    //   key: '/timetable',
+    //   label: 'Time Table',
+    //   icon: <CalendarRangeIcon />,
+    //   roles: ['CA', 'HOD', "DeptAdmin", "student", 'Principal'],
+    // },
     {
       key: '/lateentries',
       label: 'Late Arrival',
