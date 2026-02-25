@@ -1,28 +1,20 @@
-import React, { useEffect, useRef } from "react";
+import  { useEffect, useRef } from "react";
 import {
-  WalletOutlined,
   AppstoreOutlined,
   IdcardOutlined,
-  CheckCircleOutlined,
-  SettingFilledus,
-  FileDoneOutlined,
   BookOutlined,
   ClockCircleOutlined,
   BarChartOutlined,
   TeamOutlined,
   SafetyCertificateOutlined,
   CustomerServiceOutlined,
-  UserAddOutlined,
   NotificationOutlined,
   CoffeeOutlined,
   UserOutlined, CreditCardOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CalculatorIcon, Calendar1Icon, CalendarRangeIcon, CookingPotIcon, Megaphone, Mic, Mic2Icon, Speaker, SpeakerIcon } from "lucide-react";
-import { FaSpeakerDeck, FaBookOpen, FaComment, FaUserGraduate } from "react-icons/fa";
-import { MdInsertComment } from "react-icons/md";
-import { SpeakerWaveIcon } from "@heroicons/react/24/solid";
-import { Calendar } from "antd";
+import {  CalendarRangeIcon } from "lucide-react";
+import { FaComment, FaUserGraduate } from "react-icons/fa";
 
 export default function Sidebar({ role, open, onClose }) {
   const sidebarRef = useRef();
