@@ -107,6 +107,12 @@ export default function Sidebar({ role, open, onClose }) {
       roles: ['HOD', 'DeptAdmin', 'Principal'],
     },
     {
+      key: '/timetable',
+      label: 'Time Table',
+      icon: <CalendarRangeIcon />,
+      roles: ['CA', 'HOD', "DeptAdmin", "student", 'Principal'],
+    },
+    {
       key: '/lateentries',
       label: 'Late Arrival',
       icon: <ClockCircleOutlined />,
@@ -153,20 +159,7 @@ export default function Sidebar({ role, open, onClose }) {
       label: 'System Monitor',
       icon: <BarChartOutlined />,
       roles: ['Admin']
-    }
-    // {
-    //   key: '/timetable',
-    //   label: 'Time Table',
-    //   icon: <CalendarRangeIcon />,
-    //   roles: ['CA','HOD', 'Principal'],
-    // },
-    //  {
-    //   key: '/StudentTimetable',
-    //   label: 'Time Table',
-    //   icon: <CalendarRangeIcon />,
-    //   roles: ['student'],
-    // },
-
+    },
     // {
     //   key: '/fees',
     //   label: 'Fees',

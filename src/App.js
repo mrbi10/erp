@@ -25,8 +25,7 @@ import AttendanceLogs from './pages/sidebar/AttendanceLogs';
 import Announcement from './pages/sidebar/Announcement';
 import SecurityLateEntry from './pages/sidebar/SecurityLateEntry';
 // import Fees from './pages/sidebar/Fees';
-// import Timetable from './pages/sidebar/Timetable';
-// import StudentTimetable from './pages/sidebar/StudentTimetable';
+import Timetable from './pages/sidebar/Timetable';
 import Placements from './pages/sidebar/Placements';
 import ManageSubjects from './pages/sidebar/ManageSubjects';
 import Feedback from './pages/sidebar/Feedback';
@@ -98,6 +97,9 @@ import ManageDrives from './pages/placements/ManageDrives';
 import DriveApplications from './pages/placements/DriveApplications';
 import DriveAnalytics from './pages/placements/DriveAnalytics';
 import StudentsProfile from './pages/placements/StudentsProfile';
+
+import GenerateTimetable from './pages/timetable/GenerateTimetable';
+import Viewtimetable from './pages/timetable/Viewtimetable';
 
 
 // import { loadDeptClass } from "./constants/deptClass";
@@ -227,8 +229,6 @@ export default function App() {
                 <Route path="/attendancelogs" element={<AttendanceLogs user={user} />} />
                 <Route path="/mess" element={<Mess user={user} />} />
                 <Route path="/announcement" element={<Announcement user={user} />} />
-                {/* <Route path="/timetable" element={<Timetable user={user} />} /> */}
-                {/* <Route path="/StudentTimetable" element={<StudentTimetable user={user} />} /> */}
                 <Route path="/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
                 <Route path="/managesubjects" element={<ManageSubjects user={user} />} />
                 <Route path="/system-monitor" element={<SystemMonitor />} />
@@ -321,6 +321,24 @@ export default function App() {
                 <Route path="/passes" element={<PassManagement user={user} />}>
                   <Route path="my" element={<MyPasses />} />
                   <Route path="manage" element={<ManagePasses />} />
+                </Route>
+
+                <Route path="/timetable" element={<Timetable user={user} />}>
+
+                  <Route
+                    path="generate"
+                    element={
+                      ["Admin", "HOD", "Principal", "DeptAdmin"].includes(user.role)
+                        ? <GenerateTimetable user={user} />
+                        : <PageNotFound />
+                    }
+                  />
+
+                  <Route
+                    path="view"
+                    element={<Viewtimetable user={user} />}
+                  />
+
                 </Route>
 
 
@@ -441,6 +459,8 @@ export default function App() {
 
                 <Route path="*" element={<PageNotFound />} />
               </>
+
+
             )}
           </Routes>
         </main>
