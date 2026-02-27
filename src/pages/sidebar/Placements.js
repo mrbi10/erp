@@ -7,6 +7,7 @@ import {
   FaUsers,
   FaUserGraduate,
   FaChalkboardTeacher,
+  FaCheckCircle
 } from "react-icons/fa";
 
 export default function Placements({ user }) {
@@ -110,13 +111,20 @@ export default function Placements({ user }) {
     );
   }
 
+  else if (["CA"].includes(user.role)) {
+    options.push(
+      { label: "Placement Profile Approval", page: "approval", icon: <FaCheckCircle /> }
+    );
+  }
+
   else if (["CA", "HOD", "Principal"].includes(user.role)) {
     options.push(
       { label: "Placement Training Results", page: "results", icon: <FaUsers /> },
       { label: "Placement Training Analytics", page: "analytics", icon: <FaChartBar /> },
       { label: "Placement Training Answer Review", page: "review", icon: <FaClipboardCheck /> },
       { label: "Manage Placement Drive Applications", page: "drive-applications", icon: <FaUsers /> },
-      { label: "Placement Drive Analytics", page: "drive-analytics", icon: <FaChartBar /> }
+      { label: "Placement Drive Analytics", page: "drive-analytics", icon: <FaChartBar /> },
+      
     );
   }
 

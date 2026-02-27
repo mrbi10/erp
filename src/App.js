@@ -92,7 +92,8 @@ import PlacementAnswerReview from './pages/placements/PlacementAnswerReview';
 
 import StudentDrives from './pages/placements/StudentDrives';
 import StudentApplications from './pages/placements/StudentApplications';
-import PlacementProfile from './pages/placements/PlacementProfile';
+import StudentPlacementProfile from './pages/placements/StudentPlacementProfile';
+import AcademicApprovalPanel from './pages/placements/AcademicApprovalPanel';
 import ManageDrives from './pages/placements/ManageDrives';
 import DriveApplications from './pages/placements/DriveApplications';
 import DriveAnalytics from './pages/placements/DriveAnalytics';
@@ -377,7 +378,7 @@ export default function App() {
 
                   <Route
                     path="profile"
-                    element={user.role === 'student' ? <PlacementProfile user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentPlacementProfile user={user} /> : <PageNotFound />}
                   />
 
                   {/* ===== COMMON RESULTS (ROLE-BASED DATA) ===== */}
@@ -386,6 +387,15 @@ export default function App() {
                     element={
                       ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <PlacementResults user={user} />
+                        : <PageNotFound />
+                    }
+                  />
+
+                  <Route
+                    path="approval"
+                    element={
+                      ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
+                        ? <AcademicApprovalPanel user={user} />
                         : <PageNotFound />
                     }
                   />
