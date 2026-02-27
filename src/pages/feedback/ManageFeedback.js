@@ -20,13 +20,27 @@ import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
 
 /* ===================== CONFIGURATION ===================== */
 
-const ACADEMIC_YEAR_OPTIONS = [
-  { value: "2023-2024", label: "2023–2024" },
-  { value: "2024-2025", label: "2024–2025" },
-  { value: "2025-2026", label: "2025–2026" },
-  { value: "2026-2027", label: "2026–2027" }
-];
+const generateAcademicYears = () => {
+  const years = [];
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
 
+  const academicStartYear = month < 5 ? year - 1 : year;
+
+  for (let i = 3; i >= 0; i--) {
+    const start = academicStartYear - i;
+    const end = start + 1;
+    years.push({
+      value: `${start}-${end}`,
+      label: `${start}–${end}`
+    });
+  }
+
+  return years;
+};
+
+const ACADEMIC_YEAR_OPTIONS = generateAcademicYears();
 const DEPT_OPTIONS = Object.entries(DEPT_MAP).map(
   ([id, name]) => ({ value: Number(id), label: name })
 );
@@ -119,8 +133,23 @@ export default function ManageFeedback({ user }) {
         }
 
         if (user.role === "CA" && user.assigned_class_id) {
-          const classObj = CLASS_OPTIONS.find(c => c.value === Number(user.assigned_class_id));
-          setForm(prev => ({ ...prev, targetClass: classObj || null }));
+          const classObj = CLASS_OPTIONS.find(
+            c => c.value === Number(user.assigned_class_id)
+          );
+
+          if (classObj) {
+            const academicYearValue = getAcademicYearFromClass(classObj.value);
+
+            const matchedYear = ACADEMIC_YEAR_OPTIONS.find(
+              y => y.value === academicYearValue
+            );
+
+            setForm(prev => ({
+              ...prev,
+              targetClass: classObj,
+              academicYear: matchedYear || null
+            }));
+          }
         }
 
       } catch (error) {
@@ -141,21 +170,92 @@ export default function ManageFeedback({ user }) {
     [questionSets]
   );
 
+  // 🔹 Auto map class → academic year
+  // 🔹 Auto map class → academic year (India academic cycle aware)
+  const getAcademicYearFromClass = (classId) => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth(); // 0 = Jan, 6 = July
+
+    // If month < June → we are still in previous academic cycle
+    const academicStartYear = month < 5 ? year - 1 : year;
+
+    // Example:
+    // If today = Feb 2026 → academicStartYear = 2025
+    // So 1st year = 2025-2026
+
+    const startYear = academicStartYear - (classId - 1);
+    const endYear = startYear + 1;
+
+    return `${startYear}-${endYear}`;
+  };
   /* ---------- HANDLERS ---------- */
   const handleCreateSession = async (e) => {
     e.preventDefault();
+
     const { dept, targetClass, academicYear, title, startDate, endDate, questionSet } = form;
 
-    if (!academicYear || !title || !startDate || !endDate || !questionSet || (user.role !== "CA" && (!dept || !targetClass))) {
-      Swal.fire('Missing Fields', 'Please complete all required fields to launch a session.', 'warning');
+    // 1️⃣ Required Field Validation
+    if (
+      !academicYear ||
+      !title ||
+      !startDate ||
+      !endDate ||
+      !questionSet ||
+      (user.role !== "CA" && (!dept || !targetClass))
+    ) {
+      Swal.fire("Missing Fields", "Please complete all required fields.", "warning");
+      return;
+    }
+
+    // 2️⃣ Date Validation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (new Date(startDate) < today) {
+      Swal.fire("Invalid Date", "Start date cannot be in the past.", "warning");
+      return;
+    }
+
+    if (new Date(endDate) < today) {
+      Swal.fire("Invalid Date", "End date cannot be in the past.", "warning");
       return;
     }
 
     if (new Date(startDate) > new Date(endDate)) {
-      Swal.fire('Invalid Dates', 'The End Date cannot be before the Start Date.', 'warning');
+      Swal.fire("Invalid Dates", "End date cannot be before start date.", "warning");
       return;
     }
 
+    // 3️⃣ Determine Final Dept & Class Based on Role
+    const finalDeptId =
+      user.role === "CA" || user.role === "DeptAdmin"
+        ? Number(user.dept_id)
+        : dept.value;
+
+    const finalClassId =
+      user.role === "CA"
+        ? Number(user.assigned_class_id)
+        : targetClass.value;
+
+    // 4️⃣ Duplicate Active Session Check
+    // const alreadyActive = sessions.some(
+    //   (s) =>
+    //     s.is_active &&
+    //     Number(s.dept_id) === Number(finalDeptId) &&
+    //     Number(s.class_id) === Number(finalClassId)
+    // );
+
+    // if (alreadyActive) {
+    //   Swal.fire(
+    //     "Active Session Exists",
+    //     "An active feedback session already exists for this class.",
+    //     "warning"
+    //   );
+    //   return;
+    // }
+
+    // 5️⃣ Confirmation
     const confirm = await Swal.fire({
       title: "Launch Session?",
       html: `You are about to start <b>"${title}"</b>.<br/><br/>Students will be able to submit feedback immediately.`,
@@ -171,8 +271,8 @@ export default function ManageFeedback({ user }) {
       setCreating(true);
 
       const payload = {
-        dept_id: user.role === "CA" || user.role === "DeptAdmin" ? user.dept_id : dept.value,
-        class_id: user.role === "CA" ? user.assigned_class_id : targetClass.value,
+        dept_id: finalDeptId,
+        class_id: finalClassId,
         academic_year: academicYear.value,
         title,
         start_date: startDate,
@@ -180,13 +280,34 @@ export default function ManageFeedback({ user }) {
         question_set_id: questionSet.value
       };
 
-      await axios.post(`${BASE_URL}/feedback/session`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${BASE_URL}/feedback/session`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      Swal.fire({ icon: 'success', title: "Session Created", text: "Feedback collection has started.", timer: 2000, showConfirmButton: false });
+      Swal.fire({
+        icon: "success",
+        title: "Session Created",
+        timer: 2000,
+        showConfirmButton: false
+      });
 
-      setForm(prev => ({ ...prev, title: "", startDate: "", endDate: "", questionSet: null }));
+      // Reset Only Required Fields
+      setForm(prev => ({
+        ...prev,
+        title: "",
+        startDate: "",
+        endDate: "",
+        questionSet: null
+      }));
 
-      const res = await axios.get(`${BASE_URL}/feedback/sessions`, { headers: { Authorization: `Bearer ${token}` } });
+      // Refresh Sessions
+      const res = await axios.get(
+        `${BASE_URL}/feedback/sessions`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       setSessions((res.data || []).sort((a, b) => b.session_id - a.session_id));
 
     } catch (err) {
@@ -277,247 +398,259 @@ export default function ManageFeedback({ user }) {
 
   /* ---------- RENDER: MAIN CONTENT ---------- */
   return (
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
 
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-800">Feedback Management</h1>
-            <p className="text-slate-600 font-medium mt-1">Configure and oversee student evaluation cycles.</p>
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-800">Feedback Management</h1>
+          <p className="text-slate-600 font-medium mt-1">Configure and oversee student evaluation cycles.</p>
+        </div>
+        <div className="bg-indigo-100 text-indigo-800 px-5 py-3 rounded-lg text-sm font-bold flex items-center gap-3 border border-indigo-200">
+          <FaLayerGroup className="text-lg" />
+          {sessions.filter(s => s.is_active).length} Active Sessions
+        </div>
+      </div>
+
+      {/* FORM CARD */}
+      <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+        <div className="bg-slate-800 p-5 flex items-center gap-3">
+          <div className="bg-indigo-500 text-white p-2 rounded-lg">
+            <FaPlus className="text-sm" />
           </div>
-          <div className="bg-indigo-100 text-indigo-800 px-5 py-3 rounded-lg text-sm font-bold flex items-center gap-3 border border-indigo-200">
-            <FaLayerGroup className="text-lg" />
-            {sessions.filter(s => s.is_active).length} Active Sessions
-          </div>
+          <h2 className="text-xl font-bold text-white">Create New Feedback Session</h2>
         </div>
 
-        {/* FORM CARD */}
-        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-          <div className="bg-slate-800 p-5 flex items-center gap-3">
-            <div className="bg-indigo-500 text-white p-2 rounded-lg">
-              <FaPlus className="text-sm" />
+        <form onSubmit={handleCreateSession} className="p-6 md:p-8 space-y-8">
+
+          {/* Row 1: Target Audience */}
+          <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+            <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">1. Target Audience</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+                  Department {(user.role === "CA" || user.role === "DeptAdmin") && <FaLock className="text-slate-400" title="Locked to your department" />}
+                </label>
+                <Select
+                  isDisabled={user.role === "CA" || user.role === "DeptAdmin"}
+                  options={DEPT_OPTIONS}
+                  placeholder="Select Department"
+                  value={form.dept}
+                  onChange={val => setForm({ ...form, dept: val })}
+                  styles={customSelectStyles}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+                  Class / Year {user.role === "CA" && <FaLock className="text-slate-400" title="Locked to your assigned class" />}
+                </label>
+                <Select
+                  isDisabled={user.role === "CA"}
+                  options={CLASS_OPTIONS}
+                  placeholder="Select Class/Year"
+                  value={form.targetClass}
+                  onChange={val => {
+                    const academicYearValue = getAcademicYearFromClass(val.value);
+
+                    const matchedYear = ACADEMIC_YEAR_OPTIONS.find(
+                      y => y.value === academicYearValue
+                    );
+
+                    setForm(prev => ({
+                      ...prev,
+                      targetClass: val,
+                      academicYear: matchedYear || null
+                    }));
+                  }}
+                  styles={customSelectStyles}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Academic Year</label>
+                <Select
+                  options={ACADEMIC_YEAR_OPTIONS}
+                  placeholder="Select Year..."
+                  value={form.academicYear}
+                  onChange={val => setForm({ ...form, academicYear: val })}
+                  styles={customSelectStyles}
+                />
+              </div>
             </div>
-            <h2 className="text-xl font-bold text-white">Create New Feedback Session</h2>
           </div>
 
-          <form onSubmit={handleCreateSession} className="p-6 md:p-8 space-y-8">
-
-            {/* Row 1: Target Audience */}
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">1. Target Audience</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
-                    Department {(user.role === "CA" || user.role === "DeptAdmin") && <FaLock className="text-slate-400" title="Locked to your department" />}
-                  </label>
-                  <Select
-                    isDisabled={user.role === "CA" || user.role === "DeptAdmin"}
-                    options={DEPT_OPTIONS}
-                    placeholder="Select Department"
-                    value={form.dept}
-                    onChange={val => setForm({ ...form, dept: val })}
-                    styles={customSelectStyles}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
-                    Class / Year {user.role === "CA" && <FaLock className="text-slate-400" title="Locked to your assigned class" />}
-                  </label>
-                  <Select
-                    isDisabled={user.role === "CA"}
-                    options={CLASS_OPTIONS}
-                    placeholder="Select Class/Year"
-                    value={form.targetClass}
-                    onChange={val => setForm({ ...form, targetClass: val })}
-                    styles={customSelectStyles}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Academic Year</label>
-                  <Select
-                    options={ACADEMIC_YEAR_OPTIONS}
-                    placeholder="Select Year..."
-                    value={form.academicYear}
-                    onChange={val => setForm({ ...form, academicYear: val })}
-                    styles={customSelectStyles}
+          {/* Row 2: Configuration */}
+          <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+            <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">2. Session Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Questionnaire Template</label>
+                <Select
+                  options={questionSetOptions}
+                  placeholder="Select Template..."
+                  value={form.questionSet}
+                  onChange={val => setForm({ ...form, questionSet: val })}
+                  styles={customSelectStyles}
+                />
+              </div>
+              <div className="md:col-span-2 relative">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Session Title</label>
+                <div className="relative">
+                  <FaListAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="e.g. Mid-Semester Feedback 2026"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
+                    value={form.title}
+                    onChange={e => setForm({ ...form, title: e.target.value })}
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Row 2: Configuration */}
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">2. Session Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Questionnaire Template</label>
-                  <Select
-                    options={questionSetOptions}
-                    placeholder="Select Template..."
-                    value={form.questionSet}
-                    onChange={val => setForm({ ...form, questionSet: val })}
-                    styles={customSelectStyles}
+          {/* Row 3: Timeline & Launch */}
+          <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+            <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">3. Timeline & Launch</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Start Date</label>
+                <div className="relative">
+                  <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="date"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
+                    value={form.startDate}
+                    onChange={e => setForm({ ...form, startDate: e.target.value })}
                   />
                 </div>
-                <div className="md:col-span-2 relative">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Session Title</label>
-                  <div className="relative">
-                    <FaListAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="e.g. Mid-Semester Feedback 2026"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
-                      value={form.title}
-                      onChange={e => setForm({ ...form, title: e.target.value })}
-                    />
-                  </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">End Date</label>
+                <div className="relative">
+                  <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="date"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
+                    value={form.endDate}
+                    onChange={e => setForm({ ...form, endDate: e.target.value })}
+                  />
                 </div>
               </div>
-            </div>
-
-            {/* Row 3: Timeline & Launch */}
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">3. Timeline & Launch</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Start Date</label>
-                  <div className="relative">
-                    <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="date"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
-                      value={form.startDate}
-                      onChange={e => setForm({ ...form, startDate: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">End Date</label>
-                  <div className="relative">
-                    <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="date"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
-                      value={form.endDate}
-                      onChange={e => setForm({ ...form, endDate: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <button
-                    type="submit"
-                    disabled={creating}
-                    className={`
+              <div>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className={`
                       w-full py-3 rounded-lg font-bold text-white shadow-md flex items-center justify-center gap-2 transition-colors border-2
                       ${creating ? 'bg-indigo-400 border-indigo-400 cursor-not-allowed' : 'bg-indigo-600 border-indigo-700 hover:bg-indigo-700'}
                     `}
-                  >
-                    {creating ? (
-                      <> <FaSpinner className="animate-spin text-xl" /> Processing... </>
-                    ) : (
-                      <> <FaPlay /> Launch Session Now </>
-                    )}
-                  </button>
-                </div>
+                >
+                  {creating ? (
+                    <> <FaSpinner className="animate-spin text-xl" /> Processing... </>
+                  ) : (
+                    <> <FaPlay /> Launch Session Now </>
+                  )}
+                </button>
               </div>
             </div>
-
-          </form>
-        </div>
-
-        {/* SESSION LIST */}
-        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-          <div className="bg-slate-50 p-6 border-b border-slate-200 flex items-center gap-3">
-            <FaListAlt className="text-slate-500 text-xl" />
-            <h3 className="text-xl font-bold text-slate-800">Session History</h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-slate-100 border-b-2 border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                <tr>
-                  <th className="p-4 w-1/3">Session Title</th>
-                  <th className="p-4">Target Audience</th>
-                  <th className="p-4">Duration</th>
-                  <th className="p-4 text-center">Status</th>
-                  <th className="p-4 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {sessions.map(s => (
-                  <tr key={s.session_id} className="hover:bg-indigo-50/50 transition-colors">
-                    <td className="p-4">
-                      <p className="font-bold text-slate-900 text-base">{s.title}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-mono font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">ID: {s.session_id}</span>
-                        <span className="text-sm font-semibold text-slate-600">{s.academic_year}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-col gap-1.5 text-sm font-semibold text-slate-700">
-                        <span className="flex items-center gap-2">
-                          <FaUniversity className="text-slate-400" />
-                          {DEPT_MAP[s.dept_id] || "Unknown Dept"}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <FaLayerGroup className="text-slate-400" />
-                          {CLASS_MAP[s.class_id] || "Unknown Class"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-4 font-medium text-slate-700">
-                      <p>Start: {formatDDMMYYYY(s.start_date)}</p>
-                      <p>End: {formatDDMMYYYY(s.end_date)}</p>
-                    </td>
-                    <td className="p-4 text-center">
-                      {s.is_active ? (
-                        <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide bg-slate-200 text-slate-600 border border-slate-300">
-                          <FaLock className="mr-2 text-slate-400" />
-                          Closed
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-center">
-                      {s.is_active ? (
-                        <button
-                          onClick={() => handleCloseSession(s.session_id)}
-                          className="text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors border-2 border-red-700 flex items-center justify-center gap-2 mx-auto shadow-sm"
-                        >
-                          <FaStopCircle /> Close
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleOpenSession(s.session_id)}
-                          className="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg transition-colors border-2 border-emerald-700 flex items-center justify-center gap-2 mx-auto shadow-sm"
-                        >
-                          <FaPlay /> Reopen
-                        </button>
-                      )}
-
-                    </td>
-                  </tr>
-                ))}
-                {sessions.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="p-16 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-400">
-                        <FaExclamationTriangle className="text-5xl mb-3 opacity-30" />
-                        <p className="font-bold text-lg text-slate-600">No Sessions Found</p>
-                        <p className="text-md mt-1 text-slate-500">Create your first feedback session above.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
+        </form>
       </div>
+
+      {/* SESSION LIST */}
+      <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+        <div className="bg-slate-50 p-6 border-b border-slate-200 flex items-center gap-3">
+          <FaListAlt className="text-slate-500 text-xl" />
+          <h3 className="text-xl font-bold text-slate-800">Session History</h3>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead className="bg-slate-100 border-b-2 border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <tr>
+                <th className="p-4 w-1/3">Session Title</th>
+                <th className="p-4">Target Audience</th>
+                <th className="p-4">Duration</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {sessions.map(s => (
+                <tr key={s.session_id} className="hover:bg-indigo-50/50 transition-colors">
+                  <td className="p-4">
+                    <p className="font-bold text-slate-900 text-base">{s.title}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-mono font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">ID: {s.session_id}</span>
+                      <span className="text-sm font-semibold text-slate-600">{s.academic_year}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex flex-col gap-1.5 text-sm font-semibold text-slate-700">
+                      <span className="flex items-center gap-2">
+                        <FaUniversity className="text-slate-400" />
+                        {DEPT_MAP[s.dept_id] || "Unknown Dept"}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <FaLayerGroup className="text-slate-400" />
+                        {CLASS_MAP[s.class_id] || "Unknown Class"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-4 font-medium text-slate-700">
+                    <p>Start: {formatDDMMYYYY(s.start_date)}</p>
+                    <p>End: {formatDDMMYYYY(s.end_date)}</p>
+                  </td>
+                  <td className="p-4 text-center">
+                    {s.is_active ? (
+                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide bg-slate-200 text-slate-600 border border-slate-300">
+                        <FaLock className="mr-2 text-slate-400" />
+                        Closed
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-4 text-center">
+                    {s.is_active ? (
+                      <button
+                        onClick={() => handleCloseSession(s.session_id)}
+                        className="text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors border-2 border-red-700 flex items-center justify-center gap-2 mx-auto shadow-sm"
+                      >
+                        <FaStopCircle /> Close
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenSession(s.session_id)}
+                        className="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg transition-colors border-2 border-emerald-700 flex items-center justify-center gap-2 mx-auto shadow-sm"
+                      >
+                        <FaPlay /> Reopen
+                      </button>
+                    )}
+
+                  </td>
+                </tr>
+              ))}
+              {sessions.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="p-16 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                      <FaExclamationTriangle className="text-5xl mb-3 opacity-30" />
+                      <p className="font-bold text-lg text-slate-600">No Sessions Found</p>
+                      <p className="text-md mt-1 text-slate-500">Create your first feedback session above.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
   );
 }

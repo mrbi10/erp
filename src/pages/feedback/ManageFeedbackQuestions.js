@@ -46,6 +46,21 @@ const customSelectStyles = {
   singleValue: (base) => ({ ...base, color: "#1e293b", fontWeight: "600" }),
 };
 
+const FEEDBACK_TYPE_OPTIONS = [
+  { value: "staff", label: "Faculty Feedback" },
+  { value: "lab", label: "Lab Feedback" },
+  { value: "event", label: "Event Feedback" },
+  { value: "placement", label: "Placement Training Feedback" },
+  { value: "infrastructure", label: "Infrastructure Feedback" },
+  { value: "exam", label: "Semester Exam" }
+];
+
+const QUESTION_TYPE_OPTIONS = [
+  { value: "rating", label: "Rating Scale" },
+  { value: "text", label: "Text Answer" },
+  { value: "yesno", label: "Yes / No" }
+];
+
 /* ===================== COMPONENT ===================== */
 
 export default function ManageFeedbackQuestions() {
@@ -54,12 +69,16 @@ export default function ManageFeedbackQuestions() {
   const [sets, setSets] = useState([]);
   const [selectedSet, setSelectedSet] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [feedbackType, setFeedbackType] = useState(null);
 
   // Form State
   const [newQuestion, setNewQuestion] = useState("");
   const [orderNo, setOrderNo] = useState(1);
   const [maxRating, setMaxRating] = useState(10); // Default to 10 point scale
   const questionInputRef = useRef(null); // Used to auto-focus after submit
+  const [questionType, setQuestionType] = useState("rating");
+  const [allowRemarks, setAllowRemarks] = useState(false);
+  const [isOptional, setIsOptional] = useState(false);
 
   // UI State
   const [loading, setLoading] = useState(true);
@@ -94,8 +113,12 @@ export default function ManageFeedbackQuestions() {
   /* ===================== HANDLERS: SETS ===================== */
   const handleCreateSet = async (e) => {
     e.preventDefault(); // Prevent form submission reload
-    if (!newSetName.trim()) {
-      Swal.fire('Missing Name', 'Please enter a name for the new question set.', 'warning');
+    if (!newSetName.trim() || !feedbackType) {
+      Swal.fire(
+        "Missing Details",
+        "Please enter a set name and select feedback type.",
+        "warning"
+      );
       return;
     }
 
@@ -103,7 +126,10 @@ export default function ManageFeedbackQuestions() {
       setCreatingSet(true);
       await axios.post(
         `${BASE_URL}/feedback/question-sets`,
-        { name: newSetName },
+        {
+          name: newSetName,
+          feedback_type: feedbackType.value
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -167,7 +193,10 @@ export default function ManageFeedbackQuestions() {
         {
           question_text: newQuestion,
           order_no: orderNo,
-          max_rating: maxRating
+          question_type: questionType,
+          max_rating: questionType === "rating" ? maxRating : null,
+          allow_remarks: allowRemarks ? 1 : 0 || 0,
+          is_optional: isOptional ? 1 : 0
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -176,6 +205,9 @@ export default function ManageFeedbackQuestions() {
       setNewQuestion("");
       setOrderNo(prev => prev + 1);
       fetchQuestions(selectedSet.value);
+      setQuestionType("rating");
+      setAllowRemarks(false);
+      setIsOptional(false);
 
       // Keep user in the flow
       questionInputRef.current?.focus();
@@ -230,110 +262,152 @@ export default function ManageFeedbackQuestions() {
   }
 
   return (
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* HEADER */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h1 className="text-2xl font-bold text-left text-slate-800 tracking-tight">Manage Feedback Questions</h1>
-          <p className="text-slate-500 font-medium mt-1">Design and organize questionnaires for student feedback.</p>
+      {/* HEADER */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h1 className="text-2xl font-bold text-left text-slate-800 tracking-tight">Manage Feedback Questions</h1>
+        <p className="text-slate-500 font-medium mt-1">Design and organize questionnaires for student feedback.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        {/* --- LEFT COLUMN: SET MANAGEMENT --- */}
+        <div className="lg:col-span-4 space-y-6">
+
+          {/* Create New Set Form */}
+          <form onSubmit={handleCreateSet} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2 border-b pb-2">
+              <FaPlus className="text-indigo-500" /> Create New Set
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Set Name</label>
+                <input
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                  placeholder="e.g., Faculty Evaluation 2026"
+                  value={newSetName}
+                  onChange={e => setNewSetName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Feedback Type
+                </label>
+                <Select
+                  options={FEEDBACK_TYPE_OPTIONS}
+                  placeholder="Select Feedback Type"
+                  value={feedbackType}
+                  onChange={setFeedbackType}
+                  styles={customSelectStyles}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={creatingSet}
+                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {creatingSet ? <FaSpinner className="animate-spin" /> : "Create Set"}
+              </button>
+            </div>
+          </form>
+
+          {/* Select Set Card */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2 border-b pb-2">
+              <FaLayerGroup className="text-indigo-500" /> Select Active Set
+            </h2>
+            <Select
+              options={sets.map(s => ({ value: s.set_id, label: s.name }))}
+              placeholder="Choose a Question Set..."
+              onChange={onSetChange}
+              value={selectedSet}
+              styles={customSelectStyles}
+            />
+
+            {selectedSet && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-lg">
+                  {questions.length}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase">Total Questions</p>
+                  <p className="text-sm font-bold text-slate-800">{selectedSet.label}</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* --- RIGHT COLUMN: QUESTIONS MANAGEMENT --- */}
+        <div className="lg:col-span-8">
+          {selectedSet ? (
+            <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col min-h-[600px]">
+              <div className="h-1 w-full bg-indigo-600"></div>
 
-          {/* --- LEFT COLUMN: SET MANAGEMENT --- */}
-          <div className="lg:col-span-4 space-y-6">
+              {/* Toolbar / Add Form (Now a real <form> for Enter key support) */}
+              <form onSubmit={handleAddQuestion} className="p-6 bg-slate-50 border-b border-slate-200 space-y-4">
+                <h2 className="font-bold text-slate-800 flex items-center gap-2">
+                  <FaPen className="text-indigo-500" /> Add New Question
+                </h2>
 
-            {/* Create New Set Form */}
-            <form onSubmit={handleCreateSet} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2 border-b pb-2">
-                <FaPlus className="text-indigo-500" /> Create New Set
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Set Name</label>
-                  <input
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-                    placeholder="e.g., Faculty Evaluation 2026"
-                    value={newSetName}
-                    onChange={e => setNewSetName(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={creatingSet}
-                  className="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {creatingSet ? <FaSpinner className="animate-spin" /> : "Create Set"}
-                </button>
-              </div>
-            </form>
-
-            {/* Select Set Card */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2 border-b pb-2">
-                <FaLayerGroup className="text-indigo-500" /> Select Active Set
-              </h2>
-              <Select
-                options={sets.map(s => ({ value: s.set_id, label: s.name }))}
-                placeholder="Choose a Question Set..."
-                onChange={onSetChange}
-                value={selectedSet}
-                styles={customSelectStyles}
-              />
-
-              {selectedSet && (
-                <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-lg">
-                    {questions.length}
+                <div className="flex flex-col md:flex-row gap-4 items-end">
+                  {/* Question Input */}
+                  <div className="flex-1 w-full">
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Question Text</label>
+                    <input
+                      ref={questionInputRef}
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium"
+                      placeholder="Type question here and hit Enter..."
+                      value={newQuestion}
+                      onChange={e => setNewQuestion(e.target.value)}
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase">Total Questions</p>
-                    <p className="text-sm font-bold text-slate-800">{selectedSet.label}</p>
+
+                  {/* Order No */}
+                  <div className="w-full md:w-24">
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Order No.</label>
+                    <input
+                      type="number"
+                      className="w-full px-2 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center font-bold text-slate-700"
+                      value={orderNo}
+                      onChange={e => setOrderNo(Number(e.target.value))}
+                    />
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* --- RIGHT COLUMN: QUESTIONS MANAGEMENT --- */}
-          <div className="lg:col-span-8">
-            {selectedSet ? (
-              <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col min-h-[600px]">
-                <div className="h-1 w-full bg-indigo-600"></div>
+                  {/* Max Rating */}
+                  {/* Question Type */}
+                  <div className="w-full md:w-40">
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      Question Type
+                    </label>
+                    <Select
+                      options={QUESTION_TYPE_OPTIONS}
+                      value={QUESTION_TYPE_OPTIONS.find(o => o.value === questionType)}
+                      onChange={(opt) => setQuestionType(opt.value)}
+                      styles={customSelectStyles}
+                    />
+                  </div>
 
-                {/* Toolbar / Add Form (Now a real <form> for Enter key support) */}
-                <form onSubmit={handleAddQuestion} className="p-6 bg-slate-50 border-b border-slate-200 space-y-4">
-                  <h2 className="font-bold text-slate-800 flex items-center gap-2">
-                    <FaPen className="text-indigo-500" /> Add New Question
-                  </h2>
 
-                  <div className="flex flex-col md:flex-row gap-4 items-end">
-                    {/* Question Input */}
-                    <div className="flex-1 w-full">
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Question Text</label>
-                      <input
-                        ref={questionInputRef}
-                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium"
-                        placeholder="Type question here and hit Enter..."
-                        value={newQuestion}
-                        onChange={e => setNewQuestion(e.target.value)}
-                      />
-                    </div>
+                  <div className="w-full md:w-40 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isOptional}
+                      onChange={(e) => setIsOptional(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label className="text-sm font-semibold text-slate-600">
+                      Optional Question
+                    </label>
+                  </div>
 
-                    {/* Order No */}
+                  {/* Max Rating (Only if Rating Type) */}
+                  {questionType === "rating" && (
                     <div className="w-full md:w-24">
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Order No.</label>
-                      <input
-                        type="number"
-                        className="w-full px-2 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center font-bold text-slate-700"
-                        value={orderNo}
-                        onChange={e => setOrderNo(Number(e.target.value))}
-                      />
-                    </div>
-
-                    {/* Max Rating */}
-                    <div className="w-full md:w-24">
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Scale (Max)</label>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">
+                        Scale (Max)
+                      </label>
                       <input
                         type="number"
                         className="w-full px-2 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center font-bold text-slate-700"
@@ -341,81 +415,115 @@ export default function ManageFeedbackQuestions() {
                         onChange={e => setMaxRating(Number(e.target.value))}
                       />
                     </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition shadow-sm disabled:opacity-70 flex items-center justify-center gap-2"
-                    >
-                      {saving ? <FaSpinner className="animate-spin" /> : "Add"}
-                    </button>
-                  </div>
-                </form>
-
-                {/* Questions List Content */}
-                <div className="flex-1 bg-white relative">
-                  {loadingQuestions ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500 bg-white/90 z-10">
-                      <FaSpinner className="animate-spin text-4xl mb-3" />
-                      <span className="font-bold text-slate-600">Loading questions...</span>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-slate-100 h-full overflow-y-auto" style={{ maxHeight: '600px' }}>
-                      {questions.length > 0 ? (
-                        questions.map((q) => (
-                          <div key={q.question_id} className="p-5 hover:bg-indigo-50/30 transition-colors flex items-center gap-4 group">
-
-                            {/* Order Badge */}
-                            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center font-black text-sm shrink-0">
-                              {q.order_no}
-                            </div>
-
-                            {/* Text & Meta */}
-                            <div className="flex-1">
-                              <p className="text-slate-800 font-semibold text-[15px]">
-                                {q.question_text}
-                              </p>
-                              <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1">
-                                <FaStar className="text-amber-400" /> Rated out of {q.max_rating}
-                              </p>
-                            </div>
-
-                            {/* Delete Button - ALWAYS VISIBLE NOW */}
-                            <button
-                              onClick={() => handleDeleteQuestion(q.question_id)}
-                              className="p-2.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-colors border border-red-100 shrink-0 flex items-center gap-2"
-                              title="Delete Question"
-                            >
-                              <FaTrash className="text-sm" />
-                              <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Remove</span>
-                            </button>
-
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full py-20 text-slate-400">
-                          <FaClipboardList className="text-5xl mb-4 opacity-50" />
-                          <p className="font-bold text-lg text-slate-600">No questions yet.</p>
-                          <p className="text-sm mt-1">Type a question above and hit Enter.</p>
-                        </div>
-                      )}
-                    </div>
                   )}
+
+                  {/* Allow Remarks Toggle */}
+                  {/* <div className="w-full md:w-40 flex items-center gap-2 mt-2 md:mt-0">
+                    <input
+                      type="checkbox"
+                      checked={allowRemarks}
+                      onChange={e => setAllowRemarks(e.target.checked)}
+                    />
+                    <label className="text-sm font-semibold text-slate-600">
+                      Allow Remarks
+                    </label>
+                  </div> */}
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition shadow-sm disabled:opacity-70 flex items-center justify-center gap-2"
+                  >
+                    {saving ? <FaSpinner className="animate-spin" /> : "Add"}
+                  </button>
                 </div>
+              </form>
+
+              {/* Questions List Content */}
+              <div className="flex-1 bg-white relative">
+                {loadingQuestions ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500 bg-white/90 z-10">
+                    <FaSpinner className="animate-spin text-4xl mb-3" />
+                    <span className="font-bold text-slate-600">Loading questions...</span>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 h-full overflow-y-auto" style={{ maxHeight: '600px' }}>
+                    {questions.length > 0 ? (
+                      questions.map((q) => (
+                        <div key={q.question_id} className="p-5 hover:bg-indigo-50/30 transition-colors flex items-center gap-4 group">
+
+                          {/* Order Badge */}
+                          <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center font-black text-sm shrink-0">
+                            {q.order_no}
+                          </div>
+
+                          {/* Text & Meta */}
+                          <div className="flex-1">
+                            <p className="text-slate-800 font-semibold text-[15px]">
+                              {q.question_text}
+                            </p>
+                            <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-2">
+                              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[10px] uppercase font-bold">
+                                {q.question_type}
+                              </span>
+
+                              {q.question_type === "rating" && (
+                                <span className="flex items-center gap-1">
+                                  <FaStar className="text-amber-400" />
+                                  Scale: {q.max_rating}
+                                </span>
+                              )}
+
+                              {q.is_optional === 1 && (
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] uppercase font-bold">
+                                  Optional
+                                </span>
+                              )}
+
+                              {/* {q.allow_remarks === 1 && (
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] uppercase font-bold">
+                                  Remarks Enabled
+                                </span>
+                              )} */}
+                            </p>
+                          </div>
+
+                          {/* Delete Button - ALWAYS VISIBLE NOW */}
+                          <button
+                            onClick={() => handleDeleteQuestion(q.question_id)}
+                            className="p-2.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-colors border border-red-100 shrink-0 flex items-center gap-2"
+                            title="Delete Question"
+                          >
+                            <FaTrash className="text-sm" />
+                            <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Remove</span>
+                          </button>
+
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full py-20 text-slate-400">
+                        <FaClipboardList className="text-5xl mb-4 opacity-50" />
+                        <p className="font-bold text-lg text-slate-600">No questions yet.</p>
+                        <p className="text-sm mt-1">Type a question above and hit Enter.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            ) : (
-              // Empty State for Right Column
-              <div className="h-full min-h-[500px] flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 text-slate-400 shadow-sm">
-                <FaLayerGroup className="text-6xl mb-6 text-indigo-200" />
-                <h3 className="font-bold text-2xl text-slate-700">No Set Selected</h3>
-                <p className="font-medium mt-2 max-w-sm text-center text-slate-500">
-                  Select an existing question set from the left panel, or create a new one to begin.
-                </p>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            // Empty State for Right Column
+            <div className="h-full min-h-[500px] flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 text-slate-400 shadow-sm">
+              <FaLayerGroup className="text-6xl mb-6 text-indigo-200" />
+              <h3 className="font-bold text-2xl text-slate-700">No Set Selected</h3>
+              <p className="font-medium mt-2 max-w-sm text-center text-slate-500">
+                Select an existing question set from the left panel, or create a new one to begin.
+              </p>
+            </div>
+          )}
         </div>
       </div>
+    </div>
   );
 }
