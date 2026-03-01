@@ -107,6 +107,10 @@ export default function GiveFeedback({ user }) {
     loadDetails();
   }, [selectedSession, token]);
 
+  const firstError = document.querySelector(".text-red-600");
+  if (firstError) {
+    firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
   /* ===================== LOGIC & HELPERS ===================== */
 
   const handleAnswerChange = (staffId, questionId, field, value) => {
@@ -126,21 +130,21 @@ export default function GiveFeedback({ user }) {
   const progress = useMemo(() => {
     if (!questions.length) return 0;
 
-    // Count only mandatory questions
     const mandatoryQuestions = questions.filter(q => q.is_optional === 0);
 
     if (!mandatoryQuestions.length) return 100;
 
-    // STAFF BASED
-    if (selectedSession?.feedback_type === "staff") {
-      if (!staff.length) return 0;
+    let totalRequired = 0;
+    let answeredCount = 0;
 
-      const totalRequired = staff.length * mandatoryQuestions.length;
-      let answeredCount = 0;
+    if (selectedSession?.feedback_type === "staff") {
 
       staff.forEach(s => {
         mandatoryQuestions.forEach(q => {
+          totalRequired++;
+
           const ans = answers[s.staff_id]?.[q.question_id];
+
           if (!ans) return;
 
           if (
@@ -155,31 +159,53 @@ export default function GiveFeedback({ user }) {
         });
       });
 
-      return Math.round((answeredCount / totalRequired) * 100);
+    } else {
+
+      mandatoryQuestions.forEach(q => {
+        totalRequired++;
+
+        const ans = answers["general"]?.[q.question_id];
+
+        if (!ans) return;
+
+        if (
+          (q.question_type === "rating" || q.question_type === "yesno") &&
+          ans.rating != null
+        ) answeredCount++;
+
+        if (
+          q.question_type === "text" &&
+          ans.answer_text?.trim()
+        ) answeredCount++;
+      });
     }
 
-    // NON-STAFF
-    const totalRequired = mandatoryQuestions.length;
-    let answeredCount = 0;
-
-    mandatoryQuestions.forEach(q => {
-      const ans = answers["general"]?.[q.question_id];
-      if (!ans) return;
-
-      if (
-        (q.question_type === "rating" || q.question_type === "yesno") &&
-        ans.rating != null
-      ) answeredCount++;
-
-      if (
-        q.question_type === "text" &&
-        ans.answer_text?.trim()
-      ) answeredCount++;
-    });
+    if (totalRequired === 0) return 0;
 
     return Math.round((answeredCount / totalRequired) * 100);
 
   }, [answers, staff, questions, selectedSession]);
+
+
+  const isQuestionMissing = (q, staffKey) => {
+    if (q.is_optional === 1) return false;
+
+    const ans = answers[staffKey]?.[q.question_id];
+
+    if (!ans) return true;
+
+    if (
+      (q.question_type === "rating" || q.question_type === "yesno") &&
+      ans.rating == null
+    ) return true;
+
+    if (
+      q.question_type === "text" &&
+      !ans.answer_text?.trim()
+    ) return true;
+
+    return false;
+  };
 
   const handleSubmit = async () => {
 
@@ -265,7 +291,7 @@ export default function GiveFeedback({ user }) {
           payload.answers.push({
             staff_id: null,
             question_id: q.question_id,
-            rating: ans?.rating ?? null,
+            answer_value: ans?.rating ?? null,
             answer_text: ans?.answer_text ?? null
           });
         });
@@ -308,10 +334,13 @@ export default function GiveFeedback({ user }) {
             <p className="font-medium text-slate-700">
               {q.question_text}
             </p>
-
-            {q.is_optional === 1 && (
+            {q.is_optional === 1 ? (
               <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-bold uppercase">
                 Optional
+              </span>
+            ) : (
+              <span className="text-red-500 text-xs font-bold">
+                *
               </span>
             )}
           </div>
