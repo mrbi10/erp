@@ -45,15 +45,15 @@ export default function Home() {
 
       {/* HERO */}
       <section className="relative flex flex-col items-center justify-center text-center py-32 px-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-200 via-blue-50 to-white opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-200 via-blue-50 to-white opacity-60 z-0" />
 
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9 }}
-          className="text-4xl sm:text-6xl font-extrabold tracking-tight text-blue-700"
+          className="relative z-10 text-4xl sm:text-6xl font-extrabold tracking-tight text-blue-700"
         >
-          MNMJEC ERP Portal 
+          MNMJEC ERP Portal
         </motion.h1>
 
         <motion.p
