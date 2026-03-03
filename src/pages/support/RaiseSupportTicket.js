@@ -74,6 +74,7 @@ export default function RaiseSupportTicket() {
     { value: "Attendance", label: "Attendance Tracking" },
     { value: "Marks", label: "Marks & Grading" },
     { value: "Exam", label: "Examination Module" },
+    { value: "Feedback", label: "Feedback Module" },
     { value: "Other", label: "Other / General Inquiry" },
   ], []);
 
