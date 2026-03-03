@@ -101,6 +101,7 @@ import StudentsProfile from './pages/placements/StudentsProfile';
 
 import GenerateTimetable from './pages/timetable/GenerateTimetable';
 import Viewtimetable from './pages/timetable/Viewtimetable';
+import Timetablesetup from './pages/timetable/TimetableSetup';
 
 
 // import { loadDeptClass } from "./constants/deptClass";
@@ -331,6 +332,15 @@ export default function App() {
                     element={
                       ["Admin", "HOD", "Principal", "DeptAdmin"].includes(user.role)
                         ? <GenerateTimetable user={user} />
+                        : <PageNotFound />
+                    }
+                  />
+
+                  <Route
+                    path="setup"
+                    element={
+                      ["Admin", "HOD", "Principal", "DeptAdmin"].includes(user.role)
+                        ? <Timetablesetup user={user} />
                         : <PageNotFound />
                     }
                   />
