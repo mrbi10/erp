@@ -35,44 +35,95 @@ const REGULATION_OPTIONS = [
 const selectStyles = {
   control: (base, state) => ({
     ...base,
-    borderRadius: "0.75rem", // rounded-xl
-    padding: "2px 4px",
-    borderColor: state.isFocused ? "#3b82f6" : "#e5e7eb",
-    backgroundColor: "#ffffff",
-    boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.1)" : "none",
-    "&:hover": { borderColor: "#d1d5db" },
-    fontSize: "0.875rem",
-    minHeight: "46px",
-  }),
-  menu: (base) => ({
-    ...base,
     borderRadius: "0.75rem",
-    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-    overflow: "hidden",
-    zIndex: 50,
-    marginTop: "4px",
-  }),
-  option: (base, state) => ({
-    ...base,
-    backgroundColor: state.isSelected
-      ? "#3b82f6"
-      : state.isFocused
-        ? "#eff6ff"
-        : "white",
-    color: state.isSelected ? "white" : "#1f2937",
-    cursor: "pointer",
+    padding: "2px 6px",
+    borderColor: state.isFocused ? "#4f46e5" : "#e5e7eb",
+    backgroundColor: "#ffffff",
+    boxShadow: state.isFocused
+      ? "0 0 0 3px rgba(79, 70, 229, 0.15)"
+      : "none",
+    minHeight: "46px",
     fontSize: "0.875rem",
-    padding: "10px 12px",
+    "&:hover": {
+      borderColor: "#c7d2fe"
+    }
   }),
-  singleValue: (base) => ({
+
+  valueContainer: (base) => ({
     ...base,
-    color: "#111827",
-    fontWeight: "500",
+    padding: "2px 8px"
   }),
+
+  input: (base) => ({
+    ...base,
+    color: "#111827"
+  }),
+
   placeholder: (base) => ({
     ...base,
     color: "#9ca3af",
+    fontWeight: 500
   }),
+
+  singleValue: (base) => ({
+    ...base,
+    color: "#111827",
+    fontWeight: 600
+  }),
+
+  indicatorSeparator: () => ({
+    display: "none"
+  }),
+
+  dropdownIndicator: (base, state) => ({
+    ...base,
+    color: state.isFocused ? "#4f46e5" : "#9ca3af",
+    "&:hover": {
+      color: "#4f46e5"
+    }
+  }),
+
+  clearIndicator: (base) => ({
+    ...base,
+    color: "#ef4444",
+    "&:hover": {
+      color: "#dc2626"
+    }
+  }),
+
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999
+  }),
+
+  menu: (base) => ({
+    ...base,
+    borderRadius: "0.75rem",
+    marginTop: "6px",
+    boxShadow:
+      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+    overflow: "hidden"
+  }),
+
+  menuList: (base) => ({
+    ...base,
+    maxHeight: 300,
+    overflowY: "auto",
+    padding: 0
+  }),
+
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? "#4f46e5"
+      : state.isFocused
+        ? "#eef2ff"
+        : "#ffffff",
+    color: state.isSelected ? "#ffffff" : "#111827",
+    fontSize: "0.875rem",
+    padding: "10px 14px",
+    cursor: "pointer"
+  })
 };
 
 function ManageSubjects({ user }) {
@@ -89,6 +140,7 @@ function ManageSubjects({ user }) {
 
   // Filter State
   const [searchText, setSearchText] = useState("");
+  const [saving, setSaving] = useState(false);
 
 
 
@@ -138,6 +190,7 @@ function ManageSubjects({ user }) {
       );
       return;
     }
+    setSaving(true);
 
     const url = editingId
       ? `${BASE_URL}/subjects/${editingId}`
@@ -170,41 +223,44 @@ function ManageSubjects({ user }) {
     } catch {
       Swal.fire("Error", "Operation failed. Please try again.", "error");
     }
+    finally {
+      setSaving(false);
+    }
   };
 
-const handleDelete = async (id) => {
-  const result = await Swal.fire({
-    title: "Are you sure?",
-    text: "This subject will be permanently deleted.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#ef4444",
-    cancelButtonColor: "#6b7280",
-    confirmButtonText: "Yes, Delete",
-  });
-
-  if (!result.isConfirmed) return;
-
-  try {
-    const res = await fetch(`${BASE_URL}/subjects/${id}/delete`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This subject will be permanently deleted.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, Delete",
     });
 
-    const data = await res.json();
+    if (!result.isConfirmed) return;
 
-    if (!res.ok) {
-      throw new Error(data.message || "Delete failed");
+    try {
+      const res = await fetch(`${BASE_URL}/subjects/${id}/delete`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Delete failed");
+      }
+
+      fetchSubjects();
+
+      Swal.fire("Deleted", data.message || "Subject removed.", "success");
+
+    } catch (err) {
+      Swal.fire("Error", err.message, "error");
     }
-
-    fetchSubjects();
-
-    Swal.fire("Deleted", data.message || "Subject removed.", "success");
-
-  } catch (err) {
-    Swal.fire("Error", err.message, "error");
-  }
-};
+  };
 
   // --- Helpers ---
   const resetForm = () => {
@@ -480,8 +536,11 @@ const handleDelete = async (id) => {
                   </label>
                   <Select
                     options={REGULATION_OPTIONS}
-                    isClearable={false}
+                    isClearable
                     placeholder="Select Regulation"
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    maxMenuHeight={300}
                     value={
                       form.regulation
                         ? REGULATION_OPTIONS.find(
@@ -525,10 +584,11 @@ const handleDelete = async (id) => {
               </button>
               <button
                 onClick={handleSubmit}
+                disabled={saving}
                 className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 hover:shadow-xl hover:bg-indigo-700 transition-all flex items-center gap-2"
               >
                 <FaSave />
-                {editingId ? "Save Changes" : "Create Subject"}
+                {saving ? "Saving..." : editingId ? "Save Changes" : "Create Subject"}
               </button>
             </div>
           </div>

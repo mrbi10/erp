@@ -25,23 +25,98 @@ import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
 const customSelectStyles = {
   control: (base, state) => ({
     ...base,
-    minHeight: '48px',
-    borderRadius: '0.5rem',
-    borderColor: state.isFocused ? '#4f46e5' : '#cbd5e1',
-    boxShadow: state.isFocused ? '0 0 0 1px #4f46e5' : 'none',
-    backgroundColor: '#fff',
-    cursor: 'pointer',
-    '&:hover': { borderColor: '#818cf8' }
+    minHeight: "48px",
+    borderRadius: "0.75rem",
+    borderColor: state.isFocused ? "#4f46e5" : "#cbd5e1",
+    boxShadow: state.isFocused
+      ? "0 0 0 3px rgba(79, 70, 229, 0.15)"
+      : "none",
+    backgroundColor: "#ffffff",
+    fontSize: "0.9rem",
+    cursor: "pointer",
+    transition: "all 0.15s ease",
+    "&:hover": {
+      borderColor: "#6366f1"
+    }
   }),
+
+  valueContainer: (base) => ({
+    ...base,
+    padding: "4px 10px"
+  }),
+
+  input: (base) => ({
+    ...base,
+    color: "#0f172a"
+  }),
+
+  placeholder: (base) => ({
+    ...base,
+    color: "#94a3b8",
+    fontWeight: 500
+  }),
+
+  singleValue: (base) => ({
+    ...base,
+    color: "#0f172a",
+    fontWeight: 600
+  }),
+
+  indicatorSeparator: () => ({
+    display: "none"
+  }),
+
+  dropdownIndicator: (base, state) => ({
+    ...base,
+    color: state.isFocused ? "#4f46e5" : "#64748b",
+    "&:hover": {
+      color: "#4f46e5"
+    }
+  }),
+
+  clearIndicator: (base) => ({
+    ...base,
+    color: "#ef4444",
+    "&:hover": {
+      color: "#dc2626"
+    }
+  }),
+
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999
+  }),
+
+  menu: (base) => ({
+    ...base,
+    borderRadius: "0.75rem",
+    marginTop: "6px",
+    overflow: "hidden",
+    boxShadow:
+      "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)"
+  }),
+
+  menuList: (base) => ({
+    ...base,
+    maxHeight: 260,
+    overflowY: "auto",
+    padding: 0
+  }),
+
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#e0e7ff' : 'white',
-    color: state.isSelected ? 'white' : '#1e293b',
-    cursor: 'pointer',
-    padding: '10px 14px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px'
+    backgroundColor: state.isSelected
+      ? "#4f46e5"
+      : state.isFocused
+        ? "#eef2ff"
+        : "#ffffff",
+    color: state.isSelected ? "#ffffff" : "#1e293b",
+    padding: "10px 14px",
+    fontSize: "0.875rem",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    cursor: "pointer"
   })
 };
 
@@ -298,6 +373,9 @@ export default function ManageStaffClassAccess() {
                     styles={customSelectStyles}
                     isDisabled={userRole === "HOD" || userRole === "DeptAdmin"}
                     placeholder="Select Dept..."
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    maxMenuHeight={260}
                   />
                 </div>
                 <div>
@@ -360,8 +438,17 @@ export default function ManageStaffClassAccess() {
                       onChange={(val) => setForm(prev => ({ ...prev, subject: val }))}
                       components={{ Option: IconOption, SingleValue: IconSingleValue }}
                       styles={customSelectStyles}
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      maxMenuHeight={260}
                       isDisabled={!form.dept || !form.targetClass}
-                      placeholder={form.dept && form.targetClass ? "Select Subject..." : "Select Class first"}
+                      isLoading={loadingSubjects}
+                      isClearable
+                      placeholder={
+                        form.dept && form.targetClass
+                          ? "Select Subject..."
+                          : "Select Class first"
+                      }
                     />
                   </div>
                 )}
