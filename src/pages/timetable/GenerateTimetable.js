@@ -16,6 +16,7 @@ import {
     FaUtensils
 } from "react-icons/fa";
 import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { useNavigate } from "react-router-dom";
 
 // ---------------------------
 // Constants & Styles
@@ -88,6 +89,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => (
 // ---------------------------
 export default function GenerateTimetable({ user }) {
     const token = localStorage.getItem("token");
+    const navigate = useNavigate();
 
     // Selection State
     const [deptId, setDeptId] = useState("");
@@ -249,15 +251,36 @@ export default function GenerateTimetable({ user }) {
                 switch (data.errorCode) {
 
                     case "NO_TIME_SLOTS":
-                        Swal.fire("Setup Missing", "No time slots defined for this class.", "error");
-                        return;
-
                     case "NO_SUBJECT_REQUIREMENTS":
-                        Swal.fire("Setup Missing", "No subject requirements found for this class.", "error");
+                        Swal.fire({
+                            icon: "error",
+                            title: "Setup Missing",
+                            text: "Timetable setup is incomplete. Please configure it.",
+                            showCancelButton: true,
+                            confirmButtonText: "Go to Setup",
+                            cancelButtonText: "Close",
+                            confirmButtonColor: "#2563eb"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                navigate("/timetable/setup");
+                            }
+                        });
                         return;
 
                     case "NO_STAFF_MAPPING":
-                        Swal.fire("Setup Missing", "No staff assigned to subjects.", "error");
+                        Swal.fire({
+                            icon: "error",
+                            title: "Staff Mapping Missing",
+                            text: "No staff assigned to subjects. Please check staff access.",
+                            showCancelButton: true,
+                            confirmButtonText: "Check Staff Access",
+                            cancelButtonText: "Close",
+                            confirmButtonColor: "#2563eb"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                navigate("/staffaccess/manage");
+                            }
+                        });
                         return;
 
                     case "INSUFFICIENT_SLOTS":
@@ -410,11 +433,23 @@ export default function GenerateTimetable({ user }) {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                            <span className="p-3 bg-blue-100 rounded-2xl text-blue-700"><FaCalendarAlt className="text-2xl" /></span>
+                            <span className="p-3 bg-blue-100 rounded-2xl text-blue-700">
+                                <FaCalendarAlt className="text-2xl" />
+                            </span>
                             Timetable Setup
                         </h1>
-                        <p className="text-slate-500 mt-2 font-medium ml-1 text-lg">Generate structure and allocate staff</p>
+                        <p className="text-slate-500 mt-2 font-medium ml-1 text-lg">
+                            Generate structure and allocate staff
+                        </p>
                     </div>
+
+                    {/* NEW BUTTON */}
+                    <button
+                        onClick={() => navigate("/timetable/setup")}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all"
+                    >
+                        Setup Timetable
+                    </button>
                 </div>
 
                 {/* Controls & Filters */}
