@@ -448,7 +448,7 @@ export default function GenerateTimetable({ user }) {
                         onClick={() => navigate("/timetable/setup")}
                         className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all"
                     >
-                        Setup Timetable
+                        Setup Timetable Details
                     </button>
                 </div>
 
