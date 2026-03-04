@@ -22,7 +22,6 @@ import { useNavigate } from "react-router-dom";
 // Constants & Styles
 // ---------------------------
 
-// Match the exact keys from your JSON
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const FULL_DAYS = {
     "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday",
@@ -112,7 +111,7 @@ export default function GenerateTimetable({ user }) {
         "Content-Type": "application/json"
     }), [token]);
 
-    /* ================= FETCH & MERGE TIMETABLE ================= */
+    /* ================= FETCH TIMETABLE ================= */
     const fetchTimetable = async (selectedClassId) => {
         if (!selectedClassId) {
             setTimetable([]);
@@ -131,17 +130,14 @@ export default function GenerateTimetable({ user }) {
             const rawTimetable = data.timetable || [];
             const rawSlots = data.timeSlots || [];
 
-            // MERGE LOGIC:
-            // 1. Take all structural slots for this specific class
-            // 2. Map assignment details onto them if they exist
             const classSlots = rawSlots.filter(s => s.class_id === Number(selectedClassId));
 
             const mergedGrid = classSlots.map(slot => {
                 const assignment = rawTimetable.find(t => t.time_slot_id === slot.id);
                 return {
                     ...slot,
-                    time_slot_id: slot.id, // Standardize ID key
-                    ...assignment // Inject assigned subject/staff if available
+                    time_slot_id: slot.id,
+                    ...assignment 
                 };
             });
 
@@ -157,7 +153,6 @@ export default function GenerateTimetable({ user }) {
 
     useEffect(() => {
         fetchTimetable(classId);
-        // eslint-disable-next-line
     }, [classId]);
 
     useEffect(() => {
@@ -172,9 +167,7 @@ export default function GenerateTimetable({ user }) {
 
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message);
-
                 setDropdownOptions(data.options || []);
-
             } catch (err) {
                 console.error(err);
             }
@@ -184,28 +177,18 @@ export default function GenerateTimetable({ user }) {
     }, [deptId, classId]);
 
     useEffect(() => {
-
         if (!user) return;
-
         if (user.role === "CA") {
             setDeptId(user.dept_id);
             setClassId(user.assigned_class_id);
         }
-
         if (user.role === "HOD" || user.role === "DeptAdmin" || user.role === "Staff") {
             setDeptId(user.dept_id);
         }
-
     }, [user]);
 
-    const isDeptLocked =
-        user.role === "CA" ||
-        user.role === "HOD" ||
-        user.role === "DeptAdmin" ||
-        user.role === "Staff";
-
-    const isClassLocked =
-        user.role === "CA";
+    const isDeptLocked = ["CA", "HOD", "DeptAdmin", "Staff"].includes(user.role);
+    const isClassLocked = user.role === "CA";
 
     const subjectOptions = dropdownOptions
         .reduce((acc, opt) => {
@@ -234,7 +217,6 @@ export default function GenerateTimetable({ user }) {
 
         try {
             setGenerating(true);
-
             const res = await fetch(`${BASE_URL}/timetable/generate`, {
                 method: "POST",
                 headers,
@@ -247,69 +229,35 @@ export default function GenerateTimetable({ user }) {
             const data = await res.json();
 
             if (!res.ok) {
-
                 switch (data.errorCode) {
-
                     case "NO_TIME_SLOTS":
                     case "NO_SUBJECT_REQUIREMENTS":
                         Swal.fire({
                             icon: "error",
                             title: "Setup Missing",
-                            text: "Timetable setup is incomplete. Please configure it.",
+                            text: "Timetable setup is incomplete.",
                             showCancelButton: true,
                             confirmButtonText: "Go to Setup",
-                            cancelButtonText: "Close",
                             confirmButtonColor: "#2563eb"
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                navigate("/timetable/setup");
-                            }
-                        });
+                        }).then((result) => { if (result.isConfirmed) navigate("/timetable/setup"); });
                         return;
-
                     case "NO_STAFF_MAPPING":
                         Swal.fire({
                             icon: "error",
                             title: "Staff Mapping Missing",
-                            text: "No staff assigned to subjects. Please check staff access.",
+                            text: "No staff assigned to subjects.",
                             showCancelButton: true,
                             confirmButtonText: "Check Staff Access",
-                            cancelButtonText: "Close",
                             confirmButtonColor: "#2563eb"
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                navigate("/staffaccess/manage");
-                            }
-                        });
+                        }).then((result) => { if (result.isConfirmed) navigate("/staffaccess/manage"); });
                         return;
-
-                    case "INSUFFICIENT_SLOTS":
-                        Swal.fire("Configuration Error", "Required hours exceed available slots.", "error");
-                        return;
-
-                    case "SCHEDULING_FAILED":
-                        Swal.fire({
-                            title: "Scheduling Failed",
-                            text: "Unable to fit all subjects within constraints.",
-                            icon: "error"
-                        });
-                        return;
-
                     default:
                         throw new Error(data.message || "Generation failed");
                 }
             }
 
-            Swal.fire({
-                title: "Success!",
-                text: "Timetable generated successfully",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false
-            });
-
+            Swal.fire({ title: "Success!", text: "Timetable generated", icon: "success", timer: 1500, showConfirmButton: false });
             fetchTimetable(classId);
-
         } catch (err) {
             Swal.fire("Generation Failed", err.message, "error");
         } finally {
@@ -328,12 +276,11 @@ export default function GenerateTimetable({ user }) {
 
     const submitUpdateSlot = async () => {
         if (!editForm.subject_id || !editForm.staff_id) {
-            Swal.fire("Required", "Subject ID and Staff ID are required.", "warning");
+            Swal.fire("Required", "Subject and Staff are required.", "warning");
             return;
         }
 
         setIsUpdating(true);
-
         try {
             const res = await fetch(`${BASE_URL}/timetable/update-slot`, {
                 method: "PUT",
@@ -348,33 +295,17 @@ export default function GenerateTimetable({ user }) {
             });
 
             const data = await res.json();
-
             if (!res.ok) {
-                // ✅ Handle staff clash properly
                 if (data.errorCode === "STAFF_TIME_CLASH") {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Time Conflict",
-                        text: data.message,
-                        confirmButtonColor: "#2563eb"
-                    });
+                    Swal.fire({ icon: "error", title: "Time Conflict", text: data.message });
                     return;
                 }
-
-                // Other backend errors
                 throw new Error(data.message || "Update failed");
             }
 
-            Swal.fire({
-                title: "Updated",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false
-            });
-
+            Swal.fire({ title: "Updated", icon: "success", timer: 1500, showConfirmButton: false });
             setEditingSlot(null);
             fetchTimetable(classId);
-
         } catch (err) {
             Swal.fire("Update Failed", err.message, "error");
         } finally {
@@ -382,19 +313,18 @@ export default function GenerateTimetable({ user }) {
         }
     };
 
-    /* ================= DATA TRANSFORMATION ================= */
+    /* ================= DATA TRANSFORMATION (WITH MERGING) ================= */
     const { grid, orderedSlots } = useMemo(() => {
         if (!timetable.length) return { grid: {}, orderedSlots: [] };
 
         const grouped = {};
         const structureMap = {};
 
+        // 1. Sort and Group by Day
         timetable.forEach(slot => {
-            // Group per day
             if (!grouped[slot.day]) grouped[slot.day] = [];
-            grouped[slot.day].push(slot);
+            grouped[slot.day].push({ ...slot });
 
-            // Use time as structure key (NOT id)
             const timeKey = `${slot.start_time}-${slot.end_time}`;
             if (!structureMap[timeKey]) {
                 structureMap[timeKey] = {
@@ -406,17 +336,37 @@ export default function GenerateTimetable({ user }) {
             }
         });
 
-        // Sort each day
-        Object.keys(grouped).forEach(day => {
-            grouped[day].sort((a, b) =>
-                a.start_time.localeCompare(b.start_time)
-            );
-        });
-
-        // Sort structure by time
         const ordered = Object.values(structureMap).sort((a, b) =>
             a.start_time.localeCompare(b.start_time)
         );
+
+        // 2. Merging Logic: Calculate colSpan for identical back-to-back periods
+        Object.keys(grouped).forEach(day => {
+            const slots = grouped[day].sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+            for (let i = 0; i < slots.length; i++) {
+                let current = slots[i];
+                if (current.is_break || !current.subject_id || current._skip) continue;
+
+                let span = 1;
+                for (let j = i + 1; j < slots.length; j++) {
+                    let next = slots[j];
+
+                    if (
+                        !next.is_break &&
+                        next.subject_id === current.subject_id &&
+                        next.staff_id === current.staff_id &&
+                        next.period_type === current.period_type
+                    ) {
+                        span++;
+                        next._skip = true; // Mark to skip rendering
+                    } else {
+                        break;
+                    }
+                }
+                current._span = span;
+            }
+        });
 
         return { grid: grouped, orderedSlots: ordered };
     }, [timetable]);
@@ -424,7 +374,6 @@ export default function GenerateTimetable({ user }) {
     const deptOptions = Object.entries(DEPT_MAP).map(([k, v]) => ({ value: Number(k), label: v }));
     const classOptions = Object.entries(CLASS_MAP).map(([k, v]) => ({ value: Number(k), label: v }));
 
-    /* ================= RENDER ================= */
     return (
         <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-10 font-sans text-slate-800 pb-24">
             <div className="max-w-[1400px] mx-auto space-y-8">
@@ -442,8 +391,6 @@ export default function GenerateTimetable({ user }) {
                             Generate structure and allocate staff
                         </p>
                     </div>
-
-                    {/* NEW BUTTON */}
                     <button
                         onClick={() => navigate("/timetable/setup")}
                         className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all"
@@ -454,12 +401,8 @@ export default function GenerateTimetable({ user }) {
 
                 {/* Controls & Filters */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-6 items-end z-20 relative">
-
-                    {/* Department */}
                     <div className="w-full lg:w-1/3 space-y-2">
-                        <label className="text-sm font-bold text-slate-600 uppercase tracking-wider">
-                            Department
-                        </label>
+                        <label className="text-sm font-bold text-slate-600 uppercase tracking-wider">Department</label>
                         <Select
                             styles={selectStyles}
                             placeholder="Select Department"
@@ -470,11 +413,8 @@ export default function GenerateTimetable({ user }) {
                         />
                     </div>
 
-                    {/* Class */}
                     <div className="w-full lg:w-1/3 space-y-2">
-                        <label className="text-sm font-bold text-slate-600 uppercase tracking-wider">
-                            Class / Year
-                        </label>
+                        <label className="text-sm font-bold text-slate-600 uppercase tracking-wider">Class / Year</label>
                         <Select
                             styles={selectStyles}
                             placeholder="Select Class"
@@ -485,21 +425,16 @@ export default function GenerateTimetable({ user }) {
                         />
                     </div>
 
-                    {/* Generate Button */}
                     <div className="w-full lg:w-auto flex-1 flex justify-end">
                         <button
                             onClick={generate}
                             disabled={generating || !deptId || !classId}
-                            className="w-full lg:w-auto flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:shadow-lg hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 text-base h-[48px]"
+                            className="w-full lg:w-auto flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 h-[48px]"
                         >
-                            {generating
-                                ? <FaSpinner className="animate-spin text-lg" />
-                                : <FaCogs className="text-lg" />
-                            }
+                            {generating ? <FaSpinner className="animate-spin text-lg" /> : <FaCogs className="text-lg" />}
                             {generating ? "Generating..." : "Generate Grid"}
                         </button>
                     </div>
-
                 </div>
 
                 {/* Timetable View */}
@@ -511,33 +446,22 @@ export default function GenerateTimetable({ user }) {
                         </div>
                     ) : timetable.length === 0 ? (
                         <div className="p-20 text-center flex flex-col items-center text-slate-400">
-                            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                <FaCalendarAlt className="text-4xl opacity-20" />
-                            </div>
+                            <FaCalendarAlt className="text-4xl opacity-20 mb-4" />
                             <p className="text-xl font-semibold">No grid found.</p>
-                            <p className="text-slate-500 mt-2">Select a class or click Generate to create the skeleton.</p>
+                            <p className="text-slate-500 mt-2">Select a class to load or generate the skeleton.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto p-4 sm:p-6">
                             <table className="w-full border-collapse min-w-[1000px]">
                                 <thead>
                                     <tr>
-                                        <th className="p-4 bg-slate-50 border-b border-r border-slate-200 text-left text-sm font-black text-slate-500 uppercase w-32 sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.05)]">Day</th>
+                                        <th className="p-4 bg-slate-50 border-b border-r border-slate-200 text-left text-sm font-black text-slate-500 uppercase w-32 sticky left-0 z-10">Day</th>
                                         {orderedSlots.map((slot, index) => {
-                                            const teachingNumber = orderedSlots
-                                                .slice(0, index + 1)
-                                                .filter(s => s.is_break === 0)
-                                                .length;
-
+                                            const teachingNum = orderedSlots.slice(0, index + 1).filter(s => s.is_break === 0).length;
                                             return (
-                                                <th
-                                                    key={slot.time_slot_id}
-                                                    className="p-3 bg-slate-50 border-b border-slate-200 text-center align-bottom"
-                                                >
+                                                <th key={index} className="p-3 bg-slate-50 border-b border-slate-200 text-center align-bottom">
                                                     <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">
-                                                        {slot.is_break === 1
-                                                            ? "Break"
-                                                            : `Period ${teachingNumber}`}
+                                                        {slot.is_break === 1 ? "Break" : `Period ${teachingNum}`}
                                                     </span>
                                                 </th>
                                             );
@@ -551,89 +475,65 @@ export default function GenerateTimetable({ user }) {
 
                                         return (
                                             <tr key={day} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="p-4 border-b border-r border-slate-200 bg-white sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.05)] font-bold text-slate-700 uppercase tracking-wider">
+                                                <td className="p-4 border-b border-r border-slate-200 bg-white sticky left-0 z-10 font-bold text-slate-700 uppercase tracking-wider">
                                                     {FULL_DAYS[day]}
                                                 </td>
                                                 {orderedSlots.map((structureSlot) => {
-                                                    const slot = daySlots.find(
-                                                        s =>
-                                                            s.start_time === structureSlot.start_time &&
-                                                            s.end_time === structureSlot.end_time
-                                                    );
-
-                                                    if (!slot) {
-                                                        return (
-                                                            <td
-                                                                key={structureSlot.time_slot_id}
-                                                                className="p-2 border-b border-slate-200 bg-slate-50/30"
-                                                            />
-                                                        );
-                                                    }
+                                                    const slot = daySlots.find(s => s.start_time === structureSlot.start_time && s.end_time === structureSlot.end_time);
+                                                    if (!slot || slot._skip) return null;
 
                                                     const isBreak = slot.is_break === 1;
                                                     const isAssigned = slot.subject_id && slot.staff_id;
 
-                                                    if (isBreak) {
-                                                        return (
-                                                            <td
-                                                                key={slot.time_slot_id}
-                                                                className="p-2 border-b border-slate-200 bg-slate-50/50 align-middle"
-                                                            >
-                                                                <div className="flex flex-col items-center justify-center h-full min-h-[90px] rounded-lg border border-dashed border-slate-300">
-                                                                    {slot.break_type === "lunch"
-                                                                        ? <FaUtensils className="text-amber-500 mb-1 text-lg" />
-                                                                        : <FaCoffee className="text-amber-500 mb-1 text-lg" />}
-                                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                                                        {slot.break_type || "Break"}
-                                                                    </span>
-                                                                </div>
-                                                            </td>
-                                                        );
-                                                    }
-
                                                     return (
                                                         <td
                                                             key={slot.time_slot_id}
-                                                            className="p-2 border-b border-slate-200 align-top h-32 w-44"
+                                                            colSpan={slot._span || 1}
+                                                            className={`p-2 border-b border-slate-200 align-top h-36 min-w-[12rem]`}
                                                         >
-                                                            <div
-                                                                onClick={() => handleOpenEdit(slot)}
-                                                                className={`w-full h-full p-3 rounded-xl border transition-all cursor-pointer flex flex-col
-                    ${isAssigned
-                                                                        ? "bg-blue-50/50 border-blue-100 hover:border-blue-300 hover:bg-blue-50 shadow-sm"
-                                                                        : "bg-slate-50 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-100 items-center justify-center"
+                                                            {isBreak ? (
+                                                                <div className="flex flex-col items-center justify-center h-full rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
+                                                                    {slot.break_type === "lunch" ? <FaUtensils className="text-amber-500 mb-1" /> : <FaCoffee className="text-amber-500 mb-1" />}
+                                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">{slot.break_type || "Break"}</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div
+                                                                    onClick={() => handleOpenEdit(slot)}
+                                                                    className={`w-full h-full p-3 rounded-2xl border transition-all cursor-pointer flex flex-col group ${
+                                                                        isAssigned ? "bg-white border-slate-200 hover:border-blue-500 hover:shadow-md" : "bg-slate-50 border-dashed border-slate-300 items-center justify-center"
                                                                     }`}
-                                                            >
-                                                                {isAssigned ? (
-                                                                    <>
-                                                                        <div className="mb-1.5 flex justify-between items-start">
-                                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200 bg-white text-blue-700 uppercase tracking-wider shadow-sm">
-                                                                                {slot.subject_code || slot.subject_id}
-                                                                            </span>
-                                                                        </div>
+                                                                >
+                                                                    {isAssigned ? (
+                                                                        <>
+                                                                            <div className="mb-2 flex justify-between items-start">
+                                                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-slate-900 text-white uppercase">{slot.subject_code}</span>
+                                                                                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg border ${slot.period_type === 'LAB' ? 'border-purple-200 bg-purple-50 text-purple-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>
+                                                                                    {slot.period_type}
+                                                                                </span>
+                                                                            </div>
+                                                                            <span className="font-bold text-slate-800 text-sm leading-tight mb-1 line-clamp-2">{slot.subject_name}</span>
+                                                                            
+                                                                            {/* Location/Lab Name Logic */}
+                                                                            {slot.period_type === "LAB" && slot.lab_name && (
+                                                                                <div className="flex items-center gap-1.5 text-emerald-600 mb-2">
+                                                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                                                    <span className="text-[10px] font-bold uppercase tracking-tight">{slot.lab_name}</span>
+                                                                                </div>
+                                                                            )}
 
-                                                                        <span className="font-bold text-slate-800 text-sm leading-tight line-clamp-2 mb-2">
-                                                                            {slot.subject_name || "Unknown Subject"}
-                                                                        </span>
-
-                                                                        <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5 mt-auto bg-white border border-slate-100 px-2 py-1 rounded w-max max-w-full">
-                                                                            <FaChalkboardTeacher className="text-blue-500 shrink-0" />
-                                                                            <span className="truncate">
-                                                                                {slot.staff_name || slot.staff_id}
-                                                                            </span>
-                                                                        </span>
-                                                                    </>
-                                                                ) : (
-                                                                    <div className="flex flex-col items-center gap-2 text-slate-400 group">
-                                                                        <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                                                                            <FaEdit />
+                                                                            <div className="mt-auto flex items-center gap-2 pt-2 border-t border-slate-50">
+                                                                                <FaChalkboardTeacher className="text-slate-400 group-hover:text-blue-500 text-[10px]" />
+                                                                                <span className="text-[11px] font-bold text-slate-500 truncate">{slot.staff_name}</span>
+                                                                            </div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="flex flex-col items-center gap-1 opacity-40">
+                                                                            <FaEdit className="text-slate-400" />
+                                                                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Assign</span>
                                                                         </div>
-                                                                        <span className="text-xs font-bold uppercase tracking-wider">
-                                                                            Assign Slot
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </td>
                                                     );
                                                 })}
@@ -651,21 +551,11 @@ export default function GenerateTimetable({ user }) {
             <Modal
                 isOpen={!!editingSlot}
                 onClose={() => !isUpdating && setEditingSlot(null)}
-                title={`Configure ${editingSlot?.is_break === 1
-                    ? "Break"
-                    : `Period ${orderedSlots
-                        .filter(s => s.is_break === 0)
-                        .findIndex(s => s.time_slot_id === editingSlot?.time_slot_id) + 1
-                    }`
-                    } • ${FULL_DAYS[editingSlot?.day]}`}
+                title={`Configure ${editingSlot?.day} Slot`}
                 footer={
                     <>
                         <button onClick={() => setEditingSlot(null)} className="px-5 py-2.5 rounded-xl text-slate-600 font-bold hover:bg-slate-200 bg-slate-100 transition-colors">Cancel</button>
-                        <button
-                            onClick={submitUpdateSlot}
-                            disabled={isUpdating}
-                            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-md hover:shadow-lg hover:bg-blue-700 transition-all disabled:opacity-70 flex items-center gap-2"
-                        >
+                        <button onClick={submitUpdateSlot} disabled={isUpdating} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-md hover:bg-blue-700 flex items-center gap-2">
                             {isUpdating ? <FaSpinner className="animate-spin" /> : <FaSave />} Save Allocation
                         </button>
                     </>
@@ -673,43 +563,13 @@ export default function GenerateTimetable({ user }) {
             >
                 <div className="space-y-5">
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
-                            <FaBook className="text-blue-500" /> Subject
-                        </label>
-                        <Select
-                            styles={selectStyles}
-                            placeholder="Select Subject"
-                            options={subjectOptions}
-                            value={subjectOptions.find(o => o.value === editForm.subject_id) || null}
-                            onChange={(selected) => {
-                                setEditForm({
-                                    subject_id: selected?.value || "",
-                                    staff_id: ""
-                                });
-                            }}
-                        />
+                        <label className="text-sm font-bold text-slate-600 uppercase flex items-center gap-2"><FaBook className="text-blue-500" /> Subject</label>
+                        <Select styles={selectStyles} placeholder="Select Subject" options={subjectOptions} value={subjectOptions.find(o => o.value === editForm.subject_id) || null} onChange={(s) => setEditForm({ subject_id: s?.value || "", staff_id: "" })} />
                     </div>
-
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
-                            <FaChalkboardTeacher className="text-blue-500" /> Staff
-                        </label>
-                        <Select
-                            styles={selectStyles}
-                            placeholder="Select Staff"
-                            options={staffOptions}
-                            value={staffOptions.find(o => o.value === editForm.staff_id) || null}
-                            onChange={(selected) => {
-                                setEditForm(prev => ({
-                                    ...prev,
-                                    staff_id: selected?.value || ""
-                                }));
-                            }}
-                            isDisabled={!editForm.subject_id}
-                        />
+                        <label className="text-sm font-bold text-slate-600 uppercase flex items-center gap-2"><FaChalkboardTeacher className="text-blue-500" /> Staff</label>
+                        <Select styles={selectStyles} placeholder="Select Staff" options={staffOptions} value={staffOptions.find(o => o.value === editForm.staff_id) || null} onChange={(s) => setEditForm(p => ({ ...p, staff_id: s?.value || "" }))} isDisabled={!editForm.subject_id} />
                     </div>
-
-
                 </div>
             </Modal>
         </div>
