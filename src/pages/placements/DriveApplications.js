@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Swal from "sweetalert2";
 import Select from "react-select";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
 import {
     FaUserGraduate,

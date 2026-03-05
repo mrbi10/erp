@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BASE_URL } from '../../constants/API';
 import { FaUserCheck, FaUserTimes, FaUserCircle, FaUndo, FaCheck, FaCalendarDay, FaSearch, FaUsers, FaClipboardCheck, FaTimesCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
-import {DEPT_MAP} from "../../constants/deptClass";
+import {DEPT_MAP} from "../../constants/deptclassV2";
 
 
 

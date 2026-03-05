@@ -28,7 +28,7 @@ import {
     FaUniversity
 } from "react-icons/fa";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP } from "../../constants/deptClass";
+import { DEPT_MAP } from "../../constants/deptclassV2";
 
 /* -------------------------------------------------------
    COLORS & CONSTANTS

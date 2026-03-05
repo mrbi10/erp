@@ -19,7 +19,7 @@ import {
 
 // --- IMPORT CONSTANTS ---
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 
 // --- STYLING CONFIG (Simplified & Faster) ---
 const customSelectStyles = {

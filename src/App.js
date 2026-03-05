@@ -5,11 +5,11 @@ import { useLocation } from "react-router-dom";
 
 
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
+import Sidebar from './components/SidebarV2';
 import ForgotPassword from './components/forgotpassword';
 import ResetPassword from './components/resetpassword';
 // import NetworkAlert from './components/NetworkAlert';
-import ServerGate from "./components/ServerGate";
+import ServerGate from "./components/ServerGateV2";
 //import AssistantButton from './components/AssistantButton';
 
 import Home from './pages/orthers/Home';
@@ -32,6 +32,7 @@ import Feedback from './pages/sidebar/Feedback';
 import StaffAccess from './pages/sidebar/StaffAccess';
 import SupportTicket from './pages/sidebar/SupportTicket';
 import SystemMonitor from './pages/sidebar/SystemMonitor';
+import MenuPermissionManager from './pages/admin/MenuPermissionManager';
 
 
 
@@ -104,21 +105,28 @@ import Viewtimetable from './pages/timetable/Viewtimetable';
 import Timetablesetup from './pages/timetable/TimetableSetup';
 
 
-// import { loadDeptClass } from "./constants/deptClass";
+import { loadDeptClass } from "./constants/deptclassV3";
 
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  // useEffect(() => {
-  //   loadDeptClass();
-  // }, []);
+  useEffect(() => {
+    loadDeptClass();
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -202,7 +210,7 @@ export default function App() {
           ${isExamRoute ? "" : "pt-24 p-6"}
           text-slate-800 dark:text-slate-100
           transition-all duration-300
-          ${!isExamRoute && window.innerWidth > 768
+         ${!isExamRoute && isDesktop
               ? sidebarOpen
                 ? "pl-64"
                 : "pl-16"
@@ -234,25 +242,31 @@ export default function App() {
                 <Route path="/SecurityLateEntry" element={<SecurityLateEntry user={user} />} />
                 <Route path="/managesubjects" element={<ManageSubjects user={user} />} />
                 <Route path="/system-monitor" element={<SystemMonitor />} />
-
+                <Route path="/admin/menu-permissions"
+                  element={
+                    user.role === "Principal"
+                      ? <MenuPermissionManager user={user} />
+                      : <Navigate to="/dashboard" replace />
+                  }
+                />
 
                 {/* Attendance nested routes */}
                 <Route path="/attendance" element={<Attendance user={user} />}>
                   <Route
                     path="view"
-                    element={user.role === 'student' ? <StudentAttendance user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentAttendance user={user} /> : <Navigate to="/dashboard" replace />}
                   />
                   <Route
                     path="mark"
-                    element={user.role !== 'student' ? <MarkAttendance user={user} /> : <PageNotFound />}
+                    element={user.role !== 'student' ? <MarkAttendance user={user} /> : <Navigate to="/dashboard" replace />}
                   />
                   <Route
                     path="reports"
-                    element={user.role !== 'student' ? <ReportsPage user={user} /> : <PageNotFound />}
+                    element={user.role !== 'student' ? <ReportsPage user={user} /> : <Navigate to="/dashboard" replace />}
                   />
                   <Route
                     path="manage"
-                    element={user.role === 'HOD' ? <ManageStaff user={user} /> : <PageNotFound />}
+                    element={user.role === 'HOD' ? <ManageStaff user={user} /> : <Navigate to="/dashboard" replace />}
                   />
                   <Route path="*" element={<PageNotFound />} />
                 </Route>
@@ -285,7 +299,7 @@ export default function App() {
                   element={
                     ['HOD', 'DeptAdmin', 'Principal'].includes(user.role)
                       ? <StaffAccess user={user} />
-                      : <PageNotFound />
+                      : <Navigate to="/dashboard" replace />
                   }
                 >
                   <Route
@@ -293,7 +307,7 @@ export default function App() {
                     element={
                       ['HOD', 'DeptAdmin', 'Principal'].includes(user.role)
                         ? <ViewStaffAccess user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
                   <Route
@@ -301,7 +315,7 @@ export default function App() {
                     element={
                       ['HOD', 'DeptAdmin', 'Principal'].includes(user.role)
                         ? <ManageStaffClassAccess user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
                 </Route>
@@ -332,7 +346,7 @@ export default function App() {
                     element={
                       ["Admin", "HOD", "Principal", "DeptAdmin"].includes(user.role)
                         ? <GenerateTimetable user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
 
@@ -341,7 +355,7 @@ export default function App() {
                     element={
                       ["Admin", "HOD", "Principal", "DeptAdmin"].includes(user.role)
                         ? <Timetablesetup user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
 
@@ -358,37 +372,37 @@ export default function App() {
                   {/* ===== STUDENT ===== */}
                   <Route
                     path="my-courses"
-                    element={user.role === 'student' ? <StudentMyCourses user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentMyCourses user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="result"
-                    element={user.role === 'student' ? <StudentResults user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentResults user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="tests"
-                    element={user.role === 'student' ? <StudentTests user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentTests user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="tests/:testId"
-                    element={user.role === 'student' ? <StudentTests user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentTests user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="drives"
-                    element={user.role === 'student' ? <StudentDrives user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentDrives user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="applications"
-                    element={user.role === 'student' ? <StudentApplications user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentApplications user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="profile"
-                    element={user.role === 'student' ? <StudentPlacementProfile user={user} /> : <PageNotFound />}
+                    element={user.role === 'student' ? <StudentPlacementProfile user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   {/* ===== COMMON RESULTS (ROLE-BASED DATA) ===== */}
@@ -397,7 +411,7 @@ export default function App() {
                     element={
                       ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <PlacementResults user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
 
@@ -406,7 +420,7 @@ export default function App() {
                     element={
                       ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <AcademicApprovalPanel user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
 
@@ -415,7 +429,7 @@ export default function App() {
                     element={
                       ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <PlacementAnswerReview user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
 
@@ -425,34 +439,34 @@ export default function App() {
                     element={
                       ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <PlacementAnalytics user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
 
                   {/* ===== TRAINER ===== */}
                   <Route
                     path="courses"
-                    element={user.role === 'trainer' ? <TrainerCourses user={user} /> : <PageNotFound />}
+                    element={user.role === 'trainer' ? <TrainerCourses user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="tests/manage/:courseId"
-                    element={user.role === 'trainer' ? <TrainerManageTests user={user} /> : <PageNotFound />}
+                    element={user.role === 'trainer' ? <TrainerManageTests user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="tests/:testId/questions"
-                    element={user.role === 'trainer' ? <TrainerAddQuestions /> : <PageNotFound />}
+                    element={user.role === 'trainer' ? <TrainerAddQuestions /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="drives-manage"
-                    element={user.role === 'trainer' ? <ManageDrives user={user} /> : <PageNotFound />}
+                    element={user.role === 'trainer' ? <ManageDrives user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
                     path="studentsprofile"
-                    element={user.role === 'trainer' ? <StudentsProfile user={user} /> : <PageNotFound />}
+                    element={user.role === 'trainer' ? <StudentsProfile user={user} /> : <Navigate to="/dashboard" replace />}
                   />
 
                   <Route
@@ -460,7 +474,7 @@ export default function App() {
                     element={
                       ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <DriveApplications user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
 
@@ -469,7 +483,7 @@ export default function App() {
                     element={
                       ['trainer', 'CA', 'HOD', 'Principal'].includes(user.role)
                         ? <DriveAnalytics user={user} />
-                        : <PageNotFound />
+                        : <Navigate to="/dashboard" replace />
                     }
                   />
                   <Route path="*" element={<PageNotFound />} />

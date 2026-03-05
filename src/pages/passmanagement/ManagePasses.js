@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 import {
     FaIdCard,
     FaSearch,

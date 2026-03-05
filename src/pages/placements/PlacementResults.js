@@ -21,7 +21,7 @@ import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { BASE_URL } from "../../constants/API";
 import { formatSubmittedAt } from "../../constants/dateUtils";
-import { DEPT_MAP, yearoptions } from "../../constants/deptClass";
+import { DEPT_MAP, yearoptions } from "../../constants/deptclassV2";
 import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
 
 // ---------------------------

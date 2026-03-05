@@ -5,7 +5,7 @@ import { BASE_URL } from "../../constants/API";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {  FaUsers, FaBuilding, FaUserGraduate } from "react-icons/fa";
-import { DEPT_MAP } from "../../constants/deptClass";
+import { DEPT_MAP } from "../../constants/deptclassV2";
 
 
 const CARD_CLASSES = "p-6 bg-white rounded-2xl border border-gray-100 shadow-xl transition duration-500 hover:shadow-2xl hover:border-sky-200 h-full flex flex-col";

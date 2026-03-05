@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Select from "react-select";
 import { FaSearch, FaSyncAlt, FaClock, FaUserClock, FaExclamationTriangle, FaFilter } from "react-icons/fa";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 
 const LateEntries = () => {
   const [entries, setEntries] = useState([]);

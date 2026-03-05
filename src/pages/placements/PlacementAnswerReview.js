@@ -21,7 +21,7 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP, yearoptions } from "../../constants/deptClass";
+import { DEPT_MAP, yearoptions } from "../../constants/deptclassV2";
 import { formatSubmittedAt } from "../../constants/dateUtils";
 
 /* -------------------- STYLES & HELPERS -------------------- */

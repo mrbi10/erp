@@ -26,7 +26,7 @@ import { BASE_URL } from "../../constants/API";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel } from "../../utils/exportHelper";
-import { DEPT_MAP } from "../../constants/deptClass";
+import { DEPT_MAP } from "../../constants/deptclassV2";
 
 // ---------------------------
 // Helpers & Utilities

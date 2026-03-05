@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BASE_URL } from "../../constants/API";
 import { QRCodeCanvas } from "qrcode.react";
 import { FaBus, FaUtensils, FaTicketAlt, FaTimes, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 
 
 // --- Utility: Format Date nicely ---

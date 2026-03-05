@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../constants/API";
-import { DEPT_MAP, CLASS_MAP } from "../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../constants/deptclassV2";
 
 // Simple Tab Component for cleaner navigation
 const TabButton = ({ active, onClick, icon: Icon, label }) => (

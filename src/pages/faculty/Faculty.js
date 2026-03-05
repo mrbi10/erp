@@ -19,7 +19,7 @@ import Select from "react-select";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP } from "../../constants/deptClass";
+import { DEPT_MAP } from "../../constants/deptclassV2";
 
 // ---------------------------
 // Constants & Utils

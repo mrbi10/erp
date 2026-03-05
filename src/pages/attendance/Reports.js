@@ -17,7 +17,7 @@ import {
   FaChartLine
 } from 'react-icons/fa';
 import { BASE_URL } from '../../constants/API';
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
 
 // ---------------------------

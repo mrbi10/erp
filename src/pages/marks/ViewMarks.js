@@ -12,7 +12,7 @@ import {
   FaSpinner,
   FaSortAlphaDown,
 } from "react-icons/fa";
-import { DEPT_MAP, CLASS_MAP } from "../../constants/deptClass";
+import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
 
 const ViewMarks = () => {

@@ -12,7 +12,7 @@ import {
     FaExclamationCircle
 } from "react-icons/fa";
 import { BASE_URL } from "../../constants/API";
-import { DEPT_MAP } from "../../constants/deptClass";
+import { DEPT_MAP } from "../../constants/deptclassV2";
 
 const PERSON_OPTIONS = [
     { value: "ALL", label: "All Types" },
