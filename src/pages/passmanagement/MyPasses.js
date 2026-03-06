@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { BASE_URL } from "../../constants/API";
 import { QRCodeCanvas } from "qrcode.react";
-import { FaBus, FaUtensils, FaTicketAlt, FaTimes, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import { FaBus, FaUtensils, FaTicketAlt, FaTimes, FaCheckCircle, FaExclamationCircle, FaBed } from "react-icons/fa";
 import { DEPT_MAP, CLASS_MAP } from "../../constants/deptclassV2";
 
 
@@ -95,14 +95,35 @@ export default function MyPasses() {
 // --- Sub-Component: The Ticket Card (List View) ---
 const TicketCard = ({ pass, onClick }) => {
     const isBus = pass.pass_type === "bus";
+    const isMess = pass.pass_type === "jain_mess";
+    const isHostel = pass.pass_type === "hostel";
     const isActive = pass.is_valid === 1;
 
-    // Unified Blue Theme
-    const bgTheme = isBus
-        ? "bg-gradient-to-br from-indigo-700 to-blue-600" // Deep Blue for Bus
-        : "bg-gradient-to-br from-blue-500 to-cyan-400"; // Bright Blue/Cyan for Mess
+    let bgTheme = "";
+    let icon = null;
+    let title = "";
+    let subtitle = "";
 
-    const icon = isBus ? <FaBus className="text-white/90 text-4xl" /> : <FaUtensils className="text-white/90 text-3xl" />;
+    if (isBus) {
+        bgTheme = "bg-gradient-to-br from-indigo-700 to-blue-600";
+        icon = <FaBus className="text-white/90 text-4xl" />;
+        title = "Bus Pass";
+        subtitle = "Transport";
+    }
+
+    if (isMess) {
+        bgTheme = "bg-gradient-to-br from-blue-500 to-cyan-400";
+        icon = <FaUtensils className="text-white/90 text-3xl" />;
+        title = "Jain Mess";
+        subtitle = "Daily Meal Access";
+    }
+
+    if (isHostel) {
+        bgTheme = "bg-gradient-to-br from-purple-600 to-indigo-500";
+        icon = <FaBed className="text-white/90 text-3xl" />;
+        title = "Hostel Pass";
+        subtitle = "Hostel Access";
+    }
 
     return (
         <div
@@ -117,10 +138,10 @@ const TicketCard = ({ pass, onClick }) => {
                 {/* Left Side: Info */}
                 <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-1">
-                        {isBus ? "Transport" : "Daily Meal Access"}
+                        {subtitle}
                     </span>
                     <h2 className="text-2xl text-white font-black tracking-tight mb-2 drop-shadow-sm">
-                        {isBus ? "Bus Pass" : "Jain Mess"}
+                        {title}
                     </h2>
                     <div className="flex items-center gap-2 text-xs font-medium bg-black/15 px-3 py-1.5 rounded-full w-fit backdrop-blur-sm">
                         <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-red-400'}`}></div>
@@ -145,7 +166,6 @@ const TicketCard = ({ pass, onClick }) => {
 
             {/* Bottom Strip */}
             <div className="px-6 py-3 flex justify-between items-center bg-black/10 text-white/90 text-xs font-medium">
-                <span className="font-mono tracking-widest">ID:{pass.id.toString().padStart(5, '0')}</span>
                 <span className="group-hover:translate-x-1 transition-transform flex items-center gap-1">
                     Tap to scan <span className="text-lg leading-none">&rsaquo;</span>
                 </span>
@@ -156,10 +176,28 @@ const TicketCard = ({ pass, onClick }) => {
 
 // --- Sub-Component: Fullscreen Modal ---
 const FullscreenPass = ({ pass, onClose }) => {
+
     const isBus = pass.pass_type === "bus";
-    const bgTheme = isBus
-        ? "bg-gradient-to-br from-indigo-800 to-blue-700"
-        : "bg-gradient-to-br from-blue-600 to-cyan-500";
+    const isMess = pass.pass_type === "jain_mess";
+    const isHostel = pass.pass_type === "hostel";
+
+    let bgTheme = "";
+    let title = "";
+
+    if (isBus) {
+        bgTheme = "bg-gradient-to-br from-indigo-800 to-blue-700";
+        title = "BUS PASS";
+    }
+
+    if (isMess) {
+        bgTheme = "bg-gradient-to-br from-blue-600 to-cyan-500";
+        title = "JAIN MESS";
+    }
+
+    if (isHostel) {
+        bgTheme = "bg-gradient-to-br from-purple-700 to-indigo-600";
+        title = "HOSTEL PASS";
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
@@ -173,7 +211,7 @@ const FullscreenPass = ({ pass, onClose }) => {
                 <div className="p-6 pb-8 flex justify-between items-start text-white">
                     <div>
                         <h2 className="text-3xl text-white font-black uppercase tracking-tighter drop-shadow-sm">
-                            {isBus ? "BUS PASS" : "JAIN MESS"}
+                            {title}
                         </h2>
                         <p className="text-white/80 text-sm font-medium tracking-wide mt-1">Student Access Card</p>
                     </div>

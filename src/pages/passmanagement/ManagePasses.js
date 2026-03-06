@@ -26,7 +26,8 @@ console.log("deptOptions", deptOptions);
 console.log("classOptions", classOptions);
 const passTypeOptions = [
     { value: "bus", label: "Bus Pass" },
-    { value: "jain_mess", label: "Jain Mess Pass" }
+    { value: "jain_mess", label: "Jain Mess Pass" },
+    { value: "hostel", label: "Hostel Pass" }
 ];
 
 export default function ManagePasses() {
@@ -103,8 +104,10 @@ export default function ManagePasses() {
                     passMap[pass.user_id] = {
                         bus_pass_id: null,
                         mess_pass_id: null,
+                        hostel_pass_id: null,
                         has_bus_pass: false,
-                        has_mess_pass: false
+                        has_mess_pass: false,
+                        has_hostel_pass: false
                     };
                 }
 
@@ -117,6 +120,11 @@ export default function ManagePasses() {
                     passMap[pass.user_id].has_mess_pass = true;
                     passMap[pass.user_id].mess_pass_id = pass.id;
                 }
+
+                if (pass.pass_type === "hostel" && pass.is_valid === 1) {
+                    passMap[pass.user_id].has_hostel_pass = true;
+                    passMap[pass.user_id].hostel_pass_id = pass.id;
+                }
             });
 
 
@@ -124,8 +132,10 @@ export default function ManagePasses() {
                 ...student,
                 has_bus_pass: passMap[student.user_id]?.has_bus_pass || false,
                 has_mess_pass: passMap[student.user_id]?.has_mess_pass || false,
+                has_hostel_pass: passMap[student.user_id]?.has_hostel_pass || false,
                 bus_pass_id: passMap[student.user_id]?.bus_pass_id || null,
-                mess_pass_id: passMap[student.user_id]?.mess_pass_id || null
+                mess_pass_id: passMap[student.user_id]?.mess_pass_id || null,
+                hostel_pass_id: passMap[student.user_id]?.hostel_pass_id || null
             }));
 
             setStudents(merged);
@@ -157,7 +167,8 @@ export default function ManagePasses() {
             const selectableIds = filteredStudents
                 .filter(student => !(
                     (selectedType.value === "bus" && student.has_bus_pass) ||
-                    (selectedType.value === "jain_mess" && student.has_mess_pass)
+                    (selectedType.value === "jain_mess" && student.has_mess_pass) ||
+                    (selectedType.value === "hostel" && student.has_hostel_pass)
                 ))
                 .map(s => s.user_id);
             setSelectedStudents(selectableIds);
@@ -374,6 +385,7 @@ export default function ManagePasses() {
                                         <th className="p-4 font-bold uppercase tracking-wider text-xs">Dept / Year</th>
                                         <th className="p-4 font-bold uppercase tracking-wider text-xs text-center">Bus Pass</th>
                                         <th className="p-4 font-bold uppercase tracking-wider text-xs text-center">Mess Pass</th>
+                                        <th className="p-4 font-bold uppercase tracking-wider text-xs text-center">Hostel Pass</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -385,8 +397,10 @@ export default function ManagePasses() {
                                         </tr>
                                     ) : (
                                         filteredStudents.map(student => {
-                                            const disabled = (selectedType.value === "bus" && student.has_bus_pass) ||
-                                                (selectedType.value === "jain_mess" && student.has_mess_pass);
+                                            const disabled =
+                                                (selectedType.value === "bus" && student.has_bus_pass) ||
+                                                (selectedType.value === "jain_mess" && student.has_mess_pass) ||
+                                                (selectedType.value === "hostel" && student.has_hostel_pass);
 
                                             return (
                                                 <tr key={student.user_id} className={`hover:bg-indigo-50/50 transition-colors ${selectedStudents.includes(student.user_id) ? "bg-indigo-50" : ""}`}>
@@ -420,6 +434,17 @@ export default function ManagePasses() {
                                                         {student.has_mess_pass ? (
                                                             <span onClick={() => handleRevoke(student.mess_pass_id)} className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold uppercase rounded bg-green-100 text-green-700 hover:bg-red-500 hover:text-white transition-colors cursor-pointer" title="Click to Revoke">
                                                                 Active &times;
+                                                            </span>
+                                                        ) : <span className="text-gray-300">—</span>}
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        {student.has_hostel_pass ? (
+                                                            <span
+                                                                onClick={() => handleRevoke(student.hostel_pass_id)}
+                                                                className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold uppercase rounded bg-green-100 text-green-700 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                                                                title="Click to Revoke"
+                                                            >
+                                                                Active ×
                                                             </span>
                                                         ) : <span className="text-gray-300">—</span>}
                                                     </td>
