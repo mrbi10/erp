@@ -193,7 +193,7 @@ export default function ProfileHubAdd() {
         timer: 1500,
         showConfirmButton: false,
       });
-      navigate("/profilehub/activities");
+      navigate("/portfolio/activities");
 
     } catch (err) {
       console.error(err);

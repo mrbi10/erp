@@ -82,7 +82,7 @@ const ActionCard = ({ label, subtext, to, icon: Icon, color, index }) => {
 
 export default function ProfileHub({ user }) {
   const location = useLocation();
-  const basePath = "/profilehub";
+  const basePath = "/portfolio";
 
   // Check if we are on the main dashboard view
   const isDashboardView = location.pathname === basePath || location.pathname === basePath + "/";
@@ -167,7 +167,7 @@ export default function ProfileHub({ user }) {
                   icon={faUserGraduate}
                   className="text-emerald-500 text-3xl"
                 />
-                Profile Hub
+                Student Portfolio
               </h1>
               <p className="text-slate-500 text-lg max-w-2xl">
                 Welcome back, <span className="font-semibold text-slate-700">{user?.name || "User"}</span>.

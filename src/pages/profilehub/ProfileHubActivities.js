@@ -276,7 +276,7 @@ export default function ProfileHubActivities() {
                     </div>
 
                     <button
-                        onClick={() => window.location.href = '#/profilehub/add'}
+                        onClick={() => window.location.href = '#/portfolio/add'}
                         className="group flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-slate-200 hover:shadow-xl hover:bg-slate-800 transition-all active:scale-95"
                     >
                         <FaFolderOpen className="text-sm" />

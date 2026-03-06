@@ -327,7 +327,7 @@ export default function App() {
 
 
 
-                <Route path="/profilehub" element={<ProfileHub user={user} />}>
+                <Route path="/portfolio" element={<ProfileHub user={user} />}>
                   <Route path="add" element={<ProfileHubAdd />} />
                   <Route path="view" element={<ProfileHubView user={user} />} />
                   <Route path="activities" element={<ProfileHubActivities user={user} />} />

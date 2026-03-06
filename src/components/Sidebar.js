@@ -141,8 +141,8 @@ export default function Sidebar({ role, open, onClose }) {
       roles: ['Staff', 'student', 'DeptAdmin', 'CA', 'HOD', 'Principal', 'Admin'],
     },
     {
-      key: '/profilehub',
-      label: 'Profile Hub',
+      key: '/portfolio',
+      label: 'Student Portfolio',
       icon: <UserOutlined />,
       roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
     },
