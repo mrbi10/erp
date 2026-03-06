@@ -137,7 +137,7 @@ export default function Viewtimetable({ user }) {
     return (
         <div className="min-h-screen bg-[#FDFDFF] text-slate-900 pb-24 selection:bg-indigo-100">
             {/* --- SMART APP BAR --- */}
-            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-4 py-4 md:px-8">
+            <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-4 py-4 md:px-8">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex w-12 h-12 bg-indigo-600 rounded-2xl items-center justify-center text-white shadow-lg shadow-indigo-200">
