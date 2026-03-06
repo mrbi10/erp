@@ -91,7 +91,7 @@ export default function Sidebar({ role, open, onClose }) {
     },
     // {
     //   key: '/profilehub',
-    //   label: 'Profile Hub',
+    //   label: 'Student Portfolio',
     //   icon: <UserAddOutlined />,
     //   roles: ['Staff', 'Principal', 'student', 'CA', 'HOD'],
     // },
