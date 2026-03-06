@@ -4,20 +4,103 @@ import { BASE_URL } from "../../constants/API";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Utility imports
 import { exportToExcel, generatePDFReport } from "../../utils/exportHelper";
 
 import {
   FaUsers,
   FaCheckCircle,
-  FaStar,
   FaUserTie,
   FaClipboardList,
   FaFilePdf,
   FaFileExcel,
   FaBuilding,
-  FaArrowRight
+  FaPrint
 } from "react-icons/fa";
+
+/* ── PROFESSIONAL STYLE INJECTION ── */
+const ProfessionalStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    .erp-container { 
+      font-family: 'Inter', sans-serif; 
+      color: #1a202c;
+      line-height: 1.5;
+    }
+
+    /* Professional Card */
+    .erp-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* High Visibility Labels */
+    .erp-label {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4a5568;
+    }
+
+    /* Large Data Text */
+    .erp-value {
+      font-size: 36px;
+      font-weight: 800;
+      color: #1a202c;
+    }
+
+    /* Progress Bar for readability */
+    .erp-progress-bg {
+      height: 14px;
+      background: #edf2f7;
+      border-radius: 10px;
+      border: 1px solid #cbd5e0;
+    }
+    .erp-progress-fill {
+      height: 100%;
+      background: #2b6cb0;
+      border-radius: 10px;
+    }
+
+    /* Buttons */
+    .btn-action {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .btn-excel { background: #f0fff4; color: #276749; border-color: #c6f6d5; }
+    .btn-pdf { background: #fff5f5; color: #9b2c2c; border-color: #fed7d7; }
+    .btn-excel:hover { background: #c6f6d5; }
+    .btn-pdf:hover { background: #fed7d7; }
+
+    /* Navigation Tabs */
+    .nav-tab {
+      padding: 12px 24px;
+      font-weight: 700;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      background: #ffffff;
+      color: #4a5568;
+    }
+    .nav-tab.active {
+      background: #2b6cb0;
+      color: #ffffff;
+      border-color: #2b6cb0;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+  `}</style>
+);
 
 export default function ViewFeedback({ user }) {
   const [loading, setLoading] = useState(true);
@@ -30,7 +113,7 @@ export default function ViewFeedback({ user }) {
   const [staffSummary, setStaffSummary] = useState([]);
   const token = localStorage.getItem("token");
 
-  /* ===================== EXPORT HANDLERS ===================== */
+  /* ── DATA HANDLERS (LOGIC UNTOUCHED) ── */
   const handleExcelAction = () => {
     let data = [];
     if (user.role === "student") {
@@ -62,7 +145,6 @@ export default function ViewFeedback({ user }) {
     generatePDFReport(config);
   };
 
-  /* ===================== INITIAL FETCH ===================== */
   useEffect(() => {
     const init = async () => {
       try {
@@ -71,41 +153,19 @@ export default function ViewFeedback({ user }) {
           const res = await axios.get(`${BASE_URL}/feedback/student/my-feedback`, { headers: { Authorization: `Bearer ${token}` } });
           const raw = res.data || [];
           const grouped = {};
-
           raw.forEach(row => {
             const sessionKey = row.session_id;
-
-            if (!grouped[sessionKey]) {
-              grouped[sessionKey] = {
-                session_id: row.session_id,
-                title: row.title,
-                staffs: {}
-              };
-            }
-
+            if (!grouped[sessionKey]) grouped[sessionKey] = { session_id: row.session_id, title: row.title, staffs: {} };
             const staffKey = row.staff_name || "Institutional";
-
             if (!grouped[sessionKey].staffs[staffKey]) {
-              grouped[sessionKey].staffs[staffKey] = {
-                staff_name: row.staff_name,
-                feedback_type: row.staff_name ? "staff" : "non-staff",
-                responses: []
-              };
+              grouped[sessionKey].staffs[staffKey] = { staff_name: row.staff_name, feedback_type: row.staff_name ? "staff" : "non-staff", responses: [] };
             }
-
             const num = row.answer_value != null ? Number(row.answer_value) : null;
             const txt = row.answer_text?.trim() || null;
-
             if (num !== null || txt) {
-              grouped[sessionKey].staffs[staffKey].responses.push({
-                question: row.question_text,
-                type: row.question_type,
-                answer_value: num,
-                answer_text: txt
-              });
+              grouped[sessionKey].staffs[staffKey].responses.push({ question: row.question_text, answer_value: num, answer_text: txt });
             }
           });
-
           setMyFeedback(Object.values(grouped));
         } else {
           const sessRes = await axios.get(`${BASE_URL}/feedback/sessions`, { headers: { Authorization: `Bearer ${token}` } });
@@ -113,7 +173,7 @@ export default function ViewFeedback({ user }) {
           if (sessRes.data?.length > 0) handleSelectSession(sessRes.data[0]);
         }
       } catch (error) {
-        Swal.fire("Error", "Failed to load data", "error");
+        Swal.fire("Error", "Failed to load reports", "error");
       } finally { setLoading(false); }
     };
     init();
@@ -123,11 +183,12 @@ export default function ViewFeedback({ user }) {
     try {
       setSelectedSession(session);
       setSessionLoading(true);
+      const headers = { headers: { Authorization: `Bearer ${token}` } };
       if (user.role === "CA" || user.role === "DeptAdmin") {
-        const res = await axios.get(`${BASE_URL}/feedback/class/submission-summary/${session.session_id}`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get(`${BASE_URL}/feedback/class/submission-summary/${session.session_id}`, headers);
         setSubmissionSummary(res.data);
       } else if (["HOD", "Principal", "Admin"].includes(user.role)) {
-        const res = await axios.get(`${BASE_URL}/feedback/session/${session.session_id}/details`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get(`${BASE_URL}/feedback/session/${session.session_id}/details`, headers);
         const { type, data } = res.data;
         setSummaryType(type);
         if (type === "staff") { setStaffSummary(data || []); setSubmissionSummary(null); }
@@ -137,174 +198,185 @@ export default function ViewFeedback({ user }) {
     finally { setSessionLoading(false); }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-white"><div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="p-20 text-center font-bold text-2xl erp-container">Loading Reports...</div>;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 text-slate-700">
-      {/* Header Section */}
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-6 gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight uppercase">Feedback Insights</h1>
-          <p className="text-xs text-slate-400 font-medium tracking-wide">Viewing reports as <span className="text-indigo-600 font-bold">{user.role}</span></p>
+    <div className="erp-container min-h-screen bg-gray-50 pb-20">
+      <ProfessionalStyles />
+      
+      {/* ── TOP NAV BAR ── */}
+      <div className="bg-white border-b-2 border-gray-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-800 text-gray-900 tracking-tight">Academic Feedback Reports</h1>
+            <p className="text-gray-600 font-500 text-lg">Logged in as: <span className="text-blue-700 font-700">{user.role}</span></p>
+          </div>
+          <div className="flex gap-4">
+            <button onClick={handleExcelAction} className="btn-action btn-excel">
+              <FaFileExcel size={20} /> Export Excel
+            </button>
+            <button onClick={handlePDFAction} className="btn-action btn-pdf">
+              <FaFilePdf size={20} /> Export PDF
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button onClick={handleExcelAction} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all">
-            <FaFileExcel /> EXCEL
-          </button>
-          <button onClick={handlePDFAction} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition-all">
-            <FaFilePdf /> PDF
-          </button>
-        </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <AnimatePresence mode="wait">
-        {user.role === "student" ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-10"
-          >
-            {myFeedback.map((session, i) => (
-              <div key={i} className="space-y-6">
-                {/* Session Title */}
-                <div className="border-b border-slate-100 pb-2">
-                  <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-wide">
-                    {session.title}
-                  </h2>
-                </div>
-
-                {/* Staff Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {Object.values(session.staffs).map((staff, idx) => (
-                    <CompactFeedbackCard key={idx} item={staff} />
-                  ))}
-                </div>
-              </div>
+      <div className="max-w-7xl mx-auto px-6 mt-10">
+        
+        {/* ── ADMIN/STAFF TABS ── */}
+        {user.role !== "student" && sessions.length > 0 && (
+          <div className="flex gap-3 overflow-x-auto pb-6 no-scrollbar">
+            {sessions.map(s => (
+              <button
+                key={s.session_id}
+                onClick={() => handleSelectSession(s)}
+                className={`nav-tab whitespace-nowrap ${selectedSession?.session_id === s.session_id ? 'active' : ''}`}
+              >
+                {s.title}
+              </button>
             ))}
-          </motion.div>
-        ) : (
-          <div className="space-y-8">
-            {/* Session Tabs */}
-            <div className="flex overflow-x-auto gap-2 no-scrollbar border-b border-slate-50 pb-2">
-              {sessions.map(s => (
-                <button key={s.session_id} onClick={() => handleSelectSession(s)} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${selectedSession?.session_id === s.session_id ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}>
-                  {s.title}
-                </button>
-              ))}
-            </div>
-
-            {sessionLoading ? <div className="h-40 bg-slate-50 rounded-xl border border-dashed border-slate-200 animate-pulse" /> : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                {submissionSummary && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-slate-900 p-5 rounded-xl text-white">
-                      <p className="text-[9px] font-bold uppercase opacity-50 mb-1">Completion</p>
-                      <p className="text-3xl font-black">{submissionSummary.total > 0 ? Math.round((submissionSummary.submitted_count / submissionSummary.total) * 100) : 0}%</p>
-                    </div>
-                    <StatCard label="Total Cohort" value={submissionSummary.total} color="slate" />
-                    <StatCard label="Submitted" value={submissionSummary.submitted_count} color="emerald" />
-                    <StatCard label="Pending" value={submissionSummary.not_submitted_count} color="rose" />
-                  </div>
-                )}
-
-                {submissionSummary && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <TableList title="Submitted Records" data={submissionSummary.submitted_students} />
-                    <TableList title="Pending Records" data={submissionSummary.not_submitted_students} isDanger />
-                  </div>
-                )}
-
-                {staffSummary?.length > 0 && (
-                  <div className="space-y-4">
-                    {Object.values(staffSummary.reduce((acc, row) => {
-                      if (!acc[row.staff_id]) acc[row.staff_id] = { name: row.name, responses: [] };
-                      if (row.answer_value !== null || row.answer_text) acc[row.staff_id].responses.push(row);
-                      return acc;
-                    }, {})).map((staff, i) => (
-                      <div key={i} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-all">
-                        <div className="flex items-center gap-3 mb-5">
-                          <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-xs uppercase">{staff.name.charAt(0)}</div>
-                          <h3 className="font-bold text-slate-800 text-sm tracking-tight">{staff.name}</h3>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                          {staff.responses.map((r, idx) => (
-                            <div key={idx} className="space-y-1">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{r.question_text}</p>
-                              <p className="text-xs font-semibold text-slate-700">{r.answer_value ? `${r.answer_value}/10` : (r.answer_text || "—")}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            )}
           </div>
         )}
-      </AnimatePresence>
+
+        <AnimatePresence mode="wait">
+          {user.role === "student" ? (
+            /* STUDENT VIEW */
+            <motion.div key="student" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+              {myFeedback.length === 0 ? <p className="text-center py-20 text-2xl font-bold text-gray-400">No records found.</p> : 
+                myFeedback.map((session, i) => (
+                  <div key={i} className="space-y-6">
+                    <h2 className="text-2xl font-800 border-l-8 border-blue-600 pl-4 text-gray-800 uppercase tracking-wide">{session.title}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {Object.values(session.staffs).map((staff, idx) => (
+                        <FeedbackDetailCard key={idx} staff={staff} />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              }
+            </motion.div>
+          ) : (
+            /* ADMIN VIEW */
+            <motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+              {sessionLoading ? <div className="p-10 text-xl font-bold">Fetching session data...</div> : (
+                <>
+                  {submissionSummary && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <SummaryMetric label="Overall Completion" val={`${submissionSummary.total > 0 ? Math.round((submissionSummary.submitted_count / submissionSummary.total) * 100) : 0}%`} isBlue />
+                      <SummaryMetric label="Total Students" val={submissionSummary.total} />
+                      <SummaryMetric label="Submitted" val={submissionSummary.submitted_count} />
+                      <SummaryMetric label="Pending" val={submissionSummary.not_submitted_count} />
+                    </div>
+                  )}
+
+                  {submissionSummary && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <DataTable title="SUBMITTED LIST" data={submissionSummary.submitted_students} color="green" />
+                      <DataTable title="PENDING LIST" data={submissionSummary.not_submitted_students} color="red" />
+                    </div>
+                  )}
+
+                  {staffSummary?.length > 0 && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-800 text-gray-800 uppercase">Faculty Performance Summary</h2>
+                      {Object.values(staffSummary.reduce((acc, row) => {
+                        if (!acc[row.staff_id]) acc[row.staff_id] = { name: row.name, responses: [] };
+                        acc[row.staff_id].responses.push(row);
+                        return acc;
+                      }, {})).map((staff, i) => (
+                        <StaffAdminCard key={i} staff={staff} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-/* ===================== COMPONENTS ===================== */
+/* ── REUSABLE PROFESSIONAL COMPONENTS ── */
 
-const CompactFeedbackCard = ({ item }) => (
-  <div className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all">
-    <div className="flex items-center gap-3 mb-5">
-      <div className="w-9 h-9 bg-slate-50 text-indigo-600 rounded-lg flex items-center justify-center text-sm border border-slate-100">
-        {item.feedback_type === 'staff' ? <FaUserTie /> : <FaBuilding />}
-      </div>
-      <div>
-        <h3 className="font-bold text-slate-800 text-xs leading-none mb-1 uppercase tracking-tight">{item.staff_name || "Institutional"}</h3>
-        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{item.subject_name || "General"}</p>
-      </div>
+const SummaryMetric = ({ label, val, isBlue }) => (
+  <div className={`erp-card p-6 ${isBlue ? 'bg-blue-900 text-white' : ''}`}>
+    <p className={`erp-label ${isBlue ? 'text-blue-200' : 'text-gray-500'}`}>{label}</p>
+    <p className={`erp-value ${isBlue ? 'text-white' : ''}`}>{val}</p>
+  </div>
+);
+
+const FeedbackDetailCard = ({ staff }) => (
+  <div className="erp-card p-6">
+    <div className="flex items-center gap-4 border-b-2 border-gray-100 pb-4 mb-4">
+      <div className="p-3 bg-blue-100 text-blue-800 rounded-lg"><FaUserTie size={24} /></div>
+      <h3 className="text-xl font-800 uppercase tracking-tight">{staff.staff_name || "Institutional"}</h3>
     </div>
-    <div className="space-y-4">
-      {item.responses.map((r, idx) => (
-        <div key={idx} className="space-y-1.5">
-          <p className="text-[10px] font-bold text-slate-500 leading-snug">{r.question}</p>
-          {r.answer_value ? (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-1 bg-slate-100 rounded-full">
-                <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${(r.answer_value / 10) * 100}%` }} />
+    <div className="space-y-6">
+      {staff.responses.map((r, i) => (
+        <div key={i}>
+          <p className="text-lg font-600 text-gray-700 mb-2 leading-snug">{r.question}</p>
+          {r.answer_value != null ? (
+            <div className="flex items-center gap-4">
+              <div className="flex-1 erp-progress-bg">
+                <div className="erp-progress-fill" style={{ width: `${(r.answer_value / 10) * 100}%` }} />
               </div>
-              <span className="text-[10px] font-black text-slate-800">{r.answer_value}</span>
+              <span className="text-2xl font-800 text-blue-700">{r.answer_value}/10</span>
             </div>
-          ) : <p className="text-[10px] text-slate-400 italic bg-slate-50 p-2.5 rounded-lg leading-relaxed border border-slate-100/50">"{r.answer_text}"</p>}
+          ) : (
+            <p className="bg-gray-50 p-4 border-l-4 border-blue-500 italic text-gray-600 text-lg">"{r.answer_text}"</p>
+          )}
         </div>
       ))}
     </div>
   </div>
 );
 
-const StatCard = ({ label, value, color }) => {
-  const c = { slate: "text-slate-600", emerald: "text-emerald-600", rose: "text-rose-600" };
-  return (
-    <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-      <p className="text-[9px] font-bold uppercase text-slate-400 mb-1">{label}</p>
-      <p className={`text-2xl font-black ${c[color]}`}>{value}</p>
+const StaffAdminCard = ({ staff }) => (
+  <div className="erp-card p-8">
+    <h3 className="text-2xl font-800 text-blue-800 border-b-2 border-gray-100 pb-2 mb-6 uppercase tracking-wider">{staff.name}</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+      {staff.responses.map((r, i) => (
+        <div key={i} className="bg-gray-50 p-4 rounded-lg">
+          <p className="font-700 text-gray-600 mb-2 text-md tracking-tight uppercase">{r.question_text}</p>
+          {r.answer_value ? (
+            <div className="flex items-center gap-3">
+              <div className="flex-1 erp-progress-bg"><div className="erp-progress-fill" style={{ width: `${(r.answer_value/10)*100}%` }} /></div>
+              <span className="font-800 text-xl">{r.answer_value}</span>
+            </div>
+          ) : <p className="italic text-gray-500 font-500">"{r.answer_text || 'No comment'}"</p>}
+        </div>
+      ))}
     </div>
-  );
-};
+  </div>
+);
 
-const TableList = ({ title, data, isDanger }) => (
-  <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
-    <div className={`px-4 py-2 border-b border-slate-50 flex justify-between items-center ${isDanger ? 'bg-rose-50/30' : 'bg-slate-50/50'}`}>
-      <h3 className={`text-[10px] font-black uppercase tracking-widest ${isDanger ? 'text-rose-600' : 'text-slate-500'}`}>{title}</h3>
-      <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-100">{data.length}</span>
+const DataTable = ({ title, data, color }) => (
+  <div className="erp-card overflow-hidden">
+    <div className={`px-6 py-4 border-b-2 flex justify-between items-center bg-gray-50`}>
+      <h3 className={`text-xl font-800 tracking-wider ${color === 'red' ? 'text-red-700' : 'text-green-700'}`}>{title}</h3>
+      <span className="bg-gray-200 px-4 py-1 rounded-full font-800 text-lg">{data.length}</span>
     </div>
-    <div className="max-h-52 overflow-y-auto no-scrollbar">
-      <table className="w-full text-[10px]">
-        <tbody className="divide-y divide-slate-50">
-          {data.map(s => (
-            <tr key={s.student_id} className="hover:bg-slate-50/50 transition-colors">
-              <td className="px-4 py-2.5 font-mono text-slate-400 border-r border-slate-50 w-24">{s.roll_no}</td>
-              <td className="px-4 py-2.5 font-bold text-slate-700 uppercase tracking-tight">{s.name}</td>
+    <div className="max-h-96 overflow-y-auto">
+      <table className="w-full text-left">
+        <thead className="bg-gray-100 text-gray-600 border-b-2">
+          <tr>
+            <th className="px-6 py-4 font-800 text-sm">ROLL NUMBER</th>
+            <th className="px-6 py-4 font-800 text-sm">FULL NAME</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {data.map((s, idx) => (
+            <tr key={idx} className="hover:bg-blue-50 transition-colors">
+              <td className="px-6 py-4 font-700 text-lg font-mono text-gray-600">{s.roll_no}</td>
+              <td className="px-6 py-4 font-700 text-lg uppercase tracking-tight">{s.name}</td>
             </tr>
           ))}
-          {data?.length === 0 && <tr><td colSpan="2" className="py-8 text-center text-slate-300 italic text-[10px]">No records found</td></tr>}
+          {data.length === 0 && (
+            <tr><td colSpan="2" className="text-center py-10 font-700 text-gray-400">NO STUDENTS FOUND</td></tr>
+          )}
         </tbody>
       </table>
     </div>

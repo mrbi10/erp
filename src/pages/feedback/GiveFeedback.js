@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../constants/API";
@@ -11,7 +11,9 @@ import {
   FaInfoCircle,
   FaChevronLeft,
   FaHistory,
-  FaCalendarAlt
+  FaCalendarAlt,
+  FaCloud,
+  FaCloudUploadAlt
 } from "react-icons/fa";
 
 export default function GiveFeedback({ user }) {
@@ -24,6 +26,11 @@ export default function GiveFeedback({ user }) {
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submissionId, setSubmissionId] = useState(null);
+
+  // Draft save status: "idle" | "saving" | "saved" | "error"
+  const [draftStatus, setDraftStatus] = useState("idle");
+  const draftTimerRef = useRef(null);
 
   const token = localStorage.getItem("token");
 
@@ -36,18 +43,19 @@ export default function GiveFeedback({ user }) {
     const fetchSessions = async () => {
       try {
         setLoading(true);
+
         const res = await axios.get(
           `${BASE_URL}/feedback/student/session`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+
         setSessions(res.data || []);
+
       } catch (error) {
-        console.error(error);
         Swal.fire({
-          icon: 'error',
-          title: 'Connection Error',
-          text: 'Unable to load feedback sessions.',
-          confirmButtonColor: '#4f46e5'
+          icon: "error",
+          title: "Connection Error",
+          text: "Unable to load feedback sessions."
         });
       } finally {
         setLoading(false);
@@ -57,7 +65,6 @@ export default function GiveFeedback({ user }) {
     fetchSessions();
   }, [user.role, token]);
 
-  // 2. Fetch Details when Session Selected
   useEffect(() => {
     if (!selectedSession) return;
 
@@ -65,11 +72,43 @@ export default function GiveFeedback({ user }) {
       try {
         setLoading(true);
         setAnswers({});
+        setDraftStatus("idle");
+
+        // start feedback session
+        const startRes = await axios.post(
+          `${BASE_URL}/feedback/student/start/${selectedSession.session_id}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setSubmissionId(startRes.data.submission_id);
+
+        // load draft answers
+        const draftRes = await axios.get(
+          `${BASE_URL}/feedback/student/draft/${selectedSession.session_id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const draftMap = {};
+
+        draftRes.data.forEach(a => {
+          const staffKey = a.staff_id ?? "general";
+
+          if (!draftMap[staffKey]) draftMap[staffKey] = {};
+
+          draftMap[staffKey][a.question_id] = {
+            rating: a.answer_value !== null ? Number(a.answer_value) : null,
+            answer_text: a.answer_text
+          };
+        });
+
+        setAnswers(draftMap);
 
         let staffData = [];
         let questionData = [];
 
         if (selectedSession.feedback_type === "staff") {
+
           const [staffRes, questionRes] = await Promise.all([
             axios.get(
               `${BASE_URL}/feedback/student/staff/${selectedSession.session_id}`,
@@ -83,8 +122,9 @@ export default function GiveFeedback({ user }) {
 
           staffData = staffRes.data || [];
           questionData = questionRes.data || [];
+
         } else {
-          // Non-staff feedback
+
           const questionRes = await axios.get(
             `${BASE_URL}/feedback/questions?sessionId=${selectedSession.session_id}`,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -105,15 +145,20 @@ export default function GiveFeedback({ user }) {
     };
 
     loadDetails();
+
   }, [selectedSession, token]);
 
-  const firstError = document.querySelector(".text-red-600");
-  if (firstError) {
-    firstError.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
+  useEffect(() => {
+    const firstError = document.querySelector(".text-red-600");
+    if (firstError) {
+      firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [answers]);
+
   /* ===================== LOGIC & HELPERS ===================== */
 
   const handleAnswerChange = (staffId, questionId, field, value) => {
+
     setAnswers(prev => ({
       ...prev,
       [staffId]: {
@@ -124,6 +169,57 @@ export default function GiveFeedback({ user }) {
         }
       }
     }));
+
+    if (submissionId) {
+      autosaveAnswer(staffId, questionId, field, value);
+    }
+  };
+
+  const autosaveAnswer = async (staffId, questionId, field, value) => {
+
+    if (!submissionId) return;
+
+    // Show saving indicator
+    setDraftStatus("saving");
+
+    // Clear any pending "saved" reset timer
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+
+    const payload = {
+      submission_id: submissionId,
+      answers: [
+        {
+          staff_id: staffId === "general" ? null : staffId,
+          question_id: questionId,
+          answer_value: field === "rating" ? value : null,
+          answer_text: field === "answer_text" ? value : null
+        }
+      ]
+    };
+
+    try {
+      await axios.post(
+        `${BASE_URL}/feedback/student/autosave`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setDraftStatus("saved");
+
+      // Reset back to idle after 3s
+      draftTimerRef.current = setTimeout(() => {
+        setDraftStatus("idle");
+      }, 3000);
+
+    } catch (err) {
+      console.error("Autosave failed");
+      setDraftStatus("error");
+
+      draftTimerRef.current = setTimeout(() => {
+        setDraftStatus("idle");
+      }, 3000);
+    }
+
   };
 
   // Calculate completion percentage
@@ -210,7 +306,6 @@ export default function GiveFeedback({ user }) {
   const handleSubmit = async () => {
 
     // ================= VALIDATION =================
-    // ================= VALIDATION =================
     if (selectedSession.feedback_type === "staff") {
 
       for (const s of staff) {
@@ -264,39 +359,8 @@ export default function GiveFeedback({ user }) {
       setSubmitting(true);
 
       const payload = {
-        session_id: selectedSession.session_id,
-        answers: []
+        session_id: selectedSession.session_id
       };
-
-      if (selectedSession.feedback_type === "staff") {
-
-        staff.forEach(s => {
-          questions.forEach(q => {
-            const ans = answers[s.staff_id]?.[q.question_id];
-
-            payload.answers.push({
-              staff_id: s.staff_id,
-              question_id: q.question_id,
-              answer_value: ans?.rating ?? null,
-              answer_text: ans?.answer_text ?? null
-            });
-          });
-        });
-
-      } else {
-
-        questions.forEach(q => {
-          const ans = answers["general"]?.[q.question_id];
-
-          payload.answers.push({
-            staff_id: null,
-            question_id: q.question_id,
-            answer_value: ans?.rating ?? null,
-            answer_text: ans?.answer_text ?? null
-          });
-        });
-
-      }
 
       await axios.post(
         `${BASE_URL}/feedback/student/submit`,
@@ -321,6 +385,77 @@ export default function GiveFeedback({ user }) {
       setSubmitting(false);
     }
   };
+
+  const handleClearDraft = async () => {
+
+    const confirm = await Swal.fire({
+      title: "Clear draft?",
+      text: "All saved answers will be removed.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Clear Draft"
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+
+      await axios.delete(
+        `${BASE_URL}/feedback/student/draft/${selectedSession.session_id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setAnswers({});
+      setDraftStatus("idle");
+
+      Swal.fire("Draft Cleared", "All answers removed", "success");
+
+    } catch (err) {
+
+      Swal.fire("Error", "Unable to clear draft", "error");
+
+    }
+  };
+
+  /* ===================== DRAFT STATUS INDICATOR ===================== */
+  const DraftIndicator = () => {
+
+    const config = {
+      idle: {
+        icon: <FaCloud />,
+        text: "Draft saved",
+        className: "text-slate-400"
+      },
+      saving: {
+        icon: <FaCloudUploadAlt className="animate-pulse" />,
+        text: "Saving...",
+        className: "text-indigo-500"
+      },
+      saved: {
+        icon: <FaCloud />,
+        text: "All changes saved",
+        className: "text-emerald-500"
+      },
+      error: {
+        icon: <FaCloud />,
+        text: "Save failed",
+        className: "text-red-500"
+      }
+    };
+
+    const c = config[draftStatus];
+
+    return (
+      <div className={`flex items-center gap-2 text-xs font-semibold ${c.className}`}>
+        {c.icon}
+        <span>{c.text}</span>
+      </div>
+    );
+  };
+
+
 
   const renderQuestion = (q, qIdx, staffKey) => {
     return (
@@ -462,7 +597,7 @@ export default function GiveFeedback({ user }) {
           {/* Dashboard Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Feedback Sessions</h1>
+              <h1 className="text-3xl font-bold text-left text-slate-900 tracking-tight">Feedback Sessions</h1>
               <p className="text-slate-500 mt-2">Rate your academic experience and help us improve.</p>
             </div>
             {selectedSession?.already_submitted && (
@@ -548,46 +683,82 @@ export default function GiveFeedback({ user }) {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative">
 
       {/* --- STICKY HEADER --- */}
-      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
+
+            {/* Left section */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSelectedSession(null)}
                 className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors"
-                title="Back to Sessions"
               >
                 <FaChevronLeft />
               </button>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide opacity-50">Feedback Session</h2>
-                <h1 className="text-lg font-bold text-slate-800 leading-none">{selectedSession.title}</h1>
-              </div>
-            </div>
 
-            {/* Circular Progress */}
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-700">{progress}% Complete</p>
-                <p className="text-[10px] text-slate-400">{progress === 100 ? "Ready to submit" : "Keep going"}</p>
-              </div>
-              <div className="relative w-10 h-10">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
-                  <path
-                    className="text-indigo-600 transition-all duration-500 ease-out"
-                    strokeDasharray={`${progress}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-indigo-800">
-                  {progress}%
+              <div className="flex flex-col">
+                <h2 className="text-[10px] font-bold text-slate-400 text-left uppercase tracking-wider">
+                  Feedback Session
+                </h2>
+
+                <div className="flex items-center gap-3">
+                  <h1 className="text-lg font-bold text-slate-800">
+                    {selectedSession.title}
+                  </h1>
+
+                  {/* Always visible draft indicator */}
+                  <DraftIndicator />
                 </div>
               </div>
             </div>
+
+            {/* Right section */}
+            <div className="flex items-center gap-4">
+
+              {/* Progress */}
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-slate-700">{progress}% Complete</p>
+                  <p className="text-[10px] text-slate-400">
+                    {progress === 100 ? "Ready to submit" : "Keep going"}
+                  </p>
+                </div>
+
+                <div className="relative w-10 h-10">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-slate-100"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="text-indigo-600"
+                      strokeDasharray={`${progress}, 100`}
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                  </svg>
+
+                  <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-indigo-800">
+                    {progress}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Clear draft button */}
+              <button
+                onClick={handleClearDraft}
+                className="text-xs font-semibold text-red-500 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+              >
+                Clear Draft
+              </button>
+
+            </div>
+
           </div>
         </div>
       </div>
@@ -643,7 +814,7 @@ export default function GiveFeedback({ user }) {
         {/* --- FIXED SUBMIT FOOTER --- */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-5px_30px_rgba(0,0,0,0.05)] z-10">
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-6">
-            <div className="hidden md:block">
+            <div className="hidden md:flex flex-col gap-0.5">
               <p className="text-sm font-bold text-slate-700">Finished Rating?</p>
               <p className="text-xs text-slate-400">Review your answers before submitting.</p>
             </div>
