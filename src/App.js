@@ -17,7 +17,7 @@ import PageNotFound from './pages/orthers/PageNotFound';
 
 import Dashboard from './pages/sidebar/Dashboard';
 import Attendance from './pages/sidebar/Attendance';
-import Marks from './pages/sidebar/Marks';
+import Exam from './pages/sidebar/Exam';
 import Mess from './pages/sidebar/Mess';
 // import Reports from './pages/sidebar/Reports';
 import Lateentries from './pages/sidebar/Lateentries';
@@ -34,8 +34,6 @@ import SupportTicket from './pages/sidebar/SupportTicket';
 import SystemMonitor from './pages/sidebar/SystemMonitor';
 import MenuPermissionManager from './pages/admin/MenuPermissionManager';
 
-
-
 import Students from './pages/students/Students';
 import Faculty from './pages/faculty/Faculty';
 
@@ -44,11 +42,14 @@ import MarkAttendance from './pages/attendance/MarkAttendance';
 import ReportsPage from './pages/attendance/Reports';
 import ManageStaff from './pages/attendance/ManageStaff';
 
-import EnterMarks from './pages/marks/EnterMarks';
-import ViewMarks from './pages/marks/ViewMarks'
-import PrincipalOverview from './pages/marks/PrincipalOverview';
-import DepartmentAnalysis from './pages/marks/DepartmentAnalysis';
-import TopPerformers from './pages/marks/TopPerformers';
+import ExamTimetable from "./pages/exams/ExamTimetable";
+import ExamRoomAllocation from "./pages/exams/ExamRoomAllocation";
+import ExamDuties from "./pages/exams/ExamDuties";
+import ExamSeating from "./pages/exams/ExamSeating";
+import ExamMarksEntry from "./pages/exams/ExamMarksEntry";
+import ExamMarksView from "./pages/exams/ExamMarksView";
+import ExamPublishResults from "./pages/exams/ExamPublishResults";
+import ExamAnalytics from "./pages/exams/ExamAnalytics";
 
 // import FeesStudentView from './pages/fees/FeesStudentView';
 // import FeesList from './pages/fees/FeesList';
@@ -271,12 +272,32 @@ export default function App() {
                   <Route path="*" element={<PageNotFound />} />
                 </Route>
 
-                <Route path="/marks" element={<Marks user={user} />}>
-                  <Route path="enter" element={<EnterMarks />} />
-                  <Route path="view" element={<ViewMarks />} />
-                  <Route path="overview" element={<PrincipalOverview />} />
-                  <Route path="analysis" element={<DepartmentAnalysis />} />
-                  <Route path="top" element={<TopPerformers />} />
+                <Route path="/exam" element={<Exam user={user} />}>
+
+                  {/* Timetable - visible to all roles */}
+                  <Route path="timetable" element={<ExamTimetable />} />
+
+                  {/* Room allocation - staff and above */}
+                  <Route path="rooms" element={<ExamRoomAllocation />} />
+
+                  {/* Invigilation duties - staff */}
+                  <Route path="duties" element={<ExamDuties />} />
+
+                  {/* Seating plan */}
+                  <Route path="seating" element={<ExamSeating />} />
+
+                  {/* Marks */}
+                  <Route path="marks" element={<ExamMarksView />} />
+
+                  {/* Marks entry */}
+                  <Route path="marks/enter" element={<ExamMarksEntry />} />
+
+                  {/* Result publishing */}
+                  <Route path="publish" element={<ExamPublishResults />} />
+
+                  {/* Analytics / summary */}
+                  <Route path="analytics" element={<ExamAnalytics />} />
+
                 </Route>
 
                 {/* <Route path="/fees" element={<Fees user={user} />}>
