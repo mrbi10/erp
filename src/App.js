@@ -50,6 +50,7 @@ import ExamMarksEntry from "./pages/exams/ExamMarksEntry";
 import ExamMarksView from "./pages/exams/ExamMarksView";
 import ExamPublishResults from "./pages/exams/ExamPublishResults";
 import ExamAnalytics from "./pages/exams/ExamAnalytics";
+import ExamCreation from "./pages/exams/ExamCreation";
 
 // import FeesStudentView from './pages/fees/FeesStudentView';
 // import FeesList from './pages/fees/FeesList';
@@ -297,6 +298,8 @@ export default function App() {
 
                   {/* Analytics / summary */}
                   <Route path="analytics" element={<ExamAnalytics />} />
+
+                  <Route path="create" element={<ExamCreation />} />
 
                 </Route>
 

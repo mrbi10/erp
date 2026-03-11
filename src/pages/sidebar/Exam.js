@@ -57,13 +57,19 @@ export default function Exam({ user }) {
   }
 
   // HOD
-  else if (user?.role === "HOD") {
+  else if (user?.role === "HOD" || user?.role === "DeptAdmin") {
     options.push(
       {
         label: "Department Timetable",
         page: "timetable",
         icon: <FaCalendarAlt className="text-blue-500" />,
         description: "View exam schedules for your department.",
+      },
+      {
+        label: "Exam creation",
+        page: "create",
+        icon: <FaPen className="text-green-500" />,
+        description: "To create Exam.",
       },
       {
         label: "Department Results",
@@ -81,7 +87,7 @@ export default function Exam({ user }) {
   }
 
   // COURSE ADVISOR
-  else if (user?.role === "CA") {
+  else if (user?.role === "CA" || user?.role === "DeptAdmin") {
     options.push(
       {
         label: "Enter Marks",

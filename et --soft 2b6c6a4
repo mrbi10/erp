@@ -1,0 +1,140 @@
+[33m0e2dddc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m deleted a Zip file
+[33mca42f0e[m Made changed in Exam module. WIP
+[33m2b6c6a4[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Added 8 additonal pages for the new module Exam . WIP
+[33maf3d8e6[m change in homepage
+[33m360e5ba[m For SEO
+[33m52cdcfb[m Profilehub to Student portfolio bak file
+[33md425a89[m Changed in entermark . WIP
+[33mf3d333f[m reduced the Z index of live now
+[33m5c054a2[m Added hostel pass
+[33mdbd29f3[m Enchanced Give and view Feedback by adding draft and auto save
+[33ma5d2ceb[m Changed profile hub into Student Portfolio
+[33mce88401[m Changed the Deptclass to get options from DB . WIP
+[33md6b02f0[m Updated the servergate
+[33m415f31c[m Made the sidebar fetch menu and data from DB
+[33m6b05256[m Added a new page Menu permission manager
+[33mec3271d[m Added timetable in sidebar and Enchanced the TImetable view and added lab names in view
+[33m973e266[m Enchancing the Timetable section WIP
+[33m6424167[m Improvements in TImetable Module . WIP
+[33mb64219b[m commented out the timetable
+[33mc768b3a[m Added feedback module option
+[33m2936957[m Made the dropdowns properly
+[33me1b72f3[m Making the Timetable module working with more power
+[33m364d5a4[m changed pages to have features in feedback
+[33m6ce0c8e[m For better view
+[33m6081c91[m Added many types of feedback in feedback submissons
+[33mc02111c[m Formed a worflow for Student Academic record changes
+[33mff8561c[m SEO enchancements
+[33mc1f0f92[m For Seo enchancement
+[33mfceb1a6[m removed unwanted imports
+[33med86af8[m hideded timetable
+[33mc0b226e[m added mail id field in update Faculty
+[33m8c54a2e[m Removed old concept
+[33m008d99d[m Added Timetable feature
+[33m6289bbf[m removed un wanted "ROMAN_MAP"
+[33mde14824[m Added student profile
+[33m9d2d706[m Enchanced the placement section
+[33mab63871[m "This user does not have a dashboard" message for orther users
+[33m006e560[m Removed scroll
+[33m0259b12[m Merge branch 'main' of https://github.com/mrbi10/erp
+[33m37dfe71[m checked placement training into placementultimate
+[33m0ec6395[m Added a placement drive feature
+[33m8a23eda[m removed console
+[33mbc3e9c6[m Change in subject creation
+[33m3a0d359[m Getting dept and class list from backend trail
+[33m78cf153[m Added departments
+[33m2fb9650[m Removed Peiord and subject from Attendance
+[33mdff8378[m removed outer div
+[33m598f4f0[m Changes made to make DeptAdmin Access these pages
+[33meae828a[m DDMMYYYY formatter added
+[33mf449212[m Added IST format
+[33mc272e91[m Gave access to DeptAdmin also made it Enchanced
+[33m692ed05[m Pass Management feature
+[33m941a01c[m Added : Pass management feature
+[33mdf3767d[m Manage faculity button
+[33m115c7c1[m Label for DeptAdmin
+[33mad0169b[m Added dashbaord for Staff
+[33md51f535[m Added subject name and subject code below staff name
+[33m2b2b5b2[m feat: Update role selection to use FORM_ROLE_OPTIONS for improved consistency
+[33m50c0037[m feat: Enhance ManageStaffClassAccess and ViewStaffAccess components with improved state management and access list functionality
+[33m10fdf21[m feat: Update role permissions to include DeptAdmin for various components
+[33m48cf0e8[m feat: Update role retrieval to use user object from localStorage and adjust heading alignment
+[33m2897c54[m feat: Add System Monitor component and integrate into Sidebar for system health tracking
+[33m60754fe[m Enhance Announcements Feature: Add Target Labels and Improve UI
+[33m631e35f[m Enhance ViewFeedback component with improved loading states, error handling, and UI updates
+[33m3c989cf[m feat: Update Sidebar icons and add Support section for enhanced navigation
+[33m70dbab9[m feat: Refactor DEPT_MAP to constants file for better maintainability
+[33m6f48fb9[m feat: Add Raise Support Ticket and View Support Ticket components
+[33mb8fef1f[m feat: Enhance Staff Access page with improved UI and filtering options
+[33m440ea3b[m feat: Adjust layout in StaffDashboard to increase column span for AnnouncementsCard
+[33m5064624[m feat: Update attendance marking logic to include 'On Duty' status and enhance status formatting
+[33me3ffb44[m feat: Enhance AttendanceLogs and Students components to support user role-based filtering and display
+[33m3118461[m feat: Refactor GiveFeedback component to manage multiple sessions and improve feedback submission flow
+[33m4cef950[m feat: Add Staff Access management and viewing features
+[33md6dd5f5[m feat: Update roles for Feedback option in Sidebar component
+[33m0c347b9[m feat: Enable Students Answer Review option in Placement Training sidebar
+[33mc6ed1da[m feat: Add Manage Feedback Questions page and integrate with sidebar
+[33mbeae38b[m Add feedback management features including session creation, analysis, and viewing options
+[33m42e7c3f[m Add option locking mechanism and improve answer submission handling in StudentTestAttempt
+[33m2c8c67e[m Enhance PlacementAnswerReview component with improved styling, added comparison functionality, and refined question filtering logic
+[33m66a8550[m bug fix in handle excel upload
+[33m242b1da[m Made a change for quiz event
+[33m1a3b76b[m Added PlacementAnswerReview page
+[33m16f8b1d[m Added external
+[33m34c2858[m chnaged API
+[33maf8e92b[m Added PlacementAnswerReview page
+[33m21f5907[m Changed the portfolio link
+[33me8ed3be[m Enchanced the resetpassword component
+[33m44d4009[m Added analytics option to trainer
+[33mb4e2594[m Added roll number option in results page
+[33m526c5a0[m Made the analytics tab wokring
+[33mfd8956d[m To save answer while student using question palette and made percentage to show only 2 diigts after dot
+[33m41e8831[m Enchancements in pagenot found
+[33mb29ac84[m hid the bell icon
+[33mf26313b[m added api link
+[33me9e23b3[m Enchancements in Enter and view marks
+[33m01d733a[m removed use blocker
+[33mc0729e2[m change in API
+[33m4a68a46[m change in api
+[33m4915df5[m login setup correction
+[33m00ae621[m enchancements and added pdf excel export option
+[33m5a131ca[m changes in checking backend resnponse
+[33m3ea1b17[m changes in forgot password
+[33mc5687dd[m  change in site
+[33mefb2cca[m api
+[33mbfcf46d[m added profile hub feature and enchanced it
+[33m7eb4385[m changes in faculty studnets pages attedance log new page
+[33m6548c36[m Changes in manage subjects and also added gender option in students
+[33m9631dac[m  api change
+[33m654ba5b[m  api change
+[33m0d801204[m added marks
+[33m326bf09[m change in new api
+[33mcb66ccf[m change in new api
+[33mb9872d9[m  change in notify
+[33m185dd89[m changes in exam page
+[33m6160e70[m  gateway added
+[33m09a0aa7[m  gateway added
+[33m4d11a8a[m  gateway added
+[33mb1c12c8[m changes in exam page
+[33m3850e06[m changes in exam page
+[33m5563315[m Timetable change included
+[33m8aba3ea[m Timetable change included
+[33m27c3159[m Timetable change included
+[33mdc47c8e[m Timetable change included
+[33ma887e15[m Timetable change included
+[33m5fa922b[m Timetable change included
+[33m4ca26be[m Timetable change included
+[33m254b27b[m Timetable change included
+[33mc0feca6[m /erp removed
+[33m3dfb928[m /erp removed
+[33m85b63ca[m Timetable change included
+[33m1488b8e[m Timetable change included
+[33me7beb6f[m Timetable change included
+[33m6187fe3[m Timetable change included
+[33mc338d95[m Dept mapped
+[33mb30b47c[m Timetable change included
+[33m7990711[m Timetable change included
+[33m9f5bf2a[m routing
+[33m8674ab0[m Update package.json
+[33m069d7f3[m  First prod
+[33m986d39c[m first commit
