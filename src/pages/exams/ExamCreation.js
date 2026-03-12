@@ -178,9 +178,11 @@ const Toggle = ({ checked, onChange, label, sublabel, accentColor = "#6366f1" })
 // ─── Status Pill ─────────────────────────────────────────────────────────────
 const StatusPill = ({ status }) => {
     const map = {
-        active: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", label: "Live" },
-        draft: { bg: "bg-slate-100", text: "text-slate-500", dot: "bg-slate-400", label: "Draft" },
-        completed: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", label: "Done" },
+        DRAFT: { bg: "bg-slate-100", text: "text-slate-500", dot: "bg-slate-400", label: "Draft" },
+        SCHEDULED: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", label: "Scheduled" },
+        ONGOING: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", label: "Ongoing" },
+        COMPLETED: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", label: "Completed" },
+        ARCHIVED: { bg: "bg-slate-200", text: "text-slate-700", dot: "bg-slate-400", label: "Archived" },
     };
     const s = map[status] || map.draft;
     return (
@@ -731,16 +733,17 @@ function SessionCard({ s, examTypes, onEdit, onPatch, patchingId }) {
                                     <label className={`${labelCls} mb-1.5`}>Session Status</label>
                                     <div className="flex items-center gap-2">
                                         <select
-                                            className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white cursor-pointer"
                                             value={localStatus}
                                             onChange={(e) => {
                                                 setLocalStatus(e.target.value);
                                                 onPatch(s.session_id, { status: e.target.value });
                                             }}
                                         >
-                                            <option value="draft">📋 Draft</option>
-                                            <option value="active">🟢 Active (Live)</option>
-                                            <option value="completed">✅ Completed</option>
+                                            <option value="DRAFT">Draft</option>
+                                            <option value="SCHEDULED">Scheduled</option>
+                                            <option value="ONGOING">Ongoing</option>
+                                            <option value="COMPLETED">Completed</option>
+                                            <option value="ARCHIVED">Archived</option>
                                         </select>
                                         {isPatching && <Spinner size={16} color="#10b981" />}
                                     </div>
@@ -938,7 +941,7 @@ export default function ExamCreation() {
 
     const stats = {
         total: sessions.length,
-        active: sessions.filter((s) => s.status === "active").length,
+        active: sessions.filter((s) => s.status === "ONGOING").length,
         types: examTypes.length,
     };
 
@@ -956,7 +959,7 @@ export default function ExamCreation() {
                                 Academic Portal
                             </span>
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
+                        <h1 className="text-4xl md:text-5xl text-left font-black text-slate-900 tracking-tight leading-none">
                             Examinations
                         </h1>
                         <p className="text-slate-500 mt-2 font-medium">

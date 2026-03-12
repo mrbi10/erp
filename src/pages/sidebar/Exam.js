@@ -82,6 +82,12 @@ export default function Exam({ user }) {
         page: "analytics",
         icon: <FaChartBar className="text-purple-500" />,
         description: "Analyze class and subject performance.",
+      },
+      {
+        label: "Room Allocation",
+        page: "rooms",
+        icon: <FaDoorOpen className="text-orange-500" />,
+        description: "View exam hall allocation and seating.",
       }
     );
   }

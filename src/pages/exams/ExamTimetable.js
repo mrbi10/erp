@@ -95,7 +95,8 @@ const validateSlots = (slots) => {
   const filledSlots = slots.filter((s) => s.exam_date && s.start_time && s.end_time);
 
   // Check for duplicate subject
-  const subjectIds = slots.map((s) => s.subject_id);
+  // const subjectIds = slots.map((s) => s.subject_id);
+  const subjectIds = filledSlots.map((s) => s.subject_id);
   const dupSubjects = subjectIds.filter((id, i) => subjectIds.indexOf(id) !== i);
   if (dupSubjects.length) {
     errors.push("Duplicate subjects found — each subject can only appear once.");
@@ -145,17 +146,20 @@ const Spinner = ({ size = 18, color = "white" }) => (
 
 const StatusBadge = ({ status }) => {
   const map = {
-    draft: "bg-slate-100 text-slate-500 border-slate-200",
-    active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    completed: "bg-blue-50 text-blue-700 border-blue-200",
-    cancelled: "bg-red-50 text-red-600 border-red-200",
+    DRAFT: "bg-slate-100 text-slate-600 border-slate-200",
+    SCHEDULED: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    ONGOING: "bg-amber-50 text-amber-700 border-amber-200",
+    COMPLETED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    ARCHIVED: "bg-slate-200 text-slate-700 border-slate-300",
   };
+
   return (
-    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border ${map[status] || map.draft}`}>
-      {status || "draft"}
+    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border ${map[status] || map.DRAFT}`}>
+      {status || "DRAFT"}
     </span>
   );
 };
+
 
 const ModeTag = ({ mode }) => {
   const s = modeStyle[mode] || modeStyle.offline;
@@ -192,8 +196,8 @@ const SlotRow = ({ slot, index, total, onChange, onRemove, onMoveUp, onMoveDown,
       exit={{ opacity: 0, x: -20, height: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 35 }}
       className={`relative group bg-white rounded-2xl border-2 transition-all ${hasError
-          ? "border-red-200 shadow-sm shadow-red-50"
-          : "border-slate-100 hover:border-indigo-100 hover:shadow-md"
+        ? "border-red-200 shadow-sm shadow-red-50"
+        : "border-slate-100 hover:border-indigo-100 hover:shadow-md"
         }`}
     >
       {/* Left accent bar */}
@@ -578,6 +582,10 @@ export default function ExamTimetable() {
   // ── Edit modal
   const [editRow, setEditRow] = useState(null);
 
+  const [bulkStartTime, setBulkStartTime] = useState("09:30");
+  const [bulkEndTime, setBulkEndTime] = useState("12:30");
+  const [bulkStartDate, setBulkStartDate] = useState("");
+
   // ── Fetch sessions
   useEffect(() => {
     fetch(`${BASE_URL}/exam/sessions`, { headers: { Authorization: `Bearer ${token}` } })
@@ -601,43 +609,19 @@ export default function ExamTimetable() {
 
     if (!selectedSession || !can(role, "canManage")) return;
 
-    const sess = sessions.find((s) => s.session_id === selectedSession.value);
-    if (!sess) return;
-
     setLoadingSubjects(true);
 
-    const requests = [];
-
-    for (const dept of sess.dept_ids || []) {
-      for (const cls of sess.class_ids || []) {
-
-        const url = `${BASE_URL}/subjects?dept_id=${dept}&class_id=${cls}`;
-
-        requests.push(
-          fetch(url, {
-            headers: { Authorization: `Bearer ${token}` }
-          }).then(r => r.json())
-        );
-      }
-    }
-
-    Promise.all(requests)
-      .then((results) => {
-
-        const merged = results.flat();
-
-        // remove duplicate subjects
-        const unique = Array.from(
-          new Map(merged.map(s => [s.subject_id, s])).values()
-        );
-
-        setSubjects(unique);
-
+    fetch(`${BASE_URL}/subjects/examtimetable/${selectedSession.value}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(data => {
+        setSubjects(Array.isArray(data) ? data : []);
       })
       .catch(() => setSubjects([]))
       .finally(() => setLoadingSubjects(false));
 
-  }, [selectedSession, sessions, role]);
+  }, [selectedSession, role]);
 
   const fetchTimetable = () => {
     if (!selectedSession) return;
@@ -649,6 +633,55 @@ export default function ExamTimetable() {
       .then((d) => setTimetable(Array.isArray(d) ? d : []))
       .catch(() => Swal.fire("Error", "Failed to load timetable", "error"))
       .finally(() => setLoadingTimetable(false));
+  };
+
+  const applyTimeToAll = () => {
+
+    if (!bulkStartTime || !bulkEndTime) return;
+
+    setSlots(prev =>
+      prev.map(slot => {
+
+        if (!slot.exam_date) return slot;
+
+        const [sh, sm] = bulkStartTime.split(":").map(Number);
+        const [eh, em] = bulkEndTime.split(":").map(Number);
+
+        const duration = (eh * 60 + em) - (sh * 60 + sm);
+
+        return {
+          ...slot,
+          start_time: bulkStartTime,
+          end_time: bulkEndTime,
+          duration_minutes: duration
+        };
+      })
+    );
+  };
+  const autoGenerateDates = () => {
+
+    if (!bulkStartDate) return;
+
+    let current = new Date(bulkStartDate);
+
+    const nextSlots = slots.map(slot => {
+
+      while (current.getDay() === 0 || current.getDay() === 6) {
+        current.setDate(current.getDate() + 1);
+      }
+
+      const examDate = current.toISOString().slice(0, 10);
+
+      current.setDate(current.getDate() + 1);
+
+      return {
+        ...slot,
+        exam_date: examDate
+      };
+
+    });
+
+    setSlots(nextSlots);
   };
 
   // ── Enter builder: pre-populate from existing timetable, then fill remaining subjects
@@ -680,7 +713,8 @@ export default function ExamTimetable() {
     const existingSubjectIds = new Set(existing.map((e) => e.subject_id));
 
     // Add remaining subjects not yet in timetable
-    const newSlots = subjects
+    const newSlots = [...subjects]
+      .sort((a, b) => a.subject_code.localeCompare(b.subject_code))
       .filter((s) => !existingSubjectIds.has(s.subject_id))
       .map((s) => ({
         _id: `new_${s.subject_id}_${Date.now()}_${Math.random()}`,
@@ -903,7 +937,7 @@ export default function ExamTimetable() {
                 Academic Portal
               </span>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Exam Timetable</h1>
+            <h1 className="text-4xl font-black text-left text-slate-900 tracking-tight">Exam Timetable</h1>
             <p className="text-slate-500 mt-2 font-medium text-sm">
               {can(role, "canManage")
                 ? "Schedule and manage examination timetables per session"
@@ -1139,6 +1173,54 @@ export default function ExamTimetable() {
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-red-400" /> Has conflict/error
                 </span>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500">Start Date</label>
+                  <input
+                    type="date"
+                    value={bulkStartDate}
+                    onChange={(e) => setBulkStartDate(e.target.value)}
+                    className="border rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <button
+                  onClick={autoGenerateDates}
+                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-semibold"
+                >
+                  Auto Generate Dates
+                </button>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500">Start Time</label>
+                  <input
+                    type="time"
+                    value={bulkStartTime}
+                    onChange={(e) => setBulkStartTime(e.target.value)}
+                    className="border rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500">End Time</label>
+                  <input
+                    type="time"
+                    value={bulkEndTime}
+                    onChange={(e) => setBulkEndTime(e.target.value)}
+                    className="border rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <button
+                  onClick={applyTimeToAll}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold"
+                >
+                  Apply Time to All
+                </button>
+
               </div>
 
               {/* Slots */}

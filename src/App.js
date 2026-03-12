@@ -273,35 +273,17 @@ export default function App() {
                   <Route path="*" element={<PageNotFound />} />
                 </Route>
 
-                <Route path="/exam" element={<Exam user={user} />}>
-
-                  {/* Timetable - visible to all roles */}
+                {/* <Route path="/exam" element={<Exam user={user} />}>
                   <Route path="timetable" element={<ExamTimetable />} />
-
-                  {/* Room allocation - staff and above */}
                   <Route path="rooms" element={<ExamRoomAllocation />} />
-
-                  {/* Invigilation duties - staff */}
                   <Route path="duties" element={<ExamDuties />} />
-
-                  {/* Seating plan */}
                   <Route path="seating" element={<ExamSeating />} />
-
-                  {/* Marks */}
                   <Route path="marks" element={<ExamMarksView />} />
-
-                  {/* Marks entry */}
                   <Route path="marks/enter" element={<ExamMarksEntry />} />
-
-                  {/* Result publishing */}
                   <Route path="publish" element={<ExamPublishResults />} />
-
-                  {/* Analytics / summary */}
                   <Route path="analytics" element={<ExamAnalytics />} />
-
                   <Route path="create" element={<ExamCreation />} />
-
-                </Route>
+                </Route> */}
 
                 {/* <Route path="/fees" element={<Fees user={user} />}>
                 <Route path="list" element={<FeesList user={user} />} />
