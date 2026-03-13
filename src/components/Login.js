@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, X, Phone, Shield, User, Briefcase, GraduationCap } from "lucide-react";
 import { BASE_URL } from "../constants/API";
 import { jwtDecode } from "jwt-decode";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login({ onClose, onLoginSuccess }) {
   const [username, setUsername] = useState("");
@@ -18,6 +18,7 @@ export default function Login({ onClose, onLoginSuccess }) {
   const [captchaInput, setCaptchaInput] = useState("");
 
   const navigate = useNavigate();
+  const location = useLocation();
   const DOMAIN = "@mnmjec.ac.in";
 
   const userRoleIcon = () => {
@@ -42,7 +43,21 @@ export default function Login({ onClose, onLoginSuccess }) {
 
   useEffect(() => {
     loadCaptcha();
-  }, []);
+
+    const params = new URLSearchParams(location.search);
+    const errorMsg = params.get("error");
+
+    if (errorMsg) {
+      setError(decodeURIComponent(errorMsg));
+
+      navigate("/login", { replace: true });
+    }
+
+  }, [location]);
+
+  useEffect(() => {
+    if (error) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [error]);
 
   const finalEmail = username.includes("@")
     ? username.trim()
@@ -63,11 +78,11 @@ export default function Login({ onClose, onLoginSuccess }) {
       const payload = otpMode
         ? { email: finalEmail, otp }
         : {
-            email: finalEmail,
-            password,
-            captchaId: captcha.id,
-            captchaText: captchaInput,
-          };
+          email: finalEmail,
+          password,
+          captchaId: captcha.id,
+          captchaText: captchaInput,
+        };
 
       const url = otpMode ? `${BASE_URL}/login-otp` : `${BASE_URL}/login`;
 
@@ -132,7 +147,7 @@ export default function Login({ onClose, onLoginSuccess }) {
         border border-white/20 shadow-[0_8px_40px_rgba(0,0,0,0.15)]
         animate-scaleIn
       ">
-        
+
         {/* Close */}
         <button
           onClick={onClose}
@@ -141,7 +156,7 @@ export default function Login({ onClose, onLoginSuccess }) {
           <X size={20} />
         </button>
 
-    
+
 
         {/* Error */}
         {error && (
@@ -278,6 +293,36 @@ export default function Login({ onClose, onLoginSuccess }) {
             "
           >
             {loading ? "Processing…" : otpMode ? "Verify OTP" : "Sign In"}
+          </button>
+
+          <div className="flex items-center gap-3 my-3">
+            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700"></div>
+            <span className="text-xs text-slate-500">or</span>
+            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700"></div>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.location.href = `${BASE_URL}/auth/microsoft`}
+            className="
+              w-full py-3 rounded-xl font-semibold
+              flex items-center justify-center gap-3
+              border border-slate-300 dark:border-slate-700
+              bg-white/80 dark:bg-slate-800/60
+              backdrop-blur-md
+              hover:bg-white dark:hover:bg-slate-800
+              hover:shadow-lg hover:shadow-sky-200/30
+              transition-all duration-200 active:scale-[0.98]
+            "
+          >
+            {/* Microsoft Logo */}
+            <svg width="20" height="20" viewBox="0 0 23 23">
+              <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+              <rect x="13" y="1" width="9" height="9" fill="#7fba00" />
+              <rect x="1" y="13" width="9" height="9" fill="#00a4ef" />
+              <rect x="13" y="13" width="9" height="9" fill="#ffb900" />
+            </svg>
+
+            <span>Continue with Microsoft</span>
           </button>
         </form>
       </div>
