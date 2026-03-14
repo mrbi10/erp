@@ -32,7 +32,7 @@ import Feedback from './pages/sidebar/Feedback';
 import StaffAccess from './pages/sidebar/StaffAccess';
 import SupportTicket from './pages/sidebar/SupportTicket';
 import SystemMonitor from './pages/sidebar/SystemMonitor';
-import MenuPermissionManager from './pages/admin/MenuPermissionManager';
+import Events from './pages/sidebar/Events';
 
 import Students from './pages/students/Students';
 import Faculty from './pages/faculty/Faculty';
@@ -62,6 +62,7 @@ import ProfileHubView from './pages/profilehub/ProfileHubView';
 import ProfileHubAdd from './pages/profilehub/ProfileHubAdd';
 import ProfileHubActivities from './pages/profilehub/ProfileHubActivities';
 
+import MenuPermissionManager from './pages/admin/MenuPermissionManager';
 
 import GiveFeedback from './pages/feedback/GiveFeedback'
 import ViewFeedback from './pages/feedback/ViewFeedback'
@@ -106,6 +107,15 @@ import GenerateTimetable from './pages/timetable/GenerateTimetable';
 import Viewtimetable from './pages/timetable/Viewtimetable';
 import Timetablesetup from './pages/timetable/TimetableSetup';
 
+import ManageClubs from "./pages/events/ManageClubs";
+import EventsFeed from "./pages/events/EventsFeed";
+import MyRegistrations from "./pages/events/MyRegistrations";
+import CreateEvent from "./pages/events/CreateEvent";
+import ManageEvents from "./pages/events/ManageEvents";
+import EventDetails from "./pages/events/EventDetails";
+import TeamDetails from "./pages/events/TeamDetails";
+import EventParticipants from "./pages/events/EventParticipants";
+
 
 import { loadDeptClass } from "./constants/deptclassV3";
 
@@ -128,6 +138,30 @@ export default function App() {
 
   useEffect(() => {
     loadDeptClass();
+  }, []);
+
+  useEffect(() => {
+
+    const params = new URLSearchParams(window.location.search);
+    const msToken = params.get("ms_token");
+
+    if (!msToken) return;
+
+    try {
+
+      localStorage.setItem("token", msToken);
+
+      const decoded = jwtDecode(msToken);
+      localStorage.setItem("user", JSON.stringify(decoded));
+
+      setUser(decoded);
+
+      window.history.replaceState({}, document.title, "/dashboard");
+
+    } catch (err) {
+      console.error("Microsoft login failed:", err);
+    }
+
   }, []);
 
   useEffect(() => {
@@ -298,6 +332,16 @@ export default function App() {
                   <Route path="analysis" element={<FeedbackAnalysis user={user} />} />
                   <Route path="manage" element={<ManageFeedback user={user} />} />
                   <Route path="questions" element={<ManageFeedbackQuestions user={user} />} />
+                </Route>
+
+                <Route path="/events" element={<Events user={user} />}>
+
+                  <Route path="clubs" element={<ManageClubs user={user} />} />
+                  <Route path="feed" element={<EventsFeed />} />
+                  <Route path="my-registrations" element={<MyRegistrations />} />
+                  <Route path="create" element={<CreateEvent />} />
+                  <Route path="manage" element={<ManageEvents />} />
+
                 </Route>
 
                 <Route

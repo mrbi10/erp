@@ -4,7 +4,7 @@ import { BASE_URL } from "../constants/API";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate, useLocation } from "react-router-dom";
 
-export default function Login({ onClose, onLoginSuccess }) {
+export default function Login({ onClose, onLoginSuccess, errorFromRedirect }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -40,6 +40,12 @@ export default function Login({ onClose, onLoginSuccess }) {
       console.error("captcha error", e);
     }
   };
+
+  useEffect(() => {
+    if (errorFromRedirect) {
+      setError(errorFromRedirect);
+    }
+  }, [errorFromRedirect]);
 
   useEffect(() => {
     loadCaptcha();

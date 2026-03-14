@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Layout, Dropdown, Menu, Badge, Button } from "antd";
 import {
   BellOutlined,
@@ -12,6 +12,7 @@ import Login from "./Login";
 import logo from "../assests/logo2.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+
 const { Header } = Layout;
 
 export default function PremiumHeader({
@@ -21,6 +22,7 @@ export default function PremiumHeader({
   onHamburgerClick,
 }) {
   const [showLogin, setShowLogin] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -28,6 +30,21 @@ export default function PremiumHeader({
     onLogin(userData);
     setShowLogin(false);
   };
+  
+  useEffect(() => {
+
+    const params = new URLSearchParams(window.location.search);
+    const errorMsg = params.get("error");
+
+    if (!errorMsg) return;
+
+    setShowLogin(true);
+    setLoginError(decodeURIComponent(errorMsg));
+
+    // clean URL
+    window.history.replaceState({}, document.title, "/");
+
+  }, []);
 
   const handleBackClick = () => navigate(-1);
   const handleLogoutClick = () => onLogout();
@@ -210,6 +227,7 @@ export default function PremiumHeader({
 
       {shouldShowLogin && (
         <Login
+          errorFromRedirect={loginError}
           onClose={() => setShowLogin(false)}
           onLoginSuccess={handleLoginSuccess}
         />
